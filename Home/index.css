@@ -5,9 +5,28 @@ img {
 
 .top-toolbar {
     background-color: lightblue;
+    display: flex;
+    /* justify-content: space-between; */
+    align-items: center;
+}
+
+.toolbar-content {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    gap: 10px;
+}
+
+.toolbar-content p {
+    margin: 0;
+}
+
+.toolbar-content a {
+    margin-right: 50px;
 }
 
 * {
     margin: 0;
     padding: 0;
 }
+
