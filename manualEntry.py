@@ -4,10 +4,10 @@ import psycopg2
 import uuid
 
 ###use uvicorn to start FastAPI
-# uvicorn manualEntry:app --reload
+#uvicorn manualEntry:app --reload
 
 ###code to open psql for database
-# psql -h 98.92.53.251 -U postgres -d postgres
+#psql -h 98.92.53.251 -U postgres -d postgres
 
 ###use for manual entry
 #curl -X POST http://127.0.0.1:8000/manual-entry \
@@ -18,10 +18,10 @@ import uuid
 #  }'
 
 
-# Create the FastAPI application
+#Create the FastAPI application
 app = FastAPI()
 
-# Database connection config
+#Database connection config
 DB_CONFIG = {
     "host": "98.92.53.251",
     "port": 5432,
@@ -30,17 +30,17 @@ DB_CONFIG = {
     "password": "pgpass"
 }
 
-# Pydantic model that defines the expected JSON body
-# FastAPI automatically validates incoming requests against this model
+#Pydantic model that defines the expected JSON body
+#FastAPI automatically validates incoming requests against this model
 class ManualEntry(BaseModel):
-    finished_good_id: uuid.UUID  # UUID of the finished good
-    quantity: int                # Quantity to add manually
+    finished_good_id: uuid.UUID  #UUID of the finished good
+    quantity: int                #Quantity to add manually
 
-# Helper function to create a database connection
+#Helper function to create a database connection
 def get_connection():
     return psycopg2.connect(**DB_CONFIG)
 
-# POST endpoint for manual inventory entry
+#POST endpoint for manual inventory entry
 @app.post("/manual-entry")
 def manual_entry(entry: ManualEntry):
 
@@ -51,17 +51,17 @@ def manual_entry(entry: ManualEntry):
             detail="Quantity must be positive"
         )
 
-    # Open a database connection
+    #Open a database connection
     conn = get_connection()
 
-    # Disable autocommit so we can control transactions
+    #Disable autocommit so we can control transactions
     conn.autocommit = False
 
     try:
-        # Create a cursor for executing SQL statements
+        #Create a cursor for executing SQL statements
         with conn.cursor() as cur:
 
-            # Check that the FinishedGoodID exists
+            #Check that the FinishedGoodID exists
             cur.execute("""
                 SELECT 1
                 FROM tblfinishedgoods
@@ -69,14 +69,14 @@ def manual_entry(entry: ManualEntry):
             """, (str(entry.finished_good_id),))
 
 
-            # If no row is returned, the ID is invalid
+            #If no row is returned, the ID is invalid
             if cur.fetchone() is None:
                 raise HTTPException(
                     status_code=404,
                     detail="Finished good not found"
                 )
 
-            # Insert a new inventory record or update the existing one
+            #Insert a new inventory record or update the existing one
             cur.execute("""
                 INSERT INTO tblproductioninventory
                     (finishedgoodid, intavailableparts)
@@ -91,11 +91,11 @@ def manual_entry(entry: ManualEntry):
             ))
 
 
-        # Commit the transaction if everything succeeded
+        #Commit the transaction if everything succeeded
         conn.commit()
 
     except HTTPException:
-        # Roll back database changes for known errors
+        #Roll back database changes for known errors
         conn.rollback()
         raise
 
@@ -108,8 +108,8 @@ def manual_entry(entry: ManualEntry):
         )
 
     finally:
-        # Always close the database connection
+        #Always close the database connection
         conn.close()
 
-    # Return success response
+    #Return success response
     return {"status": "manual entry recorded"}
