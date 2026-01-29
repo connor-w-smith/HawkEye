@@ -14,11 +14,15 @@
 </head>
 <body>
     <div class="top-toolbar">
-        <img src="/Images/logo.png" alt="HawkEye Inventory Systems Logo">
+        <img src="{{ url_for('static', filename='CapstoneLogoWhiteText.png') }}" alt="HawkEye Inventory Systems Logo">
         <div class="toolbar-content">
-            <p>Hi, {user}</p>
-            <a href="#">Log out</a>
+            <!--<p>Hi, {user}</p> -->
+            <!-- <a href="#">Log out</a> -->
         </div>
+    </div>
+
+    <div class="header-display">
+        <h1>Inventory Dashboard</h1>
     </div>
 
     <table class="data-display">
