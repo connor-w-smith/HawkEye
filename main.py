@@ -21,6 +21,7 @@ class ManualEntry(BaseModel):
     finished_good_id: uuid.UUID
     quantity: int
 
+#connects to database and sends data to web app @ /finishedgoods
 @app.get("/finishedgoods")
 def get_finished_goods():
     try:
