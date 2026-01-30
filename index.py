@@ -24,10 +24,15 @@ def get_connection():
     )
 
 #This route runs when someone visits the root URL
-@app.route("/")
+@app.route("/index")
 def index():
     #send the HTML file to the browser
     return render_template("index.html")
+
+#This route will send the user to the login page
+@app.route("/")
+def login():
+    return render_template("login.html")
 
 #Route to the API endpoint that returns JSON data
 @app.route("/api/finishedgoods")
