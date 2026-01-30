@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict byZHrpxmKzOTATGSFUYrqZgSM8LBIy9Yy8L2JVppWLuYymwwKDmyI00qvypiYuQ
+\restrict 4aHRW4jjQGTisuHLyN8PgG79K3FOcU3R6YG4FAquM9Rb3Nynkv7TpVo6iOri3iS
 
 -- Dumped from database version 16.11 (Debian 16.11-1.pgdg13+1)
 -- Dumped by pg_dump version 18.1
 
--- Started on 2026-01-30 14:02:34 CST
+-- Started on 2026-01-30 15:22:48 CST
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -72,14 +72,13 @@ COMMENT ON COLUMN public.tblfinishedgoods.finishedgoodname IS 'Name for finished
 --
 
 CREATE TABLE public.tblproductiondata (
-    ordernumber uuid DEFAULT gen_random_uuid() NOT NULL,
-    sensorid uuid NOT NULL,
     finishedgoodid uuid NOT NULL,
     partsproduced integer DEFAULT '-1'::integer,
     productionstarttime timestamp without time zone,
     productionendtime timestamp without time zone,
     productionstartdate date,
-    productionenddate date
+    productionenddate date,
+    orderid integer NOT NULL
 );
 
 
@@ -97,15 +96,6 @@ COMMENT ON TABLE public.tblproductiondata IS 'Metadata about production line, it
 --
 -- TOC entry 3456 (class 0 OID 0)
 -- Dependencies: 216
--- Name: COLUMN tblproductiondata.sensorid; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN public.tblproductiondata.sensorid IS 'Should not have a default because it will inherit from the PK in the Sensor Infeed Data table';
-
-
---
--- TOC entry 3457 (class 0 OID 0)
--- Dependencies: 216
 -- Name: COLUMN tblproductiondata.finishedgoodid; Type: COMMENT; Schema: public; Owner: postgres
 --
 
@@ -113,7 +103,7 @@ COMMENT ON COLUMN public.tblproductiondata.finishedgoodid IS 'No default as it w
 
 
 --
--- TOC entry 3458 (class 0 OID 0)
+-- TOC entry 3457 (class 0 OID 0)
 -- Dependencies: 216
 -- Name: COLUMN tblproductiondata.partsproduced; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -122,7 +112,7 @@ COMMENT ON COLUMN public.tblproductiondata.partsproduced IS 'Default -1 for debu
 
 
 --
--- TOC entry 3459 (class 0 OID 0)
+-- TOC entry 3458 (class 0 OID 0)
 -- Dependencies: 216
 -- Name: COLUMN tblproductiondata.productionstarttime; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -131,12 +121,36 @@ COMMENT ON COLUMN public.tblproductiondata.productionstarttime IS 'Could be move
 
 
 --
--- TOC entry 3460 (class 0 OID 0)
+-- TOC entry 3459 (class 0 OID 0)
 -- Dependencies: 216
 -- Name: COLUMN tblproductiondata.productionendtime; Type: COMMENT; Schema: public; Owner: postgres
 --
 
 COMMENT ON COLUMN public.tblproductiondata.productionendtime IS 'Same as StartTime, but for ending.';
+
+
+--
+-- TOC entry 3460 (class 0 OID 0)
+-- Dependencies: 216
+-- Name: COLUMN tblproductiondata.orderid; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.tblproductiondata.orderid IS 'GENERATED ALWAYS AS IDENTITY to be an incrementing counter.';
+
+
+--
+-- TOC entry 220 (class 1259 OID 16446)
+-- Name: tblproductiondata_orderid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.tblproductiondata ALTER COLUMN orderid ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.tblproductiondata_orderid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
 
 
 --
@@ -186,10 +200,10 @@ COMMENT ON COLUMN public.tblproductioninventory.intavailableparts IS 'Stores num
 
 CREATE TABLE public.tblsensorinfeeddata (
     sensorid uuid DEFAULT gen_random_uuid() NOT NULL,
-    ordernumber uuid NOT NULL,
     inventorycount integer,
     "TimeStamp" timestamp without time zone,
-    productiondate date
+    productiondate date,
+    orderid integer NOT NULL
 );
 
 
@@ -208,10 +222,25 @@ unsure how many of the columns in this table are correct as I''m not sure yet ju
 --
 -- TOC entry 3465 (class 0 OID 0)
 -- Dependencies: 218
--- Name: COLUMN tblsensorinfeeddata.ordernumber; Type: COMMENT; Schema: public; Owner: postgres
+-- Name: COLUMN tblsensorinfeeddata.orderid; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.tblsensorinfeeddata.ordernumber IS 'Inherited from PK in ProductionData table';
+COMMENT ON COLUMN public.tblsensorinfeeddata.orderid IS 'foreign key linked to orderid in tblproductiondata';
+
+
+--
+-- TOC entry 221 (class 1259 OID 16452)
+-- Name: tblsensorinfeeddata_orderid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.tblsensorinfeeddata ALTER COLUMN orderid ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.tblsensorinfeeddata_orderid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
 
 
 --
@@ -277,7 +306,7 @@ COMMENT ON CONSTRAINT tblusercredentials_usernotemail ON public.tblusercredentia
 
 
 --
--- TOC entry 3291 (class 2606 OID 16406)
+-- TOC entry 3292 (class 2606 OID 16406)
 -- Name: tblfinishedgoods tblfinishedgoods_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -286,16 +315,16 @@ ALTER TABLE ONLY public.tblfinishedgoods
 
 
 --
--- TOC entry 3293 (class 2606 OID 16408)
+-- TOC entry 3294 (class 2606 OID 16451)
 -- Name: tblproductiondata tblproductiondata_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tblproductiondata
-    ADD CONSTRAINT tblproductiondata_pk PRIMARY KEY (ordernumber);
+    ADD CONSTRAINT tblproductiondata_pk PRIMARY KEY (orderid);
 
 
 --
--- TOC entry 3295 (class 2606 OID 16410)
+-- TOC entry 3296 (class 2606 OID 16410)
 -- Name: tblproductioninventory tblproductioninventory_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -304,7 +333,7 @@ ALTER TABLE ONLY public.tblproductioninventory
 
 
 --
--- TOC entry 3297 (class 2606 OID 16412)
+-- TOC entry 3298 (class 2606 OID 16412)
 -- Name: tblsensorinfeeddata tblsensorinfeeddata_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -313,7 +342,7 @@ ALTER TABLE ONLY public.tblsensorinfeeddata
 
 
 --
--- TOC entry 3299 (class 2606 OID 16445)
+-- TOC entry 3300 (class 2606 OID 16445)
 -- Name: tblusercredentials tblusercredentials_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -322,21 +351,12 @@ ALTER TABLE ONLY public.tblusercredentials
 
 
 --
--- TOC entry 3300 (class 2606 OID 16413)
+-- TOC entry 3301 (class 2606 OID 16413)
 -- Name: tblproductiondata tblproductiondata_tblfinishedgoods_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tblproductiondata
     ADD CONSTRAINT tblproductiondata_tblfinishedgoods_fk FOREIGN KEY (finishedgoodid) REFERENCES public.tblfinishedgoods(finishedgoodid) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
---
--- TOC entry 3301 (class 2606 OID 16418)
--- Name: tblproductiondata tblproductiondata_tblsensorinfeeddata_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.tblproductiondata
-    ADD CONSTRAINT tblproductiondata_tblsensorinfeeddata_fk FOREIGN KEY (sensorid) REFERENCES public.tblsensorinfeeddata(sensorid) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -349,19 +369,19 @@ ALTER TABLE ONLY public.tblproductioninventory
 
 
 --
--- TOC entry 3303 (class 2606 OID 16428)
+-- TOC entry 3303 (class 2606 OID 16457)
 -- Name: tblsensorinfeeddata tblsensorinfeeddata_tblproductiondata_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.tblsensorinfeeddata
-    ADD CONSTRAINT tblsensorinfeeddata_tblproductiondata_fk FOREIGN KEY (ordernumber) REFERENCES public.tblproductiondata(ordernumber) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT tblsensorinfeeddata_tblproductiondata_fk FOREIGN KEY (orderid) REFERENCES public.tblproductiondata(orderid) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
--- Completed on 2026-01-30 14:02:36 CST
+-- Completed on 2026-01-30 15:22:50 CST
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict byZHrpxmKzOTATGSFUYrqZgSM8LBIy9Yy8L2JVppWLuYymwwKDmyI00qvypiYuQ
+\unrestrict 4aHRW4jjQGTisuHLyN8PgG79K3FOcU3R6YG4FAquM9Rb3Nynkv7TpVo6iOri3iS
 
