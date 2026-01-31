@@ -1,13 +1,16 @@
 # Importing the Flask class to create the Web app.
 # Importing jsonify to return JSON to the browser
 # Importing render_template to serve HTML files
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request
 
 # Importing psycopg2 to connect Python to PostgresSQL
 import psycopg2
 
 # Importing extra helpers from psycopg2
-import psycopg2.extras 
+import psycopg2.extras
+
+# Importing inventory functions
+from inventory import user_login_verification 
 
 # Creating the Flask application
 # __name__ will tell Flask where the file is
@@ -33,6 +36,30 @@ def index():
 @app.route("/")
 def login():
     return render_template("login.html")
+
+#API endpoint for user login verification
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    try:
+        data = request.get_json()
+        username = data.get("username")
+        password = data.get("password")
+        
+        if not username or not password:
+            return jsonify({"status": "error", "message": "Username and password are required"}), 400
+        
+        # Call the login verification function from inventory.py
+        user_validated = user_login_verification(username, password)
+        
+        if user_validated:
+            return jsonify({"status": "success", "message": "Login successful"}), 200
+        else:
+            return jsonify({"status": "error", "message": "Invalid credentials"}), 401
+            
+    except ValueError as e:
+        return jsonify({"status": "error", "message": str(e)}), 401
+    except Exception as e:
+        return jsonify({"status": "error", "message": "An error occurred during login"}), 500
 
 #Route to the API endpoint that returns JSON data
 @app.route("/api/finishedgoods")

@@ -77,3 +77,25 @@ i {
     font-weight: bold;
     cursor: pointer;
 }
+
+.message-box {
+    width: 90%;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: bold;
+    display: none;
+}
+
+.message-box.success {
+    background-color: #4caf50;
+    color: white;
+    border: 1px solid #45a049;
+}
+
+.message-box.error {
+    background-color: #f44336;
+    color: white;
+    border: 1px solid #da190b;
+}
