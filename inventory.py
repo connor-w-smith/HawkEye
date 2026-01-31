@@ -1,6 +1,9 @@
 import uuid6
 import getpass
 import bcrypt
+import secrets
+import hashlib
+from datetime import datetime, timedelta
 from  db import get_connection
 
 
@@ -22,7 +25,8 @@ from  db import get_connection
 # def add_user_credentials(username, password, is_admin): Returns {"status":"success"}
 # def update_user_password(username, password): Returns {"status":"success"}
 # def delete_user_credentials(username): Returns {"status":"success"}
-# def password_recovery(username): Returns {"status":"success"}
+# def password_recovery(username): Returns token_hash
+# def verify_token_password_reset(username, token): Returns {"status":"success"}
 
 """tblfinishedgoods functions"""
 
@@ -167,8 +171,6 @@ def update_user_password(username, password):
                         break
 
                     else: print("Passwords do not match")
-            else:
-                raise ValueError(f"Password does not match")
 
             #hash password
             password_bytes = new_password.encode('utf-8')
@@ -252,20 +254,18 @@ def password_recovery(username):
             if cur.fetchone() is None:
                 raise ValueError(f"{username} does not exist")
 
-            #create temp password to pass to the reset password function
-            temp_password = "TempPassword123!"
+            #create a token
+            raw_token = secrets.token_urlsafe(32)
 
-            #hash password
-            password_bytes = temp_password.encode('utf-8')
-            password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
-            hashed_password = password_hash.decode('utf-8')
+            #hash the token before saving
+            token_hash = hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+            #set token expiration
+            token_expiration = datetime.now() + timedelta(minutes=15)
 
             cur.execute("""
-                        UPDATE tblusercredentials
-                        SET password = %s
-                        WHERE username = %s""",
-                        (hashed_password, str(username),))
-
+                        INSERT INTO tblusercredentials
+                        (token, tokenexpiration)
+                        VALUES (%s, %s)""",(token_hash, token_expiration),)
             #commit changes
             conn.commit()
 
@@ -278,7 +278,69 @@ def password_recovery(username):
         #Close connection to allow update_user_password to connect to DB
         conn.close()
 
-    return {"status":"success"}
+    return token_hash
+
+#verifies the token from the user for password recovery
+#args: user name and token, returns: {"status":"success"}
+def verify_token_password_reset(username, token):
+
+    #open connection
+    conn = get_connection()
+    #disable autocommit
+    conn.autocommit = False
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                        SELECT * FROM tblusercredentials
+                        WHERE username = %s""",
+                        (str(username),))
+
+            row = cur.fetchone()
+
+            if row is None:
+                raise ValueError(f"{username} does not exist")
+
+            """Add in the part to check the token and expiration here"""
+            #checks token_hash abd expiration
+            stored_token_hash = row[4]
+            expiration_time = row[5]
+
+            if stored_token_hash == token and datetime.now()< expiration_time
+
+                # create temp password to pass to the reset password function
+                temp_password = "TempPassword123!"
+
+                # hash password
+                password_hash = bcrypt.hashpw(temp_password.encode('utf-8'), bcrypt.gensalt())
+
+                cur.execute("""
+                        UPDATE tblusercredentials
+                        SET password = %s
+                        WHERE username = %s""",
+                        (password_hash, str(username),))
+
+            # commit changes
+            conn.commit()
+
+        #close connection
+        conn.close()
+
+        reset_status = update_user_password(username, temp_password)
+
+        if reset_status["status"] == "success":
+            return {"status": "success"}
+
+    except Exception as e:
+        conn.rollback()
+        raise e
+
+    finally:
+        #Ensure connection closed in case of error
+        if conn and conn.is_connected():
+            conn.close()
+
+
 
 
 
