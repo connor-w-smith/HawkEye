@@ -1,5 +1,8 @@
 import uuid6
+import getpass
+import bcrypt
 from  db import get_connection
+
 
 
 ###use for manual entry
@@ -11,9 +14,278 @@ from  db import get_connection
 #  }'
 
 
+"""Function Declarations by DB Table"""
+
+"""tblusercredentials functions"""
+
+# def user_login_verification(username, password): Returns user_validated (boolean)
+# def add_user_credentials(username, password, is_admin): Returns {"status":"success"}
+# def update_user_password(username, password): Returns {"status":"success"}
+# def delete_user_credentials(username): Returns {"status":"success"}
+# def password_recovery(username): Returns {"status":"success"}
+
 """tblfinishedgoods functions"""
 
-# Adds a new finished to tblfinishedgoods, arg:finishedgoodname
+# def add_finished_good(finished_good_name): Returns {"status":"success"}
+# def delete_finished_good(finished_good_name): Returns {"status":"success"}
+# def get_finished_good(finished_good_name): Returns finishedgoodid
+
+
+"""TblProductionInventory Functions"""
+
+# def add_inventory(finished_good_id, quantity): Returns {"status":"success"}
+# def delete_inventory(finished_good_id, quantity_to_subtract): Returns {"status":"success"}
+# def get_inventory(finished_good_id): Returns int current_stock
+
+
+"""tblusercredentials functions"""
+
+#verifies user login to webpage
+#args: username, password, Returns: {"Status":"Success"}
+def user_login_verification(username, password):
+
+    # Open connection to database
+    conn = get_connection()
+    # disable autocommit
+    conn.autocommit = False
+
+    try:
+        with conn.cursor() as cur:
+
+            cur.execute("""SELECT password
+                            FROM tblusercredentials
+                            WHERE username = %s""",
+                        (str(username),))
+
+            results = cur.fetchone()
+
+            # Check if username exists in the DB
+            if results is None:
+                raise ValueError(f"{username} does not exist")
+
+            # transfer password to usable variable
+            stored_password = results[0]
+
+            # verify current given password for security
+            if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
+                user_validated = True
+                return user_validated
+
+            else:
+                raise ValueError("Password does not match")
+
+    except Exception as e:
+        raise e
+
+    finally:
+        conn.close()
+
+#Adds new user to the login DB
+#args: Username, password, is_admin, returns: success statement
+def add_user_credentials(username, password, is_admin):
+
+    #open connection to database
+    conn = get_connection()
+    #Disable autocommit
+    conn.autocommit = False
+
+    try:
+        with (conn.cursor() as cur):
+
+            #check if username already exists in the database
+            cur.execute("""
+                        SELECT 1
+                        FROM tblusercredentials
+                        WHERE username = %s""",(str(username),))
+
+            #if a value is returned then the username already exists
+            if cur.fetchone() is not None:
+                raise ValueError(f"{username} already exists")
+
+            #Hash Password
+            password_bytes = password.encode('utf-8')
+            password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+            hashed_password = password_hash.decode('utf-8')
+
+            #insert new record into tblusercredentials
+            cur.execute("""
+                        INSERT INTO tblusercredentials 
+                        (username, password, isadmin)
+                        VALUES (%s, %s, %s)""",
+                        (str(username), hashed_password, is_admin),)
+
+            #If everything passed commit change
+            conn.commit()
+
+
+    except Exception as e:
+        # Rollback in case of error to maintain data integrity
+        conn.rollback()
+        raise e
+
+    finally:
+        #close connection
+        conn.close()
+
+    return {"status":"success"}
+
+"""def update_user_credentials(username, password, is_admin):"""
+#Updates user password
+#args: username, password, returns success
+def update_user_password(username, password):
+
+    #Open connection to database
+    conn = get_connection()
+    #disable autocommit
+    conn.autocommit = False
+
+    try:
+        with conn.cursor() as cur:
+
+            cur.execute("""SELECT password
+                        FROM tblusercredentials
+                        WHERE username = %s""",
+                        (str(username),))
+
+            results = cur.fetchone()
+
+            #Check if username exists in the DB
+            if results is None:
+                raise ValueError(f"{username} does not exist")
+
+            #transfer password to usable variable
+            stored_password = results[0]
+
+            #verify current given password for security
+            if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
+                while True:
+                    #get input for new password here
+                    new_password = getpass.getpass('Enter new password: ')
+                    confirm_password = getpass.getpass('Confirm new password: ')
+
+                    if new_password == confirm_password:
+                        break
+
+                    else: print("Passwords do not match")
+            else:
+                raise ValueError(f"Password does not match")
+
+            #hash password
+            password_bytes = new_password.encode('utf-8')
+            password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+            hashed_password = password_hash.decode('utf-8')
+
+            #update password for user
+            cur.execute("""UPDATE tblusercredentials
+                        SET password = %s
+                        WHERE username = %s""",
+                        (hashed_password, str(username),))
+
+            #commit changes
+            conn.commit()
+
+    except Exception as e:
+        #rollback in case of data validity issues
+        conn.rollback()
+        raise e
+
+    finally:
+        #close connection
+        conn.close()
+
+    return {"status":"success"}
+
+
+
+#deletes user from tblusercredentials
+#arg: username, returns: staus message
+def delete_user_credentials(username):
+
+    #open connection to database
+    conn = get_connection()
+    #disable autocommit
+    conn.autocommit = False
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                        SELECT 1 FROM tblusercredentials
+                        WHERE username = %s""",
+                        (str(username),))
+
+            #verify if user record was found
+            if cur.fetchone() is None:
+                raise ValueError(f"{username} does not exist")
+
+            cur.execute("""DELETE FROM tblusercredentials 
+                           WHERE username = %s""",
+                           (str(username),))
+
+    except Exception as e:
+        #rollback in case of data validity issues
+        conn.rollback()
+        raise e
+
+    finally:
+        #close connection
+        conn.close()
+
+    return {"status":"success"}
+
+#function to reset password if forgotten
+#arg: username, returns: success message
+def password_recovery(username):
+
+    #open connection
+    conn = get_connection()
+    #disable autocommit
+    conn.autocommit = False
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(""" 
+                        Select 1 
+                        FROM tblusercredentials
+                        WHERE username = %s""", (str(username),))
+
+            #verify that the user exists
+            if cur.fetchone() is None:
+                raise ValueError(f"{username} does not exist")
+
+            #create temp password to pass to the reset password function
+            temp_password = "TempPassword123!"
+
+            #hash password
+            password_bytes = temp_password.encode('utf-8')
+            password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+            hashed_password = password_hash.decode('utf-8')
+
+            cur.execute("""
+                        UPDATE tblusercredentials
+                        SET password = %s
+                        WHERE username = %s""",
+                        (hashed_password, str(username),))
+
+            #commit changes
+            conn.commit()
+
+    except Exception as e:
+        #roll back in case of error
+        conn.rollback()
+        raise e
+
+    finally:
+        #Close connection to allow update_user_password to connect to DB
+        conn.close()
+
+    return {"status":"success"}
+
+
+
+"""tblfinishedgoods functions"""
+
+# Adds a new finished to tblfinishedgoods,
+# arg:finishedgoodname, returns: finishedgoodid
 def add_finished_good(finished_good_name):
 
     # Open a database connection
@@ -58,9 +330,10 @@ def add_finished_good(finished_good_name):
         conn.close()
 
     #Why status return and not a value or a boolean value
-    return new_id
+    return {"status":"success"}
 
-#Deletes a finished good entry from tblfinishedgoods, arg:finishedgoodname
+#Deletes a finished good entry from tblfinishedgoods,
+# arg:finishedgoodname, returns: success status
 def delete_finished_good(finished_good_name): #Can add an id argument if needed
 
     #Open a Database connection
@@ -101,9 +374,10 @@ def delete_finished_good(finished_good_name): #Can add an id argument if needed
         #close the connection
         conn.close()
 
-    #If return needed add here
+    return {"status": "success"}
 
-#Searches tblfinishedgoods for a finished good name,arg: finishedgoodname returns: finishedgoodid
+#Searches tblfinishedgoods for a finished good name
+#arg: finishedgoodname returns: finishedgoodid
 def get_finished_good(finished_good_name):
 
     #Open Database Connection
@@ -145,7 +419,13 @@ def get_finished_good(finished_good_name):
 
 
 
-"TblProductionInventory Functions"
+
+
+"""TblProductionInventory Functions"""
+
+
+#Adds inventory quantity to finished good, if no finishedgood record exists, adds part and quantity to table
+#args: finishedgoodid, quantity, returns success statement
 def add_inventory(finished_good_id, quantity):
 
     #Open a database connection
@@ -163,7 +443,6 @@ def add_inventory(finished_good_id, quantity):
                 FROM tblfinishedgoods
                 WHERE finishedgoodid = %s
             """, (str(finished_good_id),))
-
 
             #If no row is returned, the ID is invalid
             if cur.fetchone() is None:
@@ -194,8 +473,9 @@ def add_inventory(finished_good_id, quantity):
         conn.close()
 
     #Return success response
-    return {"status": "entry recorded"}
+    return {"status": "success"}
 
+#Deletes
 def delete_inventory(finished_good_id, quantity_to_subtract):
 
     #open database connection
@@ -247,9 +527,10 @@ def delete_inventory(finished_good_id, quantity_to_subtract):
         #close connection
         conn.close()
 
-    return {"status": "entry recorded"}
+    return {"status": "success"}
 
-#returns the available inventory for a given finishedgoodid
+#searches the available inventory for a given finishedgoodid
+#arg: finished_good_id, returns:inventory value if any
 def get_inventory(finished_good_id):
 
     #open connection
@@ -286,13 +567,11 @@ def get_inventory(finished_good_id):
         conn.close()
 
 
-
-
 """
 # --- TEMPORARY MAIN FOR TESTING ---
 #set back db call before commenting this out
 if __name__ == "__main__":
-    test_product = "HawkEye Pro Widget"
+    test_product = "Pokemon Cards"
 
     try:
         # 1. Setup: Add Product
@@ -302,6 +581,7 @@ if __name__ == "__main__":
 
         # 2. Test: Add Inventory (Initial & Update)
         print("\n--- Testing Add Inventory ---")
+        pid = get_finished_good(test_product)
         add_inventory(pid, 50)
         stock_1 = get_inventory(pid)
         print(f"Initial stock (expected 50): {stock_1}")
@@ -334,4 +614,28 @@ if __name__ == "__main__":
 
     except Exception as error:
         print(f"Test failed: {error}")
+
+# --- Testing User Credentials ---
+    print("\n--- Testing User Management ---")
+    try:
+        # 1. Add User
+        print("Adding test user...")
+        add_user_credentials("test_admin@gmail.com", "AdminPass123!", True)
+
+        # 2. Verify Login
+        print("Verifying login...")
+        login = user_login_verification("test_admin@gmail.com", "AdminPass123!")
+        print(f"Login result: {login}")
+
+        # 3. Password Recovery
+        print("Running password recovery...")
+        recovery = password_recovery("test_admin@gmail.com")
+        print(f"Recovery status: {recovery}")
+
+        # 5. Cleanup User
+        delete_user_credentials("test_admin@gmail.com")
+        print("Test user deleted.")
+
+    except Exception as e:
+        print(f"User test failed: {e}")
 """
