@@ -306,7 +306,7 @@ def verify_token_password_reset(username, token):
             stored_token_hash = row[4]
             expiration_time = row[5]
 
-            if stored_token_hash == token and datetime.now()< expiration_time
+            if stored_token_hash == token and datetime.now() < expiration_time:
 
                 # create temp password to pass to the reset password function
                 temp_password = "TempPassword123!"
