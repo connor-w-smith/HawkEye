@@ -6,6 +6,7 @@ import uuid
 
 from inventory import add_inventory
 from db import get_connection
+from auth import router as auth_router
 
 ###use uvicorn to run
 #uvicorn main:app --reload
@@ -15,6 +16,9 @@ from db import get_connection
 
 #start fast api
 app = FastAPI(title="HawkEye Backend")
+
+#auth.py
+app.include_router(auth_router)
 
 #request validation
 class ManualEntry(BaseModel):
