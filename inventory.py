@@ -23,7 +23,7 @@ from  db import get_connection
 
 # def user_login_verification(username, password): Returns user_validated (boolean)
 # def add_user_credentials(username, password, is_admin): Returns {"status":"success"}
-# def update_user_password(username, password): Returns {"status":"success"}
+# def update_user_password(username, password, new_password): Returns {"status":"success"}
 # def delete_user_credentials(username): Returns {"status":"success"}
 # def password_recovery(username): Returns token_hash
 # def verify_token_password_reset(username, token): Returns {"status":"success"}
@@ -135,8 +135,8 @@ def add_user_credentials(username, password, is_admin):
 
 """def update_user_credentials(username, password, is_admin):"""
 #Updates user password
-#args: username, password, returns success
-def update_user_password(username, password):
+#args: username, password, new_passsword returns success
+def update_user_password(username, password, new_password):
 
     #Open connection to database
     conn = get_connection()
@@ -162,29 +162,19 @@ def update_user_password(username, password):
 
             #verify current given password for security
             if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
-                while True:
-                    #get input for new password here
-                    new_password = getpass.getpass('Enter new password: ')
-                    confirm_password = getpass.getpass('Confirm new password: ')
+                #hash password
+                password_bytes = new_password.encode('utf-8')
+                password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+                hashed_password = password_hash.decode('utf-8')
 
-                    if new_password == confirm_password:
-                        break
-
-                    else: print("Passwords do not match")
-
-            #hash password
-            password_bytes = new_password.encode('utf-8')
-            password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
-            hashed_password = password_hash.decode('utf-8')
-
-            #update password for user
-            cur.execute("""UPDATE tblusercredentials
+                #update password for user
+                cur.execute("""UPDATE tblusercredentials
                         SET password = %s
                         WHERE username = %s""",
                         (hashed_password, str(username),))
 
-            #commit changes
-            conn.commit()
+                #commit changes
+                conn.commit()
 
     except Exception as e:
         #rollback in case of data validity issues
@@ -195,7 +185,7 @@ def update_user_password(username, password):
         #close connection
         conn.close()
 
-    return {"status":"success"}
+        return {"status":"success"}
 
 
 
