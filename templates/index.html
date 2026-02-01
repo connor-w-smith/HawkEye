@@ -1,0 +1,39 @@
+<!--
+    Title: index.html
+    Author: Connor Smith
+    Description: Home page for the inventory dashboard.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HawkEye Inventory Systems</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css')}}">
+</head>
+<body>
+    <div class="top-toolbar">
+        <img src="{{ url_for('static', filename='CapstoneLogoWhiteText.png') }}" alt="HawkEye Inventory Systems Logo">
+        <div class="toolbar-content">
+            <!--<p>Hi, {user}</p> -->
+            <!-- <a href="#">Log out</a> -->
+        </div>
+    </div>
+
+    <div class="header-display">
+        <h1>Finished Products</h1>
+    </div>
+
+    <table class="data-display">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody id="data-table"></tbody>
+    </table>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
