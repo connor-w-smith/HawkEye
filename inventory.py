@@ -26,7 +26,7 @@ from  db import get_connection
 # def update_user_password(username, password, new_password): Returns {"status":"success"}
 # def delete_user_credentials(username): Returns {"status":"success"}
 # def password_recovery(username): Returns token_hash
-# def verify_token_password_reset(username, token): Returns {"status":"success"}
+# def verify_token_password_reset(username, token): Returns password_hash
 
 """tblfinishedgoods functions"""
 
@@ -316,10 +316,7 @@ def verify_token_password_reset(username, token):
         #close connection
         conn.close()
 
-        reset_status = update_user_password(username, temp_password)
-
-        if reset_status["status"] == "success":
-            return {"status": "success"}
+        return password_hash
 
     except Exception as e:
         conn.rollback()
