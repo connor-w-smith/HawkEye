@@ -185,7 +185,7 @@ def update_user_password(username, password, new_password):
         #close connection
         conn.close()
 
-        return {"status":"success"}
+    return {"status":"success"}
 
 
 
