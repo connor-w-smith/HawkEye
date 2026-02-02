@@ -65,7 +65,7 @@ def request_password_reset(data: PasswordResetRequest):
         return {"status": "User not found"}
 
 #endpoint to verify and reset password
-@router.post("/reset-password")
+@router.post("/user-reset-password")
 def user_password_reset(data: PasswordResetRequest):
     try:
         return verify_and_reset_password(data.raw_token, data.new_password)
