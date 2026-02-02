@@ -3,6 +3,7 @@ import getpass
 import bcrypt
 import secrets
 import hashlib
+import secrets
 from datetime import datetime, timedelta
 from  db import get_connection
 
@@ -50,9 +51,7 @@ def user_login_verification(username, password):
 
     # Open connection to database
     conn = get_connection()
-    # disable autocommit
-    conn.autocommit = False
-
+    
     try:
         with conn.cursor() as cur:
 
@@ -72,14 +71,14 @@ def user_login_verification(username, password):
 
             # verify current given password for security
             if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
-                user_validated = True
-                return user_validated
+                session_token = create_session(username)
+                return {"token": session_token}
 
             else:
                 raise ValueError("Password does not match")
 
     except Exception as e:
-        raise e
+        raise
 
     finally:
         conn.close()
@@ -125,7 +124,7 @@ def add_user_credentials(username, password, is_admin):
     except Exception as e:
         # Rollback in case of error to maintain data integrity
         conn.rollback()
-        raise e
+        raise 
 
     finally:
         #close connection
@@ -179,7 +178,7 @@ def update_user_password(username, password, new_password):
     except Exception as e:
         #rollback in case of data validity issues
         conn.rollback()
-        raise e
+        raise
 
     finally:
         #close connection
@@ -216,7 +215,7 @@ def delete_user_credentials(username):
     except Exception as e:
         #rollback in case of data validity issues
         conn.rollback()
-        raise e
+        raise 
 
     finally:
         #close connection
@@ -262,7 +261,7 @@ def password_recovery(username):
     except Exception as e:
         #roll back in case of error
         conn.rollback()
-        raise e
+        raise 
 
     finally:
         #Close connection to allow update_user_password to connect to DB
@@ -320,15 +319,86 @@ def verify_token_password_reset(username, token):
 
     except Exception as e:
         conn.rollback()
-        raise e
+        raise
 
     finally:
         #Ensure connection closed in case of error
         if conn and conn.is_connected():
             conn.close()
 
+#create session token when user logs in
+def create_session(username):
+    conn = get_connection()
+    conn.autocommit = False
 
+    try:
+        #creats session token and experiation
+        session_token = secrets.token_urlsafe(32)
+        expires_at = datetime.now() + timedelta(minutes=30)
 
+        with conn.cursor() as cur:
+            #inserts into tblsessions table in db
+            cur.execute("""
+                INSERT INTO tblsessions (session_token, username, expires_at)
+                VALUES (%s, %s, %s)
+            """, (session_token, username, expires_at))
+
+            conn.commit()
+
+        return session_token
+
+    except Exception as e:
+        conn.rollback()
+        raise e
+
+    finally:
+        conn.close()
+
+#validate session(timeout) functions
+def validate_session(session_token):
+    conn = get_connection()
+
+    try:
+        #on connection check token row
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT username, expires_at
+                FROM tblsessions
+                WHERE session_token = %s
+            """, (session_token,))
+
+            row = cur.fetchone()
+
+            #if no token session is invalid
+            if row is None:
+                raise ValueError("Invalid session")
+
+            username, expires_at = row
+
+            #if token is expired session will end
+            if datetime.now() > expires_at:
+                delete_session(session_token)
+                raise ValueError("Session expired")
+
+            return username
+
+    finally:
+        conn.close()
+
+#delete session(logout) function
+def delete_session(session_token):
+    conn = get_connection()
+    conn.autocommit = True
+
+    try:
+        #remove token from db when logout
+        with conn.cursor() as cur:
+            cur.execute("""
+                DELETE FROM tblsessions
+                WHERE session_token = %s
+            """, (session_token,))
+    finally:
+        conn.close()
 
 
 """tblfinishedgoods functions"""

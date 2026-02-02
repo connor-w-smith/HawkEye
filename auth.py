@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel, EmailStr
 from inventory import user_login_verification, add_user_credentials
 
@@ -28,14 +28,12 @@ class PasswordResetConfirm(BaseModel):
 @router.post("/login")
 def login(data: LoginRequest):
     try:
-        permissions = user_login_verification(data.username, data.password)
-        return
-        {
+        result = user_login_verification(data.username, data.password)
+        return {
             "status": "success",
-            "permissions": permissions
+            "session_token": result["token"]
         }
     except Exception as e:
-        #Convert errors to HTTP responses
         raise HTTPException(status_code=401, detail=str(e))
 
 #endpoint to add user
@@ -72,7 +70,6 @@ def user_password_reset(data: PasswordResetRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-
 @router.post("/reset-password")
 def reset_password(data: PasswordResetConfirm):
     try:
@@ -83,3 +80,14 @@ def reset_password(data: PasswordResetConfirm):
         return {"status": "success"}
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+
+
+@router.post("/logout")
+def logout(authorization: str = Header(...)):
+    try:
+        token = authorization.replace("Bearer ", "")
+        delete_session(token)
+        return {"status": "logged out"}
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid session")
