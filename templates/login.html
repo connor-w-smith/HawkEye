@@ -1,0 +1,35 @@
+<!--
+    Title: Login Page
+    Author: Connor Smith
+    Description: Login page for HawkEye Inventory Systems.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css')}}">
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+</head>
+<body>
+    <div class="login-modal-wrapper">
+        <div class="login-modal">
+            <h1>Login</h1>
+            <div class="input-wrapper">
+                <i class="fa fa-user"></i>
+                <input id="inputUsername" type="text" placeholder="Username">
+            </div>
+            <div class="input-wrapper">
+                <i class="fa fa-lock"></i>
+                <input id="inputPassword" type="password" placeholder="Password">
+            </div>
+            <button id="btnLogin">Login</button>
+            <div id="message" class="message-box"></div>
+        </div>
+    </div>
+<script src="{{ url_for('static', filename='app.js')}}"></script>
+</body>
+</html>
