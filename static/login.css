@@ -1,0 +1,101 @@
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(90deg, #3a9ad9, #1c6ba0);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+
+.login-modal-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+
+.login-modal {
+    width: 400px;
+    height: 500px;
+    border: solid 10px white;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(360deg, silver, #ffa500);
+    padding: 2rem;
+    gap: 1rem;
+}
+
+/*Centers the inputs*/
+/* .form-input {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+} */
+
+h1 {
+    text-align: center;
+    color: white;
+}
+
+.input-wrapper {
+    position: relative;
+    width: 80%;
+    margin-bottom: 1rem;
+    min-width: 250px;
+}
+
+i {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: gray;
+}
+
+ input {
+    width: 85%;
+    padding-left: 35px;
+    margin-left: 5px;
+    height: 40px;
+    border-radius: 6px;
+    border: solid 1px black;
+}
+
+#btnLogin {
+    width: 60%;
+    padding: .75rem;
+    border-radius: 6px;
+    background: gray;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.message-box {
+    width: 90%;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: bold;
+    display: none;
+}
+
+.message-box.success {
+    background-color: #4caf50;
+    color: white;
+    border: 1px solid #45a049;
+}
+
+.message-box.error {
+    background-color: #f44336;
+    color: white;
+    border: 1px solid #da190b;
+}
