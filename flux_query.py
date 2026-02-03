@@ -1,5 +1,4 @@
 import time
-import sys                      #for importing from files in other dirs
 from influxdb_client.client.influxdb_client import InfluxDBClient
 from influxdb_client.client.query_api import QueryApi
 from influx_details import INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET
