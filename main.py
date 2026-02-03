@@ -4,9 +4,11 @@ import psycopg2
 import psycopg2.extras
 import uuid
 
-from inventory import add_inventory
+
+from inventory import * 
 from db import get_connection
 from auth import router as auth_router
+
 
 ###use uvicorn to run
 #uvicorn main:app --reload
