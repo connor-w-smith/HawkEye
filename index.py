@@ -2,29 +2,13 @@
 # Importing jsonify to return JSON to the browser
 # Importing render_template to serve HTML files
 from flask import Flask, jsonify, render_template, request
-
-# Importing psycopg2 to connect Python to PostgresSQL
-import psycopg2
-
-# Importing extra helpers from psycopg2
-import psycopg2.extras
-
-# Importing inventory functions
-from inventory import user_login_verification 
+import requests
 
 # Creating the Flask application
 # __name__ will tell Flask where the file is
 app = Flask(__name__)
 
-# Function to create a new database connection
-def get_connection():
-    return psycopg2.connect(
-        host="98.92.53.251",
-        database="postgres",
-        user="postgres",
-        password="pgpass",
-        port=5432
-    )
+BACKEND_URL = "http://127.0.0.1:8000"
 
 #This route runs when someone visits the root URL
 @app.route("/index")
@@ -37,50 +21,69 @@ def index():
 def login():
     return render_template("login.html")
 
-#API endpoint for user login verification
+#login endpoint to sned data to backend
 @app.route("/api/login", methods=["POST"])
 def api_login():
+    data = request.get_json()
+
     try:
-        data = request.get_json()
-        username = data.get("username")
-        password = data.get("password")
-        
-        if not username or not password:
-            return jsonify({"status": "error", "message": "Username and password are required"}), 400
-        
-        # Call the login verification function from inventory.py
-        user_validated = user_login_verification(username, password)
-        
-        if user_validated:
-            return jsonify({"status": "success", "message": "Login successful"}), 200
-        else:
-            return jsonify({"status": "error", "message": "Invalid credentials"}), 401
-            
-    except ValueError as e:
-        return jsonify({"status": "error", "message": str(e)}), 401
-    except Exception as e:
-        return jsonify({"status": "error", "message": "An error occurred during login"}), 500
+        resp = requests.post(
+            f"{BACKEND_URL}/login",
+            json={
+                "username": data.get("username"),
+                "password": data.get("password")
+            },
+            timeout=5
+        )
 
-#Route to the API endpoint that returns JSON data
+        if resp.status_code != 200:
+            return jsonify(resp.json()), 401
+
+        result = resp.json()
+
+        response = make_response(jsonify({"status": "success"}))
+        response.set_cookie(
+            "session_token",
+            result["session_token"],
+            httponly=True,
+            samesite="Lax"
+        )
+        return response
+
+    except requests.RequestException:
+        return jsonify({"error": "Backend unavailable"}), 503
+
+#checks session token before asking backend for data
 @app.route("/api/finishedgoods")
-def get_finished_goods():
-    conn = get_connection()
+def finished_goods():
+    token = request.cookies.get("session_token")
+    if not token:
+        return jsonify({"error": "Unauthorized"}), 401
 
-    cur = conn.cursor(
-        cursor_factory=psycopg2.extras.RealDictCursor
+    resp = requests.get(
+        f"{BACKEND_URL}/finishedgoods",
+        headers={"Authorization": f"Bearer {token}"}
     )
 
-    #SQL query with PostgresSQL
-    cur.execute("""
-        SELECT finishedgoodid, finishedgoodname FROM 
-        tblfinishedgoods ORDER BY finishedgoodname;""")
-    
-    goods = cur.fetchall()
+    return jsonify(resp.json()), resp.status_code
 
-    cur.close()
-    conn.close()
+#deletes token once user is logged out
+@app.route("/api/logout", methods=["POST"])
+def logout():
+    token = request.cookies.get("session_token")
+    if token:
+        requests.post(
+            f"{BACKEND_URL}/logout",
+            headers={"Authorization": f"Bearer {token}"}
+        )
 
-    return jsonify(goods)
+    response = make_response(jsonify({"status": "logged out"}))
+    response.delete_cookie("session_token")
+    return response
+
+@app.route("/search")
+def search_page():
+    return render_template("search.html")
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
