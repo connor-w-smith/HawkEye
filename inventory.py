@@ -1,5 +1,4 @@
 import uuid6
-import getpass
 import bcrypt
 import secrets
 import hashlib
@@ -28,6 +27,9 @@ from  db import get_connection
 # def delete_user_credentials(username): Returns {"status":"success"}
 # def password_recovery(username): Returns token_hash
 # def verify_token_password_reset(username, token): Returns password_hash
+# def create_session(username):
+# def validate_session(session_token):
+# def delete_session(session_token):
 
 """tblfinishedgoods functions"""
 
