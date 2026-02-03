@@ -14,12 +14,13 @@ import psycopg2.extras
 
 # Importing inventory functions
 from inventory import user_login_verification 
-
 from db import get_connection
 
 # Creating the Flask application
 # __name__ will tell Flask where the file is
 app = Flask(__name__)
+
+############################ LEGACY CODE ############################
 
 # Function to create a new database connection
 '''
@@ -33,6 +34,8 @@ def get_connection():
     )
 '''
     
+########################### END LEGACY CODE ###########################
+
 #This route runs when someone visits the root URL
 @app.route("/index")
 def index():
