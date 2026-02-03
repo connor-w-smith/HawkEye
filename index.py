@@ -3,6 +3,9 @@
 # Importing render_template to serve HTML files
 from flask import Flask, jsonify, render_template, request
 
+#serve production server on flask
+from waitress import serve
+
 # Importing psycopg2 to connect Python to PostgresSQL
 import psycopg2
 
@@ -83,4 +86,5 @@ def get_finished_goods():
     return jsonify(goods)
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    #app.run(host='0.0.0.0', port=5000, debug=True)
+    serve(app, host='0.0.0.0', port=5000)
