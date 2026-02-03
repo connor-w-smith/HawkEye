@@ -15,11 +15,14 @@ import psycopg2.extras
 # Importing inventory functions
 from inventory import user_login_verification 
 
+from db import get_connection
+
 # Creating the Flask application
 # __name__ will tell Flask where the file is
 app = Flask(__name__)
 
 # Function to create a new database connection
+'''
 def get_connection():
     return psycopg2.connect(
         host="98.92.53.251",
@@ -28,7 +31,8 @@ def get_connection():
         password="pgpass",
         port=5432
     )
-
+'''
+    
 #This route runs when someone visits the root URL
 @app.route("/index")
 def index():
@@ -67,7 +71,7 @@ def api_login():
 #Route to the API endpoint that returns JSON data
 @app.route("/api/finishedgoods")
 def get_finished_goods():
-    conn = get_connection()
+    conn = get_connection() #function imported from db.py
 
     cur = conn.cursor(
         cursor_factory=psycopg2.extras.RealDictCursor
