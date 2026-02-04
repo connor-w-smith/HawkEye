@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Search Inventory</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Search</title>
     <link rel="stylesheet" href="/static/index.css">
 </head>
 <body>
@@ -11,16 +12,17 @@
     <h1>Inventory Search</h1>
 </div>
 
-<div style="text-align:center; margin-bottom: 15px;">
-    <input
-        type="text"
-        id="searchInput"
-        placeholder="Search by ID or name"
-    />
-    <button id="searchBtn">Search</button>
+<div class="search-container" style="text-align:center; margin-bottom: 20px;">
+    <input id="searchNameInput" type="text" placeholder="Search by Name" style="margin-right:10px;">
+    <button id="searchNameBtn">Search Name</button>
+
+    <br><br>
+
+    <input id="searchIdInput" type="text" placeholder="Search by ID" style="margin-right:10px;">
+    <button id="searchIdBtn">Search ID</button>
 </div>
 
-<table class="data-display">
+<table class="data-display" id="searchResults">
     <thead>
         <tr>
             <th>ID</th>
@@ -28,7 +30,7 @@
         </tr>
     </thead>
     <tbody id="data-table">
-        <!-- EMPTY ON LOAD -->
+        <!-- Results appear here -->
     </tbody>
 </table>
 
