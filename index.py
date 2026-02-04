@@ -32,6 +32,11 @@ def index():
     #send the HTML file to the browser
     return render_template("index.html")
 
+#This route will send the user to the password reset modal
+@app.route("/password-modal")
+def password_modal():
+    return render_template("password-modal.html")
+
 #This route will send the user to the login page
 @app.route("/")
 def login():

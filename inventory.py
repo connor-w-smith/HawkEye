@@ -5,6 +5,9 @@ import secrets
 import hashlib
 from datetime import datetime, timedelta
 from  db import get_connection
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 
 
@@ -688,3 +691,116 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"User test failed: {e}")
 """
+
+
+
+
+#function to reset password if forgotten - uses email
+#arg: email (username), returns: success message
+def password_recovery_email(email):
+    
+    #open connection
+    conn = get_connection()
+    #disable autocommit
+    conn.autocommit = False
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(""" 
+                        SELECT 1 
+                        FROM tblusercredentials
+                        WHERE username = %s""", (str(email),))
+
+            #verify that the user exists
+            if cur.fetchone() is None:
+                raise ValueError(f"{email} does not exist")
+
+            #create a token
+            raw_token = secrets.token_urlsafe(32)
+
+            #hash the token before saving
+            token_hash = hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+            #set token expiration
+            token_expiration = datetime.now() + timedelta(minutes=15)
+
+            cur.execute("""
+                        UPDATE tblusercredentials
+                        SET token = %s, tokenexpiration = %s
+                        WHERE username = %s""",(token_hash, token_expiration, email),)
+            #commit changes
+            conn.commit()
+
+        # Send email with reset token
+        send_password_reset_email(email, raw_token)
+
+    except Exception as e:
+        #roll back in case of error
+        conn.rollback()
+        raise e
+
+    finally:
+        #Close connection
+        conn.close()
+
+    return {"status": "success", "message": "Password reset link sent to email"}
+
+
+def send_password_reset_email(email, token):
+    """Send password reset email with token"""
+    
+    # Email configuration (update with your email settings)
+    sender_email = "your-email@gmail.com"  # CHANGE THIS
+    sender_password = "your-app-password"  # CHANGE THIS - use app-specific password for Gmail
+    
+    # Create reset link (update with your domain)
+    reset_link = f"http://yourdomain.com/reset-password?token={token}&email={email}"
+    
+    try:
+        # Create message
+        message = MIMEMultipart("alternative")
+        message["Subject"] = "Password Reset Request"
+        message["From"] = sender_email
+        message["To"] = email
+
+        # Email body
+        text = f"""\
+        Hello,
+
+        You requested a password reset. Click the link below to reset your password.
+        This link will expire in 15 minutes.
+
+        {reset_link}
+
+        If you did not request this, please ignore this email.
+
+        Best regards,
+        HawkEye Inventory System
+        """
+
+        html = f"""\
+        <html>
+            <body>
+                <p>Hello,</p>
+                <p>You requested a password reset. Click the link below to reset your password.</p>
+                <p>This link will expire in 15 minutes.</p>
+                <p><a href="{reset_link}">Reset Password</a></p>
+                <p>If you did not request this, please ignore this email.</p>
+                <p>Best regards,<br>HawkEye Inventory System</p>
+            </body>
+        </html>
+        """
+
+        part1 = MIMEText(text, "plain")
+        part2 = MIMEText(html, "html")
+        message.attach(part1)
+        message.attach(part2)
+
+        # Send email
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, email, message.as_string())
+        server.quit()
+
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        raise e

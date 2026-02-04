@@ -105,3 +105,53 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("btnLogin").click();
             }
         });
+
+
+// Password reset functionality
+document.getElementById("btnResetPassword").addEventListener("click", async () => {
+    const email = document.getElementById("inputEmail").value;
+    const messageBox = document.getElementById("message");
+
+    // Clear previous messages
+    messageBox.style.display = "none";
+    messageBox.textContent = "";
+    messageBox.className = "message-box";
+
+    // Validate email
+    if (!email) {
+        messageBox.textContent = "Please enter your email address";
+        messageBox.classList.add("error");
+        messageBox.style.display = "block";
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/request-password-reset", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                email: email
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            messageBox.textContent = "Password reset link sent to your email. Please check your inbox.";
+            messageBox.classList.add("success");
+            messageBox.style.display = "block";
+            document.getElementById("inputEmail").value = "";
+        } else {
+            messageBox.textContent = data.detail || "Email not found in our system";
+            messageBox.classList.add("error");
+            messageBox.style.display = "block";
+        }
+    } catch (error) {
+        messageBox.textContent = "An error occurred. Please try again.";
+        messageBox.classList.add("error");
+        messageBox.style.display = "block";
+        console.error("Password reset error:", error);
+    }
+});

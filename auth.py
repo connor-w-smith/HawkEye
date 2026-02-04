@@ -103,3 +103,13 @@ def reset_password(data: PasswordResetConfirm):
         return {"status": "success"}
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
+    
+
+
+@router.post("/request-password-reset")
+def request_password_reset(data: PasswordResetRequest):
+    try:
+        from inventory import password_recovery_email
+        return password_recovery_email(data.email)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
