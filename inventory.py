@@ -4,7 +4,8 @@ import secrets
 import hashlib
 import secrets
 from datetime import datetime, timedelta
-from  db import get_connection
+from db import get_connection
+from search import *
 
 
 
@@ -688,10 +689,48 @@ def get_inventory(finished_good_id):
         conn.close()
 
 
-"""
+
+
+
+
+
+"""---anything beyond this is simply code for testing purposes---"""
+
+"""def reset_test_database():
+    #Clears all data from the tables to ensure a clean state for testing.
+    conn = get_connection()
+    # Disable autocommit to ensure atomic clearing
+    conn.autocommit = False
+
+    try:
+        with conn.cursor() as cur:
+            # List all tables you want to wipe
+            # RESTART IDENTITY resets any SERIAL auto-increment counters to 1
+            # CASCADE handles foreign key dependencies
+            cur.execute(""""""
+                TRUNCATE TABLE
+                    tblusercredentials,
+                    tblproductioninventory,
+                    tblfinishedgoods
+                RESTART IDENTITY CASCADE;
+            """""")
+            conn.commit()
+            print("[INFO] Database reset successful.")
+
+    except Exception as e:
+        conn.rollback()
+        print(f"[ERROR] Database reset failed: {e}")
+        raise e
+    finally:
+        conn.close()
+
 # --- TEMPORARY MAIN FOR TESTING ---
 #set back db call before commenting this out
 if __name__ == "__main__":
+    # RESET EVERYTHING FIRST
+    print("--- Resetting Database Environment ---")
+    reset_test_database()
+    
     test_product = "Pokemon Cards"
 
     try:
@@ -741,16 +780,16 @@ if __name__ == "__main__":
     try:
         # 1. Add User
         print("Adding test user...")
-        add_user_credentials("test_admin@gmail.com", "AdminPass123!", True)
+        add_user_credentials("test_admin3@gmail.com", "AdminPass123!", True)
 
         # 2. Verify Login
         print("Verifying login...")
-        login = user_login_verification("test_admin@gmail.com", "AdminPass123!")
+        login = user_login_verification("test_admin3@gmail.com", "AdminPass123!")
         print(f"Login result: {login}")
 
         # 3. Password Recovery
         print("Running password recovery...")
-        recovery = password_recovery("test_admin@gmail.com")
+        recovery = password_recovery("test_admin3@gmail.com")
         print(f"Recovery status: {recovery}")
 
         # 5. Cleanup User
@@ -759,4 +798,39 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(f"User test failed: {e}")
+
+# --- Testing Search & Inventory Joins ---
+    print("\n--- Testing Search Functions ---")
+    try:
+        # 1. Setup a product for searching
+        search_target = "Holographic Charizard"
+        add_finished_good(search_target)
+        target_id = get_finished_good(search_target)
+        add_inventory(target_id, 10)
+
+        # 2. Test: search_finished_by_name (Case-Insensitive check)
+        print("Testing: search_finished_by_name('holographic')...")
+        name_results = search_finished_by_name("holographic")
+        print(f"Results found: {len(name_results)}")
+        for item in name_results:
+             print(f" - Found Item: {item['FinishedGoodName']} (ID: {item['FinishedGoodID']})")
+
+        # 3. Test: search_inventory_by_name (The INNER JOIN check)
+        print("\nTesting: search_inventory_by_name('Charizard')...")
+        inv_results = search_inventory_by_name("Charizard")
+        if inv_results:
+            print(f"Inventory Join Success: {inv_results[0]['FinishedGoodName']} has {inv_results[0]['AvailableInventory']} in stock.")
+        else:
+            print("[FAILURE] No inventory join results found.")
+
+        # 4. Test: search_inventory_by_id (Integer/UUID casting check)
+        print(f"\nTesting: search_inventory_by_id for ID {target_id}...")
+        id_inv_results = search_inventory_by_id(str(target_id))
+        print(f"ID Search Results: {id_inv_results}")
+
+        # Cleanup search target
+        delete_finished_good(search_target)
+
+    except Exception as e:
+        print(f"Search test failed: {e}")
 """
