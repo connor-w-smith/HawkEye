@@ -5,7 +5,8 @@ import psycopg2.extras
 import uuid
 
 
-from inventory import * 
+from inventory import *
+from search import *
 from db import get_connection
 from auth import router as auth_router
 
