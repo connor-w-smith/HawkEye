@@ -1,7 +1,8 @@
 
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Query
 from pydantic import BaseModel, EmailStr
-from inventory import user_login_verification, add_user_credentials
+from inventory import *
+from search import *
 
 router = APIRouter()
 
@@ -23,6 +24,9 @@ class PasswordResetRequest(BaseModel):
 class PasswordResetConfirm(BaseModel):
     token: str
     new_password: str
+
+class FinishedGoodNameRequest(BaseModel):
+    finished_good_name: str
 
 #endpoint for user login
 @router.post("/login")
@@ -91,3 +95,80 @@ def logout(authorization: str = Header(...)):
         return {"status": "logged out"}
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid session")
+
+
+
+@router.get("/finished-good-name-search")
+def finished_good_name_search(finished_good_name: str = Query(...)):
+
+    try:
+        finished_good_list = search_finished_by_name(finished_good_name)
+
+        return{
+            "status": "success",
+            "count": len(finished_good_list),
+            "results": finished_good_list
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/finished-good-ID-search")
+def finished_good_id_search(finished_good_id: str = Query(...)):
+
+    try:
+        finished_good_list = search_finished_by_id(finished_good_id)
+
+        return{
+            "status": "success",
+            "count": len(finished_good_list),
+            "results": finished_good_list
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+
+@router.get("/inventory-id")
+def inventory_id_search(finished_good_id: str = Query(...)):
+
+    try:
+        finished_good_inventory_list = search_inventory_by_id(finished_good_id)
+
+        if len(finished_good_inventory_list) == 0:
+            raise HTTPException(status_code=404, detail=f"No inventory found for ID {finished_good_id}")
+        return{
+            "status": "success",
+            "count": len(finished_good_inventory_list),
+            "results": finished_good_inventory_list
+        }
+
+    except HTTPException:
+        # Re-raise the 404 so FastAPI handles it
+        raise
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/inventory-name")
+def inventory_name_search(finished_good_name: str = Query(...)):
+    try:
+        finished_good_inventory_list = search_inventory_by_name(finished_good_name)
+
+        if len(finished_good_inventory_list) == 0:
+            raise HTTPException(status_code=404, detail=f"No inventory found for ID {finished_good_name}")
+
+        return {
+            "status": "success",
+            "count": len(finished_good_inventory_list),
+            "results": finished_good_inventory_list
+        }
+
+    except HTTPException:
+        # Re-raise the 404 so FastAPI handles it
+        raise
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
