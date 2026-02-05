@@ -8,6 +8,8 @@ from  db import get_connection
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import os
+import urllib.parse
 
 
 
@@ -272,78 +274,59 @@ def password_recovery(username):
         #Close connection
         conn.close()
 
-    # Send password reset email
+    # Return raw token for the caller to build a link and send email
+    return raw_token
+
+def reset_password_with_token(email, token, new_password):
+    """Verify token and set a new password for the given email."""
+    conn = get_connection()
+    conn.autocommit = False
+
     try:
-        send_password_reset_email(username, token_hash)
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT token, tokenexpiration
+                FROM tblusercredentials
+                WHERE username = %s""",
+                        (str(email),))
+
+            row = cur.fetchone()
+            if row is None:
+                raise ValueError(f"{email} does not exist")
+
+            stored_token_hash = row[0]
+            expiration_time = row[1]
+
+            # Hash the provided raw token to compare
+            provided_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+
+            if stored_token_hash is None or provided_hash != stored_token_hash:
+                raise ValueError("Invalid reset token")
+
+            if datetime.now() > expiration_time:
+                raise ValueError("Reset token has expired")
+
+            # Hash new password and update
+            password_bytes = new_password.encode('utf-8')
+            password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+            hashed_password = password_hash.decode('utf-8')
+
+            cur.execute("""
+                UPDATE tblusercredentials
+                SET password = %s, token = NULL, tokenexpiration = NULL
+                WHERE username = %s""",
+                        (hashed_password, str(email),))
+
+        conn.commit()
+        return {"status": "success", "message": "Password reset successfully"}
+
     except Exception as e:
-        print(f"Warning: Email sending failed: {str(e)}")
-        # Don't fail the password recovery if email fails
-
-    return token_hash
-
-def send_password_reset_email(email, token):
-    """Send password reset email with token link"""
-    try:
-        # Email configuration - UPDATE THESE WITH YOUR EMAIL
-        sender_email = "your-email@gmail.com"  # CHANGE THIS
-        sender_password = "your-app-password"  # CHANGE THIS - use app-specific password for Gmail
-        
-        # Create reset link - UPDATE THIS WITH YOUR DOMAIN
-        reset_link = f"http://localhost:5000/reset-password?token={token}&email={email}"
-        
-        # Create message
-        message = MIMEMultipart("alternative")
-        message["Subject"] = "Password Reset Request - HawkEye"
-        message["From"] = sender_email
-        message["To"] = email
-
-        # Email body
-        text = f"""\
-Hello,
-
-You requested a password reset for HawkEye Inventory System. 
-Click the link below to reset your password.
-
-{reset_link}
-
-This link will expire in 15 minutes.
-
-If you did not request this, please ignore this email.
-
-Best regards,
-HawkEye Inventory System
-"""
-
-        html = f"""\
-<html>
-  <body>
-    <p>Hello,</p>
-    <p>You requested a password reset for HawkEye Inventory System.</p>
-    <p>Click the link below to reset your password:</p>
-    <p><a href="{reset_link}">Reset Password</a></p>
-    <p>This link will expire in 15 minutes.</p>
-    <p>If you did not request this, please ignore this email.</p>
-    <p>Best regards,<br>HawkEye Inventory System</p>
-  </body>
-</html>
-"""
-
-        part1 = MIMEText(text, "plain")
-        part2 = MIMEText(html, "html")
-        message.attach(part1)
-        message.attach(part2)
-
-        # Send email via Gmail SMTP
-        server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, email, message.as_string())
-        server.quit()
-        
-        print(f"Password reset email sent to {email}")
-        
-    except Exception as e:
-        print(f"Error sending password reset email: {str(e)}")
+        conn.rollback()
         raise e
+
+    finally:
+        conn.close()
+
 
 #verifies the token from the user for password recovery
 #args: user name and token, returns: {"status":"success"}
@@ -371,27 +354,15 @@ def verify_token_password_reset(username, token):
             stored_token_hash = row[4]
             expiration_time = row[5]
 
+
             if stored_token_hash == token and datetime.now() < expiration_time:
+                # This function is legacy/incomplete. Use reset_password_with_token instead.
+                return True
 
-                # create temp password to pass to the reset password function
-                temp_password = "TempPassword123!"
+        # commit changes
+        conn.commit()
 
-                # hash password
-                password_hash = bcrypt.hashpw(temp_password.encode('utf-8'), bcrypt.gensalt())
-
-                cur.execute("""
-                        UPDATE tblusercredentials
-                        SET password = %s
-                        WHERE username = %s""",
-                        (password_hash, str(username),))
-
-            # commit changes
-            conn.commit()
-
-        #close connection
-        conn.close()
-
-        return password_hash
+        return False
 
     except Exception as e:
         conn.rollback()
@@ -802,8 +773,12 @@ def password_recovery_email(email):
             #commit changes
             conn.commit()
 
-        # Send email with reset token
-        send_password_reset_email(email, raw_token)
+        # Send email with reset token using BASE_URL (fallback)
+        base = os.environ.get('BASE_URL', 'http://localhost:5000')
+        token_q = urllib.parse.quote_plus(raw_token)
+        email_q = urllib.parse.quote_plus(email)
+        reset_link = f"{base.rstrip('/')}/password-modal?token={token_q}&email={email_q}"
+        send_password_reset_email(email, reset_link)
 
     except Exception as e:
         #roll back in case of error
@@ -817,61 +792,33 @@ def password_recovery_email(email):
     return {"status": "success", "message": "Password reset link sent to email"}
 
 
-def send_password_reset_email(email, token):
-    """Send password reset email with token"""
-    
+def send_password_reset_email(email, reset_link):
+    """Send password reset email using a fully constructed reset_link"""
     # Email configuration (update with your email settings)
     sender_email = "hawkeyeinventorysystems@gmail.com"
     sender_password = "mhlw dmkq vvvq jjiq"
-    
-    # Create reset link (update with your domain)
-    reset_link = f"http://yourdomain.com/reset-password?token={token}&email={email}"
-    
+
     try:
-        # Create message
         message = MIMEMultipart("alternative")
         message["Subject"] = "Password Reset Request"
         message["From"] = sender_email
         message["To"] = email
 
-        # Email body
-        text = f"""\
-        Hello,
+        text = f"""Hello,\n\nYou requested a password reset. Click the link below to reset your password.\n\n{reset_link}\n\nThis link will expire in 15 minutes.\n\nIf you did not request this, please ignore this email.\n\nBest regards,\nHawkEye Inventory System"""
 
-        You requested a password reset. Click the link below to reset your password.
-        This link will expire in 15 minutes.
-
-        {reset_link}
-
-        If you did not request this, please ignore this email.
-
-        Best regards,
-        HawkEye Inventory System
-        """
-
-        html = f"""\
-        <html>
-            <body>
-                <p>Hello,</p>
-                <p>You requested a password reset. Click the link below to reset your password.</p>
-                <p>This link will expire in 15 minutes.</p>
-                <p><a href="{reset_link}">Reset Password</a></p>
-                <p>If you did not request this, please ignore this email.</p>
-                <p>Best regards,<br>HawkEye Inventory System</p>
-            </body>
-        </html>
-        """
+        html = f"""<html><body><p>Hello,</p><p>You requested a password reset. Click the link below to reset your password.</p><p><a href=\"{reset_link}\">Reset Password</a></p><p>This link will expire in 15 minutes.</p><p>If you did not request this, please ignore this email.</p><p>Best regards,<br>HawkEye Inventory System</p></body></html>"""
 
         part1 = MIMEText(text, "plain")
         part2 = MIMEText(html, "html")
         message.attach(part1)
         message.attach(part2)
 
-        # Send email
         server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, email, message.as_string())
         server.quit()
+
+        print(f"Password reset email sent to {email}")
 
     except Exception as e:
         print(f"Error sending email: {e}")
