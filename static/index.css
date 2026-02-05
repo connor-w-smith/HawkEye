@@ -21,10 +21,25 @@ img {
 
 .toolbar-content p {
     margin: 0;
+    color: white;
+}
+
+.separator {
+    color: white;
+    margin: 0 10px;
 }
 
 .toolbar-content a {
-    margin-right: 50px;
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity 0.3s;
+    margin-right: 25px;
+}
+
+
+.toolbar-content a:hover {
+    opacity: 0.8;
 }
 
 * {

@@ -1,4 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // Display current user
+    const username = sessionStorage.getItem("username");
+    if (username) {
+        document.getElementById("username").textContent = username;
+    }
+
+    // Fetch finished goods
     fetch("/api/finishedgoods")
     .then(response => response.json())
     .then(data => {
@@ -15,7 +22,23 @@ document.addEventListener("DOMContentLoaded", () => {
             table.appendChild(row);
         });
     })
-    .catch(err => console.error("Error loading goods: ", err)); 
+    .catch(err => console.error("Error loading goods: ", err));
+
+    // Handle logout
+    document.getElementById("logout-link").addEventListener("click", async (e) => {
+        e.preventDefault();
+        try {
+            await fetch("/api/logout", {
+                method: "POST"
+            });
+            sessionStorage.removeItem("username");
+            window.location.href = "/";
+        } catch (error) {
+            console.error("Logout error:", error);
+            sessionStorage.removeItem("username");
+            window.location.href = "/";
+        }
+    });
 });
 
 
@@ -55,6 +78,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     messageBox.textContent = data.message;
                     messageBox.classList.add("success");
                     messageBox.style.display = "block";
+                    
+                    // Store username in sessionStorage
+                    sessionStorage.setItem("username", username);
                     
                     // Redirect to index page after successful login
                     setTimeout(() => {
