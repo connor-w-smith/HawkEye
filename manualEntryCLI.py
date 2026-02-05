@@ -1,13 +1,22 @@
 import psycopg2
 import uuid
 
-DB_CONFIG = {
+from db import get_connection
+
+
+############################ LEGACY CODE ############################
+""" DB_CONFIG = {
     "host": "98.92.53.251",
     "port": 5432,
     "database": "postgres",
     "user": "postgres",
     "password": "pgpass"
-}
+} """
+
+""" def get_connection():
+   return psycopg2.connect(**DB_CONFIG) """
+
+########################### END LEGACY CODE ###########################
 
 #Hard-coded list of finished goods
 FINISHED_GOODS = [
@@ -21,8 +30,6 @@ FINISHED_GOODS = [
     ("Final Product Assembly", "f35f580c-2191-4e18-a5fc-9be4ba5912d3"),
 ]
 
-def get_connection():
-    return psycopg2.connect(**DB_CONFIG)
 
 def show_menu():
     print("\n=== Manual Inventory Entry ===")

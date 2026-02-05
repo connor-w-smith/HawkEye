@@ -1,7 +1,7 @@
-
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Header, Query
 from pydantic import BaseModel, EmailStr
-from inventory import user_login_verification, add_user_credentials
+from inventory import *
+from search import *
 
 router = APIRouter()
 
@@ -21,21 +21,34 @@ class PasswordResetRequest(BaseModel):
     email: EmailStr
 
 class PasswordResetConfirm(BaseModel):
+    username: str
     token: str
-    new_password: str
+
+class PasswordUpdateRequest(BaseModel):
+    username:str
+    old_password: str
+    new_password:str
+
+
+class FinishedGoodNameRequest(BaseModel):
+    finished_good_name: str
+
+class AddFinishedGood(BaseModel):
+    finished_good_name: str
+
+class DeleteFinishedGood(BaseModel):
+    finished_good_name: str
 
 #endpoint for user login
 @router.post("/login")
 def login(data: LoginRequest):
     try:
-        permissions = user_login_verification(data.username, data.password)
-        return
-        {
+        result = user_login_verification(data.username, data.password)
+        return {
             "status": "success",
-            "permissions": permissions
+            "session_token": result["token"]
         }
     except Exception as e:
-        #Convert errors to HTTP responses
         raise HTTPException(status_code=401, detail=str(e))
 
 #endpoint to get current user
@@ -91,24 +104,127 @@ def request_password_reset(data: PasswordResetRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 #endpoint to verify and reset password
-@router.post("/reset-password")
-def user_password_reset(data: PasswordResetRequest):
+@router.post("/user-reset-password")
+def user_password_update(data: PasswordUpdateRequest):
     try:
-        return verify_and_reset_password(data.raw_token, data.new_password)
+        return update_user_password(data.user_name, data.old_password, data.new_password)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
 
 @router.post("/reset-password")
 def reset_password(data: PasswordResetConfirm):
     try:
-        verify_and_reset_password(
+        verify_token_password_reset(
             data.token,
             data.new_password
         )
         return {"status": "success"}
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+
+
+@router.post("/logout")
+def logout(authorization: str = Header(...)):
+    try:
+        token = authorization.replace("Bearer ", "")
+        delete_session(token)
+        return {"status": "logged out"}
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid session")
+
+
+
+@router.get("/finished-good-name-search")
+def finished_good_name_search(finished_good_name: str = Query(...)):
+
+    try:
+        finished_good_list = search_finished_by_name(finished_good_name)
+
+        return{
+            "status": "success",
+            "count": len(finished_good_list),
+            "results": finished_good_list
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/finished-good-ID-search")
+def finished_good_id_search(finished_good_id: str = Query(...)):
+
+    try:
+        finished_good_list = search_finished_by_id(finished_good_id)
+
+        return{
+            "status": "success",
+            "count": len(finished_good_list),
+            "results": finished_good_list
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+
+@router.get("/inventory-id")
+def inventory_id_search(finished_good_id: str = Query(...)):
+
+    try:
+        finished_good_inventory_list = search_inventory_by_id(finished_good_id)
+
+        if len(finished_good_inventory_list) == 0:
+            raise HTTPException(status_code=404, detail=f"No inventory found for ID {finished_good_id}")
+        return{
+            "status": "success",
+            "count": len(finished_good_inventory_list),
+            "results": finished_good_inventory_list
+        }
+
+    except HTTPException:
+        # Re-raise the 404 so FastAPI handles it
+        raise
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/inventory-name")
+def inventory_name_search(finished_good_name: str = Query(...)):
+    try:
+        finished_good_inventory_list = search_inventory_by_name(finished_good_name)
+
+        if len(finished_good_inventory_list) == 0:
+            raise HTTPException(status_code=404, detail=f"No inventory found for ID {finished_good_name}")
+
+        return {
+            "status": "success",
+            "count": len(finished_good_inventory_list),
+            "results": finished_good_inventory_list
+        }
+
+    except HTTPException:
+        # Re-raise the 404 so FastAPI handles it
+        raise
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/add-finished-good")
+def add_finished_good(data: AddFinishedGood):
+    try:
+        #call function from inventory.py
+        return add_finished_good(data.finished_good_name)
+
+    except Exception as e:
+        #Convert errors to HTTP responses
+        raise HTTPException(status_code=400, detail=str(e))
+
+def delete_finished_good(finished_good_id: str = Query(...)):
+    try:
+        #call function from inventory.py
+        return delete_finished_good(finished_good_id)
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
     
 
 class PasswordResetWithToken(BaseModel):

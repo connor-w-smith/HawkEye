@@ -3,6 +3,9 @@
 # Importing render_template to serve HTML files
 from flask import Flask, jsonify, render_template, request
 
+#serve production server on flask
+from waitress import serve
+
 # Importing psycopg2 to connect Python to PostgresSQL
 import psycopg2
 
@@ -11,12 +14,16 @@ import psycopg2.extras
 
 # Importing inventory functions
 from inventory import user_login_verification, password_recovery, reset_password_with_token
+from db import get_connection
 
 # Creating the Flask application
 # __name__ will tell Flask where the file is
 app = Flask(__name__)
 
+############################ LEGACY CODE ############################
+
 # Function to create a new database connection
+'''
 def get_connection():
     return psycopg2.connect(
         host="98.92.53.251",
@@ -25,6 +32,9 @@ def get_connection():
         password="pgpass",
         port=5432
     )
+'''
+    
+########################### END LEGACY CODE ###########################
 
 #This route runs when someone visits the root URL
 @app.route("/index")
@@ -100,7 +110,7 @@ def api_reset_password_confirm():
 #Route to the API endpoint that returns JSON data
 @app.route("/api/finishedgoods")
 def get_finished_goods():
-    conn = get_connection()
+    conn = get_connection() #function imported from db.py
 
     cur = conn.cursor(
         cursor_factory=psycopg2.extras.RealDictCursor
@@ -155,4 +165,5 @@ def api_request_password_reset():
         return jsonify({"status": "error", "message": "An error occurred"}), 500
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    #app.run(host='0.0.0.0', port=5000, debug=True)
+    serve(app, host='0.0.0.0', port=5000)
