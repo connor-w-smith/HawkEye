@@ -2,9 +2,12 @@ import uuid6
 import bcrypt
 import secrets
 import hashlib
-import secrets
+import smtplib
+
+from email.mime.text import MIMEText
 from datetime import datetime, timedelta
-from  db import get_connection
+from db import get_connection
+from search import *
 
 
 
@@ -25,6 +28,7 @@ from  db import get_connection
 # def add_user_credentials(username, password, is_admin): Returns {"status":"success"}
 # def update_user_password(username, password, new_password): Returns {"status":"success"}
 # def delete_user_credentials(username): Returns {"status":"success"}
+# def send_recovery_email(username, raw_token): Returns Boolean of success or fail to send
 # def password_recovery(username): Returns token_hash
 # def verify_token_password_reset(username, token): Returns password_hash
 # def create_session(username):
@@ -53,7 +57,9 @@ def user_login_verification(username, password):
 
     # Open connection to database
     conn = get_connection()
-    
+    # disable autocommit
+    conn.autocommit = False
+
     try:
         with conn.cursor() as cur:
 
@@ -80,7 +86,7 @@ def user_login_verification(username, password):
                 raise ValueError("Password does not match")
 
     except Exception as e:
-        raise
+        raise e
 
     finally:
         conn.close()
@@ -126,7 +132,7 @@ def add_user_credentials(username, password, is_admin):
     except Exception as e:
         # Rollback in case of error to maintain data integrity
         conn.rollback()
-        raise 
+        raise e
 
     finally:
         #close connection
@@ -180,7 +186,7 @@ def update_user_password(username, password, new_password):
     except Exception as e:
         #rollback in case of data validity issues
         conn.rollback()
-        raise
+        raise e
 
     finally:
         #close connection
@@ -217,13 +223,42 @@ def delete_user_credentials(username):
     except Exception as e:
         #rollback in case of data validity issues
         conn.rollback()
-        raise 
+        raise e
 
     finally:
         #close connection
         conn.close()
 
     return {"status":"success"}
+
+#function sends the email with the recovery token to the user
+#args: username(Email address), raw_token, Returns True(Sent) or False(Not Sent)
+def send_recovery_email(username, raw_token):
+    #creating variables for our email
+    sender_email = "hawkeyeinventorysystems@gmail.com"
+    app_password = "vduv utnk slzo idfr"
+
+    #Create email to send
+    subject = "Password Recovery Code"
+    body = f"Hello,\n\nYour recovery code is {raw_token}\n\nThis token will expire in 15 minutes."
+
+    msg = MIMEText(body)
+    msg['Subject'] = subject
+    msg['From'] = sender_email
+    msg['To'] = username
+
+    try:
+        #connect to Gmail's SMTP server on port 587
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(sender_email, app_password)
+            server.send_message(msg)
+            return True
+
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
+
 
 #function to reset password if forgotten
 #arg: username, returns: success message
@@ -254,22 +289,33 @@ def password_recovery(username):
             token_expiration = datetime.now() + timedelta(minutes=15)
 
             cur.execute("""
-                        INSERT INTO tblusercredentials
-                        (token, tokenexpiration)
-                        VALUES (%s, %s)""",(token_hash, token_expiration),)
+                        UPDATE tblusercredentials
+                        SET token = %s, tokenexpiration = %s
+                        WHERE username = %s
+                        """,(token_hash, token_expiration),str(username))
+
             #commit changes
             conn.commit()
+
+            email_sent = send_recovery_email(username, raw_token)
+
+            if email_sent:
+                return token_hash
+
+            else:
+                return None
 
     except Exception as e:
         #roll back in case of error
         conn.rollback()
-        raise 
+        raise e
 
     finally:
         #Close connection to allow update_user_password to connect to DB
         conn.close()
 
-    return token_hash
+
+
 
 #verifies the token from the user for password recovery
 #args: user name and token, returns: {"status":"success"}
@@ -321,7 +367,7 @@ def verify_token_password_reset(username, token):
 
     except Exception as e:
         conn.rollback()
-        raise
+        raise e
 
     finally:
         #Ensure connection closed in case of error
@@ -688,10 +734,48 @@ def get_inventory(finished_good_id):
         conn.close()
 
 
-"""
+
+
+
+
+
+"""---anything beyond this is simply code for testing purposes---"""
+
+"""def reset_test_database():
+    #Clears all data from the tables to ensure a clean state for testing.
+    conn = get_connection()
+    # Disable autocommit to ensure atomic clearing
+    conn.autocommit = False
+
+    try:
+        with conn.cursor() as cur:
+            # List all tables you want to wipe
+            # RESTART IDENTITY resets any SERIAL auto-increment counters to 1
+            # CASCADE handles foreign key dependencies
+            cur.execute(""""""
+                TRUNCATE TABLE
+                    tblusercredentials,
+                    tblproductioninventory,
+                    tblfinishedgoods
+                RESTART IDENTITY CASCADE;
+            """""")
+            conn.commit()
+            print("[INFO] Database reset successful.")
+
+    except Exception as e:
+        conn.rollback()
+        print(f"[ERROR] Database reset failed: {e}")
+        raise e
+    finally:
+        conn.close()
+
 # --- TEMPORARY MAIN FOR TESTING ---
 #set back db call before commenting this out
 if __name__ == "__main__":
+    # RESET EVERYTHING FIRST
+    print("--- Resetting Database Environment ---")
+    reset_test_database()
+    
     test_product = "Pokemon Cards"
 
     try:
@@ -741,16 +825,16 @@ if __name__ == "__main__":
     try:
         # 1. Add User
         print("Adding test user...")
-        add_user_credentials("test_admin@gmail.com", "AdminPass123!", True)
+        add_user_credentials("test_admin3@gmail.com", "AdminPass123!", True)
 
         # 2. Verify Login
         print("Verifying login...")
-        login = user_login_verification("test_admin@gmail.com", "AdminPass123!")
+        login = user_login_verification("test_admin3@gmail.com", "AdminPass123!")
         print(f"Login result: {login}")
 
         # 3. Password Recovery
         print("Running password recovery...")
-        recovery = password_recovery("test_admin@gmail.com")
+        recovery = password_recovery("test_admin3@gmail.com")
         print(f"Recovery status: {recovery}")
 
         # 5. Cleanup User
@@ -759,4 +843,39 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(f"User test failed: {e}")
+
+# --- Testing Search & Inventory Joins ---
+    print("\n--- Testing Search Functions ---")
+    try:
+        # 1. Setup a product for searching
+        search_target = "Holographic Charizard"
+        add_finished_good(search_target)
+        target_id = get_finished_good(search_target)
+        add_inventory(target_id, 10)
+
+        # 2. Test: search_finished_by_name (Case-Insensitive check)
+        print("Testing: search_finished_by_name('holographic')...")
+        name_results = search_finished_by_name("holographic")
+        print(f"Results found: {len(name_results)}")
+        for item in name_results:
+             print(f" - Found Item: {item['FinishedGoodName']} (ID: {item['FinishedGoodID']})")
+
+        # 3. Test: search_inventory_by_name (The INNER JOIN check)
+        print("\nTesting: search_inventory_by_name('Charizard')...")
+        inv_results = search_inventory_by_name("Charizard")
+        if inv_results:
+            print(f"Inventory Join Success: {inv_results[0]['FinishedGoodName']} has {inv_results[0]['AvailableInventory']} in stock.")
+        else:
+            print("[FAILURE] No inventory join results found.")
+
+        # 4. Test: search_inventory_by_id (Integer/UUID casting check)
+        print(f"\nTesting: search_inventory_by_id for ID {target_id}...")
+        id_inv_results = search_inventory_by_id(str(target_id))
+        print(f"ID Search Results: {id_inv_results}")
+
+        # Cleanup search target
+        delete_finished_good(search_target)
+
+    except Exception as e:
+        print(f"Search test failed: {e}")
 """
