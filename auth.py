@@ -21,22 +21,10 @@ class PasswordResetRequest(BaseModel):
     email: EmailStr
 
 class PasswordResetConfirm(BaseModel):
-    username: str
     token: str
-
-class PasswordUpdateRequest(BaseModel):
-    username:str
-    old_password: str
-    new_password:str
-
+    new_password: str
 
 class FinishedGoodNameRequest(BaseModel):
-    finished_good_name: str
-
-class AddFinishedGood(BaseModel):
-    finished_good_name: str
-
-class DeleteFinishedGood(BaseModel):
     finished_good_name: str
 
 #endpoint for user login
@@ -99,16 +87,16 @@ def request_password_reset(data: PasswordResetRequest):
 
 #endpoint to verify and reset password
 @router.post("/user-reset-password")
-def user_password_update(data: PasswordUpdateRequest):
+def user_password_reset(data: PasswordResetRequest):
     try:
-        return update_user_password(data.user_name, data.old_password, data.new_password)
+        return verify_and_reset_password(data.raw_token, data.new_password)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/reset-password")
 def reset_password(data: PasswordResetConfirm):
     try:
-        verify_token_password_reset(
+        verify_and_reset_password(
             data.token,
             data.new_password
         )
@@ -202,20 +190,4 @@ def inventory_name_search(finished_good_name: str = Query(...)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/add-finished-good")
-def add_finished_good(data: AddFinishedGood):
-    try:
-        #call function from inventory.py
-        return add_finished_good(data.finished_good_name)
 
-    except Exception as e:
-        #Convert errors to HTTP responses
-        raise HTTPException(status_code=400, detail=str(e))
-
-def delete_finished_good(finished_good_id: str = Query(...)):
-    try:
-        #call function from inventory.py
-        return delete_finished_good(finished_good_id)
-
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
