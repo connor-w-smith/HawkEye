@@ -2,6 +2,7 @@
 # Importing jsonify to return JSON to the browser
 # Importing render_template to serve HTML files
 from flask import Flask, jsonify, render_template, request
+import requests
 
 #serve production server on flask
 from waitress import serve
@@ -20,6 +21,7 @@ from db import get_connection
 # __name__ will tell Flask where the file is
 app = Flask(__name__)
 
+BACKEND_URL = "http://127.0.0.1:8000"
 ############################ LEGACY CODE ############################
 
 # Function to create a new database connection
@@ -60,9 +62,11 @@ def reset_password_page():
 def login():
     return render_template("login.html")
 
-#API endpoint for user login verification
+#login endpoint to sned data to backend
 @app.route("/api/login", methods=["POST"])
 def api_login():
+    data = request.get_json()
+
     try:
         data = request.get_json()
         username = data.get("username")
@@ -109,24 +113,37 @@ def api_reset_password_confirm():
 
 #Route to the API endpoint that returns JSON data
 @app.route("/api/finishedgoods")
+def finished_goods():
+    token = request.cookies.get("session_token")
+    if not token:
+        return jsonify({"error": "Unauthorized"}), 401
 def get_finished_goods():
     conn = get_connection() #function imported from db.py
 
-    cur = conn.cursor(
-        cursor_factory=psycopg2.extras.RealDictCursor
+    resp = requests.get(
+        f"{BACKEND_URL}/finishedgoods",
+        headers={"Authorization": f"Bearer {token}"}
     )
 
-    #SQL query with PostgresSQL
-    cur.execute("""
-        SELECT finishedgoodid, finishedgoodname FROM 
-        tblfinishedgoods ORDER BY finishedgoodname;""")
-    
-    goods = cur.fetchall()
+    return jsonify(resp.json()), resp.status_code
 
-    cur.close()
-    conn.close()
+#deletes token once user is logged out
+@app.route("/api/logout", methods=["POST"])
+def logout():
+    token = request.cookies.get("session_token")
+    if token:
+        requests.post(
+            f"{BACKEND_URL}/logout",
+            headers={"Authorization": f"Bearer {token}"}
+        )
 
-    return jsonify(goods)
+    response = make_response(jsonify({"status": "logged out"}))
+    response.delete_cookie("session_token")
+    return response
+
+@app.route("/search")
+def search_page():
+    return render_template("search.html")
 
 #API endpoint for password reset request
 @app.route("/api/request-password-reset", methods=["POST"])

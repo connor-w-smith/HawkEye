@@ -1,11 +1,15 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+
 from pydantic import BaseModel
 import psycopg2
 import psycopg2.extras
 import uuid
 
 
-from inventory import * 
+from inventory import *
+from search import *
 from db import get_connection
 from auth import router as auth_router
 
@@ -26,6 +30,16 @@ app.include_router(auth_router)
 class ManualEntry(BaseModel):
     finished_good_id: uuid.UUID
     quantity: int
+
+##test##
+
+# serve templates and static assets
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/search")
+def search_page(request: Request):
+    return templates.TemplateResponse("search.html", {"request": request})
 
 #connects to database and sends data to web app @ /finishedgoods
 @app.get("/finishedgoods")
