@@ -14,7 +14,7 @@ import psycopg2
 import psycopg2.extras
 
 # Importing inventory functions
-from inventory import user_login_verification 
+from inventory import user_login_verification, password_recovery, reset_password_with_token
 from db import get_connection
 
 # Creating the Flask application
@@ -44,6 +44,19 @@ def index():
     #send the HTML file to the browser
     return render_template("index.html")
 
+#This route will send the user to the password reset modal
+@app.route("/password-modal")
+def password_modal():
+    return render_template("password-modal.html")
+
+
+# Render reset password page (link from email)
+@app.route("/reset-password")
+def reset_password_page():
+    token = request.args.get('token')
+    email = request.args.get('email')
+    return render_template('reset-password.html', token=token, email=email)
+
 #This route will send the user to the login page
 @app.route("/")
 def login():
@@ -55,33 +68,50 @@ def api_login():
     data = request.get_json()
 
     try:
-        resp = requests.post(
-            f"{BACKEND_URL}/login",
-            json={
-                "username": data.get("username"),
-                "password": data.get("password")
-            },
-            timeout=5
-        )
+        data = request.get_json()
+        username = data.get("username")
+        password = data.get("password")
+        
+        if not username or not password:
+            return jsonify({"status": "error", "message": "Username and password are required"}), 400
+        
+        # Call the login verification function from inventory.py
+        user_validated = user_login_verification(username, password)
+        
+        if user_validated:
+            return jsonify({"status": "success", "message": "Login successful"}), 200
+        else:
+            return jsonify({"status": "error", "message": "Invalid credentials"}), 401
+            
+    except ValueError as e:
+        return jsonify({"status": "error", "message": str(e)}), 401
+    except Exception as e:
+        return jsonify({"status": "error", "message": "An error occurred during login"}), 500
 
-        if resp.status_code != 200:
-            return jsonify(resp.json()), 401
 
-        result = resp.json()
+# API endpoint to confirm password reset using token
+@app.route("/api/reset-password-confirm", methods=["POST"])
+def api_reset_password_confirm():
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        token = data.get('token')
+        new_password = data.get('new_password')
 
-        response = make_response(jsonify({"status": "success"}))
-        response.set_cookie(
-            "session_token",
-            result["session_token"],
-            httponly=True,
-            samesite="Lax"
-        )
-        return response
+        if not email or not token or not new_password:
+            return jsonify({"status": "error", "message": "email, token and new_password are required"}), 400
 
-    except requests.RequestException:
-        return jsonify({"error": "Backend unavailable"}), 503
+        result = reset_password_with_token(email, token, new_password)
+        return jsonify(result), 200
 
-#checks session token before asking backend for data
+    except ValueError as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": "An error occurred"}), 500
+
+#Route to the API endpoint that returns JSON data
 @app.route("/api/finishedgoods")
 def finished_goods():
     token = request.cookies.get("session_token")
@@ -114,6 +144,42 @@ def logout():
 @app.route("/search")
 def search_page():
     return render_template("search.html")
+
+#API endpoint for password reset request
+@app.route("/api/request-password-reset", methods=["POST"])
+def api_request_password_reset():
+    try:
+        data = request.get_json()
+        email = data.get("email")
+        
+        if not email:
+            return jsonify({"status": "error", "message": "Email is required"}), 400
+        
+        # Call password recovery to generate and store token; it returns the raw token
+        raw_token = password_recovery(email)
+
+        # Build reset link dynamically from the request host
+        from urllib.parse import quote_plus
+        base = request.host_url.rstrip('/')
+        token_q = quote_plus(raw_token)
+        email_q = quote_plus(email)
+        reset_link = f"{base}/password-modal?token={token_q}&email={email_q}"
+
+        # Send email using inventory helper
+        from inventory import send_password_reset_email
+        send_password_reset_email(email, reset_link)
+
+        print(f"Password recovery initiated for {email}, reset link sent")
+        return jsonify({"status": "ok", "message": "Password reset link sent to email"}), 200
+            
+    except ValueError as e:
+        print(f"Password reset error: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 404
+    except Exception as e:
+        print(f"Password reset error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": "An error occurred"}), 500
 
 if __name__ == "__main__":
     #app.run(host='0.0.0.0', port=5000, debug=True)

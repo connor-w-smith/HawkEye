@@ -6,7 +6,12 @@ import smtplib
 
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
-from db import get_connection
+from  db import get_connection
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
+import urllib.parse
 from search import *
 
 
@@ -261,7 +266,7 @@ def send_recovery_email(username, raw_token):
 
 
 #function to reset password if forgotten
-#arg: username, returns: success message
+#arg: username (email), returns: success message
 def password_recovery(username):
 
     #open connection
@@ -272,7 +277,7 @@ def password_recovery(username):
     try:
         with conn.cursor() as cur:
             cur.execute(""" 
-                        Select 1 
+                        SELECT 1 
                         FROM tblusercredentials
                         WHERE username = %s""", (str(username),))
 
@@ -288,12 +293,11 @@ def password_recovery(username):
             #set token expiration
             token_expiration = datetime.now() + timedelta(minutes=15)
 
+            # UPDATE user's token and expiration (not INSERT)
             cur.execute("""
                         UPDATE tblusercredentials
                         SET token = %s, tokenexpiration = %s
-                        WHERE username = %s
-                        """,(token_hash, token_expiration),str(username))
-
+                        WHERE username = %s""",(token_hash, token_expiration, username),)
             #commit changes
             conn.commit()
 
@@ -311,10 +315,61 @@ def password_recovery(username):
         raise e
 
     finally:
-        #Close connection to allow update_user_password to connect to DB
+        #Close connection
         conn.close()
 
+    # Return raw token for the caller to build a link and send email
+    return raw_token
 
+def reset_password_with_token(email, token, new_password):
+    """Verify token and set a new password for the given email."""
+    conn = get_connection()
+    conn.autocommit = False
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT token, tokenexpiration
+                FROM tblusercredentials
+                WHERE username = %s""",
+                        (str(email),))
+
+            row = cur.fetchone()
+            if row is None:
+                raise ValueError(f"{email} does not exist")
+
+            stored_token_hash = row[0]
+            expiration_time = row[1]
+
+            # Hash the provided raw token to compare
+            provided_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+
+            if stored_token_hash is None or provided_hash != stored_token_hash:
+                raise ValueError("Invalid reset token")
+
+            if datetime.now() > expiration_time:
+                raise ValueError("Reset token has expired")
+
+            # Hash new password and update
+            password_bytes = new_password.encode('utf-8')
+            password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+            hashed_password = password_hash.decode('utf-8')
+
+            cur.execute("""
+                UPDATE tblusercredentials
+                SET password = %s, token = NULL, tokenexpiration = NULL
+                WHERE username = %s""",
+                        (hashed_password, str(email),))
+
+        conn.commit()
+        return {"status": "success", "message": "Password reset successfully"}
+
+    except Exception as e:
+        conn.rollback()
+        raise e
+
+    finally:
+        conn.close()
 
 
 #verifies the token from the user for password recovery
@@ -343,27 +398,15 @@ def verify_token_password_reset(username, token):
             stored_token_hash = row[4]
             expiration_time = row[5]
 
+
             if stored_token_hash == token and datetime.now() < expiration_time:
+                # This function is legacy/incomplete. Use reset_password_with_token instead.
+                return True
 
-                # create temp password to pass to the reset password function
-                temp_password = "TempPassword123!"
+        # commit changes
+        conn.commit()
 
-                # hash password
-                password_hash = bcrypt.hashpw(temp_password.encode('utf-8'), bcrypt.gensalt())
-
-                cur.execute("""
-                        UPDATE tblusercredentials
-                        SET password = %s
-                        WHERE username = %s""",
-                        (password_hash, str(username),))
-
-            # commit changes
-            conn.commit()
-
-        #close connection
-        conn.close()
-
-        return password_hash
+        return False
 
     except Exception as e:
         conn.rollback()
@@ -843,6 +886,93 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(f"User test failed: {e}")
+"""
+
+#function to reset password if forgotten - uses email
+#arg: email (username), returns: success message
+def password_recovery_email(email):
+    
+    #open connection
+    conn = get_connection()
+    #disable autocommit
+    conn.autocommit = False
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(""" 
+                        SELECT 1 
+                        FROM tblusercredentials
+                        WHERE username = %s""", (str(email),))
+
+            #verify that the user exists
+            if cur.fetchone() is None:
+                raise ValueError(f"{email} does not exist")
+
+            #create a token
+            raw_token = secrets.token_urlsafe(32)
+
+            #hash the token before saving
+            token_hash = hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+            #set token expiration
+            token_expiration = datetime.now() + timedelta(minutes=15)
+
+            cur.execute("""
+                        UPDATE tblusercredentials
+                        SET token = %s, tokenexpiration = %s
+                        WHERE username = %s""",(token_hash, token_expiration, email),)
+            #commit changes
+            conn.commit()
+
+        # Send email with reset token using BASE_URL (fallback)
+        base = os.environ.get('BASE_URL', 'http://localhost:5000')
+        token_q = urllib.parse.quote_plus(raw_token)
+        email_q = urllib.parse.quote_plus(email)
+        reset_link = f"{base.rstrip('/')}/password-modal?token={token_q}&email={email_q}"
+        send_password_reset_email(email, reset_link)
+
+    except Exception as e:
+        #roll back in case of error
+        conn.rollback()
+        raise e
+
+    finally:
+        #Close connection
+        conn.close()
+
+    return {"status": "success", "message": "Password reset link sent to email"}
+
+
+def send_password_reset_email(email, reset_link):
+    """Send password reset email using a fully constructed reset_link"""
+    # Email configuration (update with your email settings)
+    sender_email = "hawkeyeinventorysystems@gmail.com"
+    sender_password = "mhlw dmkq vvvq jjiq"
+
+    try:
+        message = MIMEMultipart("alternative")
+        message["Subject"] = "Password Reset Request"
+        message["From"] = sender_email
+        message["To"] = email
+
+        text = f"""Hello,\n\nYou requested a password reset. Click the link below to reset your password.\n\n{reset_link}\n\nThis link will expire in 15 minutes.\n\nIf you did not request this, please ignore this email.\n\nBest regards,\nHawkEye Inventory System"""
+
+        html = f"""<html><body><p>Hello,</p><p>You requested a password reset. Click the link below to reset your password.</p><p><a href=\"{reset_link}\">Reset Password</a></p><p>This link will expire in 15 minutes.</p><p>If you did not request this, please ignore this email.</p><p>Best regards,<br>HawkEye Inventory System</p></body></html>"""
+
+        part1 = MIMEText(text, "plain")
+        part2 = MIMEText(html, "html")
+        message.attach(part1)
+        message.attach(part2)
+
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, email, message.as_string())
+        server.quit()
+
+        print(f"Password reset email sent to {email}")
+
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        raise e
 
 # --- Testing Search & Inventory Joins ---
     print("\n--- Testing Search Functions ---")
