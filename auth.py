@@ -1,5 +1,4 @@
-
-from fastapi import APIRouter, HTTPException, Header, Query
+from fastapi import APIRouter, HTTPException, Request, Header, Query
 from pydantic import BaseModel, EmailStr
 from inventory import *
 from search import *
@@ -51,6 +50,26 @@ def login(data: LoginRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
+
+#endpoint to get current user
+@router.get("/current-user")
+def get_current_user(request: Request):
+    try:
+        # Get username from Authorization header or cookies
+        username = request.headers.get("X-Username")
+        if not username:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        return {"username": username}
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+#endpoint to logout
+@router.post("/logout")
+def logout(request: Request):
+    try:
+        return {"status": "success", "message": "Logged out successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 #endpoint to add user
 @router.post("/add-user")
