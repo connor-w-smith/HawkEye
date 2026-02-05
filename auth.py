@@ -79,10 +79,16 @@ def delete_user(data: DeleteUserRequest):
 @router.post("/request-password-reset")
 def request_password_reset(data: PasswordResetRequest):
     try:
-        password_recovery(data.username)
-        return {"status": "ok"}
-    except Exception:
-        return {"status": "User not found"}
+        from inventory import password_recovery
+        # `password_recovery` expects the username (email) string
+        result = password_recovery(data.email)
+        print(f"Password recovery result: {result}")
+        return {"status": "ok", "message": "Password reset token generated"}
+    except Exception as e:
+        print(f"Password reset error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=str(e))
 
 #endpoint to verify and reset password
 @router.post("/reset-password")
@@ -105,11 +111,8 @@ def reset_password(data: PasswordResetConfirm):
         raise HTTPException(status_code=400, detail="Invalid or expired token")
     
 
-
-@router.post("/request-password-reset")
-def request_password_reset(data: PasswordResetRequest):
-    try:
-        from inventory import password_recovery_email
-        return password_recovery_email(data.email)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+class PasswordResetWithToken(BaseModel):
+    email: EmailStr
+    token: str
+    new_password: str
+# request-password-reset endpoint defined above

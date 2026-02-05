@@ -228,7 +228,7 @@ def delete_user_credentials(username):
     return {"status":"success"}
 
 #function to reset password if forgotten
-#arg: username, returns: success message
+#arg: username (email), returns: success message
 def password_recovery(username):
 
     #open connection
@@ -239,7 +239,7 @@ def password_recovery(username):
     try:
         with conn.cursor() as cur:
             cur.execute(""" 
-                        Select 1 
+                        SELECT 1 
                         FROM tblusercredentials
                         WHERE username = %s""", (str(username),))
 
@@ -255,10 +255,11 @@ def password_recovery(username):
             #set token expiration
             token_expiration = datetime.now() + timedelta(minutes=15)
 
+            # UPDATE user's token and expiration (not INSERT)
             cur.execute("""
-                        INSERT INTO tblusercredentials
-                        (token, tokenexpiration)
-                        VALUES (%s, %s)""",(token_hash, token_expiration),)
+                        UPDATE tblusercredentials
+                        SET token = %s, tokenexpiration = %s
+                        WHERE username = %s""",(token_hash, token_expiration, username),)
             #commit changes
             conn.commit()
 
@@ -268,10 +269,81 @@ def password_recovery(username):
         raise e
 
     finally:
-        #Close connection to allow update_user_password to connect to DB
+        #Close connection
         conn.close()
 
+    # Send password reset email
+    try:
+        send_password_reset_email(username, token_hash)
+    except Exception as e:
+        print(f"Warning: Email sending failed: {str(e)}")
+        # Don't fail the password recovery if email fails
+
     return token_hash
+
+def send_password_reset_email(email, token):
+    """Send password reset email with token link"""
+    try:
+        # Email configuration - UPDATE THESE WITH YOUR EMAIL
+        sender_email = "your-email@gmail.com"  # CHANGE THIS
+        sender_password = "your-app-password"  # CHANGE THIS - use app-specific password for Gmail
+        
+        # Create reset link - UPDATE THIS WITH YOUR DOMAIN
+        reset_link = f"http://localhost:5000/reset-password?token={token}&email={email}"
+        
+        # Create message
+        message = MIMEMultipart("alternative")
+        message["Subject"] = "Password Reset Request - HawkEye"
+        message["From"] = sender_email
+        message["To"] = email
+
+        # Email body
+        text = f"""\
+Hello,
+
+You requested a password reset for HawkEye Inventory System. 
+Click the link below to reset your password.
+
+{reset_link}
+
+This link will expire in 15 minutes.
+
+If you did not request this, please ignore this email.
+
+Best regards,
+HawkEye Inventory System
+"""
+
+        html = f"""\
+<html>
+  <body>
+    <p>Hello,</p>
+    <p>You requested a password reset for HawkEye Inventory System.</p>
+    <p>Click the link below to reset your password:</p>
+    <p><a href="{reset_link}">Reset Password</a></p>
+    <p>This link will expire in 15 minutes.</p>
+    <p>If you did not request this, please ignore this email.</p>
+    <p>Best regards,<br>HawkEye Inventory System</p>
+  </body>
+</html>
+"""
+
+        part1 = MIMEText(text, "plain")
+        part2 = MIMEText(html, "html")
+        message.attach(part1)
+        message.attach(part2)
+
+        # Send email via Gmail SMTP
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, email, message.as_string())
+        server.quit()
+        
+        print(f"Password reset email sent to {email}")
+        
+    except Exception as e:
+        print(f"Error sending password reset email: {str(e)}")
+        raise e
 
 #verifies the token from the user for password recovery
 #args: user name and token, returns: {"status":"success"}
@@ -749,8 +821,8 @@ def send_password_reset_email(email, token):
     """Send password reset email with token"""
     
     # Email configuration (update with your email settings)
-    sender_email = "your-email@gmail.com"  # CHANGE THIS
-    sender_password = "your-app-password"  # CHANGE THIS - use app-specific password for Gmail
+    sender_email = "hawkeyeinventorysystems@gmail.com"
+    sender_password = "mhlw dmkq vvvq jjiq"
     
     # Create reset link (update with your domain)
     reset_link = f"http://yourdomain.com/reset-password?token={token}&email={email}"

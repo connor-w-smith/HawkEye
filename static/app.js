@@ -42,21 +42,28 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
- document.getElementById("btnLogin").addEventListener("click", async () => {
+document.addEventListener("DOMContentLoaded", () => {
+    const btnLogin = document.getElementById("btnLogin");
+    if (btnLogin) {
+        btnLogin.addEventListener("click", async () => {
             const username = document.getElementById("inputUsername").value;
             const password = document.getElementById("inputPassword").value;
             const messageBox = document.getElementById("message");
 
             // Clear previous messages
-            messageBox.style.display = "none";
-            messageBox.textContent = "";
-            messageBox.className = "message-box";
+            if (messageBox) {
+                messageBox.style.display = "none";
+                messageBox.textContent = "";
+                messageBox.className = "message-box";
+            }
 
             // Validate inputs
             if (!username || !password) {
-                messageBox.textContent = "Please enter both username and password";
-                messageBox.classList.add("error");
-                messageBox.style.display = "block";
+                if (messageBox) {
+                    messageBox.textContent = "Please enter both username and password";
+                    messageBox.classList.add("error");
+                    messageBox.style.display = "block";
+                }
                 return;
             }
 
@@ -75,83 +82,107 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await response.json();
 
                 if (response.ok) {
-                    messageBox.textContent = data.message;
-                    messageBox.classList.add("success");
-                    messageBox.style.display = "block";
-                    
+                    if (messageBox) {
+                        messageBox.textContent = data.message || "Login successful";
+                        messageBox.classList.add("success");
+                        messageBox.style.display = "block";
+                    }
+
                     // Store username in sessionStorage
                     sessionStorage.setItem("username", username);
-                    
+
                     // Redirect to index page after successful login
                     setTimeout(() => {
                         window.location.href = "/index";
                     }, 1500);
                 } else {
-                    messageBox.textContent = data.message;
+                    if (messageBox) {
+                        messageBox.textContent = data.message || data.detail || "Login failed";
+                        messageBox.classList.add("error");
+                        messageBox.style.display = "block";
+                    }
+                }
+            } catch (error) {
+                if (messageBox) {
+                    messageBox.textContent = "An error occurred. Please try again.";
                     messageBox.classList.add("error");
                     messageBox.style.display = "block";
                 }
-            } catch (error) {
-                messageBox.textContent = "An error occurred. Please try again.";
-                messageBox.classList.add("error");
-                messageBox.style.display = "block";
                 console.error("Login error:", error);
             }
         });
-
-        // Allow login by pressing Enter key
-        document.getElementById("inputPassword").addEventListener("keypress", (event) => {
-            if (event.key === "Enter") {
-                document.getElementById("btnLogin").click();
-            }
-        });
-
-
-// Password reset functionality
-document.getElementById("btnResetPassword").addEventListener("click", async () => {
-    const email = document.getElementById("inputEmail").value;
-    const messageBox = document.getElementById("message");
-
-    // Clear previous messages
-    messageBox.style.display = "none";
-    messageBox.textContent = "";
-    messageBox.className = "message-box";
-
-    // Validate email
-    if (!email) {
-        messageBox.textContent = "Please enter your email address";
-        messageBox.classList.add("error");
-        messageBox.style.display = "block";
-        return;
     }
 
-    try {
-        const response = await fetch("/api/request-password-reset", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                email: email
-            })
+    const inputPassword = document.getElementById("inputPassword");
+    if (inputPassword) {
+        inputPassword.addEventListener("keypress", (event) => {
+            if (event.key === "Enter") {
+                const btn = document.getElementById("btnLogin");
+                if (btn) btn.click();
+            }
         });
+    }
 
-        const data = await response.json();
+    // Password reset functionality
+    const btnReset = document.getElementById("btnResetPassword");
+    if (btnReset) {
+        btnReset.addEventListener("click", async () => {
+            const emailEl = document.getElementById("inputEmail");
+            const email = emailEl ? emailEl.value : null;
+            const messageBox = document.getElementById("message");
 
-        if (response.ok) {
-            messageBox.textContent = "Password reset link sent to your email. Please check your inbox.";
-            messageBox.classList.add("success");
-            messageBox.style.display = "block";
-            document.getElementById("inputEmail").value = "";
-        } else {
-            messageBox.textContent = data.detail || "Email not found in our system";
-            messageBox.classList.add("error");
-            messageBox.style.display = "block";
-        }
-    } catch (error) {
-        messageBox.textContent = "An error occurred. Please try again.";
-        messageBox.classList.add("error");
-        messageBox.style.display = "block";
-        console.error("Password reset error:", error);
+            // Clear previous messages
+            if (messageBox) {
+                messageBox.style.display = "none";
+                messageBox.textContent = "";
+                messageBox.className = "message-box";
+            }
+
+            // Validate email
+            if (!email) {
+                if (messageBox) {
+                    messageBox.textContent = "Please enter your email address";
+                    messageBox.classList.add("error");
+                    messageBox.style.display = "block";
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch("/api/request-password-reset", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        email: email
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (messageBox) {
+                        messageBox.textContent = "Password reset link sent to your email. Please check your inbox.";
+                        messageBox.classList.add("success");
+                        messageBox.style.display = "block";
+                    }
+                    if (emailEl) emailEl.value = "";
+                } else {
+                    if (messageBox) {
+                        messageBox.textContent = data.detail || data.message || "Email not found in our system";
+                        messageBox.classList.add("error");
+                        messageBox.style.display = "block";
+                    }
+                }
+            } catch (error) {
+                if (messageBox) {
+                    messageBox.textContent = "An error occurred. Please try again.";
+                    messageBox.classList.add("error");
+                    messageBox.style.display = "block";
+                }
+                console.error("Password reset error:", error);
+            }
+        });
     }
 });
