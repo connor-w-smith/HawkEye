@@ -1008,4 +1008,4 @@ def send_password_reset_email(email, reset_link):
 
     except Exception as e:
         print(f"Search test failed: {e}")
-"""
+
