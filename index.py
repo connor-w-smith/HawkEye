@@ -4,11 +4,39 @@
 from flask import Flask, jsonify, render_template, request
 import requests
 
+#serve production server on flask
+from waitress import serve
+
+# Importing psycopg2 to connect Python to PostgresSQL
+import psycopg2
+
+# Importing extra helpers from psycopg2
+import psycopg2.extras
+
+# Importing inventory functions
+from inventory import user_login_verification 
+from db import get_connection
+
 # Creating the Flask application
 # __name__ will tell Flask where the file is
 app = Flask(__name__)
 
 BACKEND_URL = "http://127.0.0.1:8000"
+############################ LEGACY CODE ############################
+
+# Function to create a new database connection
+'''
+def get_connection():
+    return psycopg2.connect(
+        host="98.92.53.251",
+        database="postgres",
+        user="postgres",
+        password="pgpass",
+        port=5432
+    )
+'''
+    
+########################### END LEGACY CODE ###########################
 
 #This route runs when someone visits the root URL
 @app.route("/index")
@@ -59,6 +87,8 @@ def finished_goods():
     token = request.cookies.get("session_token")
     if not token:
         return jsonify({"error": "Unauthorized"}), 401
+def get_finished_goods():
+    conn = get_connection() #function imported from db.py
 
     resp = requests.get(
         f"{BACKEND_URL}/finishedgoods",
@@ -86,4 +116,5 @@ def search_page():
     return render_template("search.html")
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    #app.run(host='0.0.0.0', port=5000, debug=True)
+    serve(app, host='0.0.0.0', port=5000)

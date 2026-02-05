@@ -2,7 +2,9 @@ import uuid6
 import bcrypt
 import secrets
 import hashlib
-import secrets
+import smtplib
+
+from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 from db import get_connection
 from search import *
@@ -26,6 +28,7 @@ from search import *
 # def add_user_credentials(username, password, is_admin): Returns {"status":"success"}
 # def update_user_password(username, password, new_password): Returns {"status":"success"}
 # def delete_user_credentials(username): Returns {"status":"success"}
+# def send_recovery_email(username, raw_token): Returns Boolean of success or fail to send
 # def password_recovery(username): Returns token_hash
 # def verify_token_password_reset(username, token): Returns password_hash
 # def create_session(username):
@@ -54,7 +57,9 @@ def user_login_verification(username, password):
 
     # Open connection to database
     conn = get_connection()
-    
+    # disable autocommit
+    conn.autocommit = False
+
     try:
         with conn.cursor() as cur:
 
@@ -81,7 +86,7 @@ def user_login_verification(username, password):
                 raise ValueError("Password does not match")
 
     except Exception as e:
-        raise
+        raise e
 
     finally:
         conn.close()
@@ -127,7 +132,7 @@ def add_user_credentials(username, password, is_admin):
     except Exception as e:
         # Rollback in case of error to maintain data integrity
         conn.rollback()
-        raise 
+        raise e
 
     finally:
         #close connection
@@ -181,7 +186,7 @@ def update_user_password(username, password, new_password):
     except Exception as e:
         #rollback in case of data validity issues
         conn.rollback()
-        raise
+        raise e
 
     finally:
         #close connection
@@ -218,13 +223,42 @@ def delete_user_credentials(username):
     except Exception as e:
         #rollback in case of data validity issues
         conn.rollback()
-        raise 
+        raise e
 
     finally:
         #close connection
         conn.close()
 
     return {"status":"success"}
+
+#function sends the email with the recovery token to the user
+#args: username(Email address), raw_token, Returns True(Sent) or False(Not Sent)
+def send_recovery_email(username, raw_token):
+    #creating variables for our email
+    sender_email = "hawkeyeinventorysystems@gmail.com"
+    app_password = "vduv utnk slzo idfr"
+
+    #Create email to send
+    subject = "Password Recovery Code"
+    body = f"Hello,\n\nYour recovery code is {raw_token}\n\nThis token will expire in 15 minutes."
+
+    msg = MIMEText(body)
+    msg['Subject'] = subject
+    msg['From'] = sender_email
+    msg['To'] = username
+
+    try:
+        #connect to Gmail's SMTP server on port 587
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(sender_email, app_password)
+            server.send_message(msg)
+            return True
+
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
+
 
 #function to reset password if forgotten
 #arg: username, returns: success message
@@ -255,22 +289,33 @@ def password_recovery(username):
             token_expiration = datetime.now() + timedelta(minutes=15)
 
             cur.execute("""
-                        INSERT INTO tblusercredentials
-                        (token, tokenexpiration)
-                        VALUES (%s, %s)""",(token_hash, token_expiration),)
+                        UPDATE tblusercredentials
+                        SET token = %s, tokenexpiration = %s
+                        WHERE username = %s
+                        """,(token_hash, token_expiration),str(username))
+
             #commit changes
             conn.commit()
+
+            email_sent = send_recovery_email(username, raw_token)
+
+            if email_sent:
+                return token_hash
+
+            else:
+                return None
 
     except Exception as e:
         #roll back in case of error
         conn.rollback()
-        raise 
+        raise e
 
     finally:
         #Close connection to allow update_user_password to connect to DB
         conn.close()
 
-    return token_hash
+
+
 
 #verifies the token from the user for password recovery
 #args: user name and token, returns: {"status":"success"}
@@ -322,7 +367,7 @@ def verify_token_password_reset(username, token):
 
     except Exception as e:
         conn.rollback()
-        raise
+        raise e
 
     finally:
         #Ensure connection closed in case of error

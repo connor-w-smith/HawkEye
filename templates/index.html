@@ -16,8 +16,9 @@
     <div class="top-toolbar">
         <img src="{{ url_for('static', filename='CapstoneLogoWhiteText.png') }}" alt="HawkEye Inventory Systems Logo">
         <div class="toolbar-content">
-            <!--<p>Hi, {user}</p> -->
-            <!-- <a href="#">Log out</a> -->
+            <p id="user-greeting">Hi, <span id="username"></span></p>
+            <span class="separator">|</span>
+            <a href="/" id="logout-link">Log out</a>
         </div>
     </div>
 
