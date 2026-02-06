@@ -153,11 +153,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 const confirmPassword = document.getElementById('pm_confirmPassword').value;
 
                 if (!newPassword || !confirmPassword) {
-                    if (messageBox) { messageBox.textContent = 'Please enter and confirm your new password'; messageBox.classList.add('error'); messageBox.style.display = 'block'; }
+                    if (messageBox) { messageBox.textContent = 'Please enter and confirm your new password'; messageBox.classList.add('error'); messageBox.style.display = 'block'; messageBox.style.color = 'red'; }
                     return;
                 }
                 if (newPassword !== confirmPassword) {
-                    if (messageBox) { messageBox.textContent = 'Passwords do not match'; messageBox.classList.add('error'); messageBox.style.display = 'block'; }
+                    if (messageBox) { messageBox.textContent = 'Passwords do not match'; messageBox.classList.add('error'); messageBox.style.display = 'block'; messageBox.style.color = 'red'; }
                     return;
                 }
 
@@ -169,10 +169,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                     const data = await res.json();
                     if (res.ok) {
-                        if (messageBox) { messageBox.textContent = data.message || 'Password reset successful'; messageBox.classList.add('success'); messageBox.style.display = 'block'; }
+                        if (messageBox) { messageBox.textContent = data.message || 'Password reset successful'; messageBox.classList.add('success'); messageBox.style.display = 'block'; messageBox.style.color = 'green'; }
                         setTimeout(() => { window.location.href = '/'; }, 1500);
                     } else {
-                        if (messageBox) { messageBox.textContent = data.message || data.detail || 'Unable to reset password'; messageBox.classList.add('error'); messageBox.style.display = 'block'; }
+                        if (messageBox) { messageBox.textContent = data.message || data.detail || 'Unable to reset password'; messageBox.classList.add('error'); messageBox.style.display = 'block'; messageBox.style.color = 'red'; }
                     }
                 } catch (err) {
                     if (messageBox) { messageBox.textContent = 'An error occurred. Please try again.'; messageBox.classList.add('error'); messageBox.style.display = 'block'; }
