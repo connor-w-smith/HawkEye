@@ -3,6 +3,7 @@
 # Importing render_template to serve HTML files
 from flask import Flask, jsonify, render_template, request
 import requests
+import psycopg2
 
 #serve production server on flask
 from waitress import serve
@@ -117,6 +118,7 @@ def finished_goods():
     token = request.cookies.get("session_token")
     if not token:
         return jsonify({"error": "Unauthorized"}), 401
+
 def get_finished_goods():
     conn = get_connection() #function imported from db.py
 
@@ -180,6 +182,7 @@ def api_request_password_reset():
         import traceback
         traceback.print_exc()
         return jsonify({"status": "error", "message": "An error occurred"}), 500
+
 
 if __name__ == "__main__":
     #app.run(host='0.0.0.0', port=5000, debug=True)

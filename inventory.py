@@ -2,9 +2,8 @@ import uuid6
 import bcrypt
 import secrets
 import hashlib
-import smtplib
 
-from email.mime.text import MIMEText
+
 from datetime import datetime, timedelta
 from  db import get_connection
 import smtplib
@@ -147,7 +146,7 @@ def add_user_credentials(username, password, is_admin):
 
 """def update_user_credentials(username, password, is_admin):"""
 #Updates user password
-#args: username, password, new_passsword returns success
+#args: username, password, new_password returns success
 def update_user_password(username, password, new_password):
 
     #Open connection to database
@@ -188,6 +187,8 @@ def update_user_password(username, password, new_password):
                 #commit changes
                 conn.commit()
 
+                return {"status": "success"}
+
     except Exception as e:
         #rollback in case of data validity issues
         conn.rollback()
@@ -197,7 +198,7 @@ def update_user_password(username, password, new_password):
         #close connection
         conn.close()
 
-    return {"status":"success"}
+
 
 
 
@@ -318,8 +319,6 @@ def password_recovery(username):
         #Close connection
         conn.close()
 
-    # Return raw token for the caller to build a link and send email
-    return raw_token
 
 def reset_password_with_token(email, token, new_password):
     """Verify token and set a new password for the given email."""
@@ -423,7 +422,7 @@ def create_session(username):
     conn.autocommit = False
 
     try:
-        #creats session token and experiation
+        #creats session token and expiration
         session_token = secrets.token_urlsafe(32)
         expires_at = datetime.now() + timedelta(minutes=30)
 
@@ -694,7 +693,7 @@ def delete_inventory(finished_good_id, quantity_to_subtract):
     conn.autocommit = False
 
     try:
-        #create cursor to excute SQL commands
+        #create cursor to execute SQL commands
         with conn.cursor() as cur:
 
             # Check that the FinishedGoodID exists in tblfinishedgoods

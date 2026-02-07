@@ -1,160 +1,126 @@
+import psycopg2
 from db import get_connection
 
 
 
+
+
 """Function Directory"""
+# def get_finished_good_table():
+# def get_production_inventory_table():
+# def get_production_data_table():
+# def get_production_data_table():
 
-# def search_finished_by_name(finished_name: str): Returns output{FinishedGoodID, FinishedGoodName}
-# def search_finished_by_id(finished_id: str): Returns output{FinishedGoodID, FinishedGoodName}
-# def search_inventory_by_id(finished_id: str): Returns output{{FinishedGoodID, FinishedGoodName, AvailableInventory}
-# def search_inventory_by_name(finished_name: str): Returns output{{FinishedGoodID, FinishedGoodName, AvailableInventory}
 
-#searches tblfinishedgoods using finishedgoodname
-def search_finished_by_name(finished_name: str):
+
+#returns all columns from tblfinishedgoods
+def get_finished_good_table():
+
+    # connect to db
+    conn = get_connection()
+
+    try:
+        with conn.cursor() as cursor:
+            #db query
+            cursor.execute("""SELECT finishedgoodid, finishedgoodname
+                            FROM tblfinishedgoods""")
+
+            #store found rows to be passed
+            rows = cursor.fetchall()
+
+            if not rows:
+                raise ValueError(f"No data found in finished good table")
+
+            else:
+                return rows
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(f"Database error: {error}")
+        raise
+
+    finally:
+        if conn:
+            #close connection
+            conn.close()
+
+def get_production_inventory_table():
+    #open connection
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            #db query
+            cursor.execute("""SELECT finishedgoodid, intavailableparts 
+                            FROM tblproductioninventory""")
+
+            rows = cursor.fetchall()
+
+            if not rows:
+                raise ValueError(f"No data found in production inventory table")
+
+            else:
+                return rows
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(f"Database error: {error}")
+        raise
+
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_production_data_table():
     #open db connection
     conn = get_connection()
 
     try:
         with conn.cursor() as cursor:
-            #ILIKE is for case-insensitive and % is for wildcards
-            query = ("""SELECT finishedgoodid, finishedgoodname
-                     FROM tblfinishedgoods 
-                     WHERE finishedgoodname ILIKE %s""")
+            cursor.execute("""SELECT orderid, partsproduced, productionstarttime, productionendtime, 
+                            productionstartdate, productionenddate FROM tblproductiondata""")
 
-            #format the search for wildcards
-            like_pattern = f"%{finished_name}%"
+            rows = cursor.fetchall()
 
-            cursor.execute(query, (like_pattern,))
+            if not rows:
+                raise ValueError(f"No data found in production data table")
 
-            #fetchall to get all matching results
-            results = cursor.fetchall()
+            else:
+                return rows
 
-            #converting tuples to list of dictionary objects
-            output = []
-            for row in results:
-                output.append({
-                    "FinishedGoodID": row[0],
-                    "FinishedGoodName": row[1]
-                })
-
-            return output
-
-    except Exception as e:
-        raise e
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(f"Database error: {error}")
+        raise
 
     finally:
-        #ensure connection is closed
-        conn.close()
+        if conn:
+            conn.close()
 
-#searches tblfinishedgoods by finishedgoodid
-def search_finished_by_id(finished_id: str):
-    #open db connection
+
+def get_user_credentials_table():
+    # db connection
     conn = get_connection()
 
     try:
         with conn.cursor() as cursor:
-            #ILIKE is for case-insensitive and % is for wildcards
-            query = ("""SELECT finishedgoodid, finishedgoodname 
-                     FROM tblfinishedgoods 
-                     WHERE finishedgoodid = %s""")
+            cursor.execute("""SELECT userid, username, password, isadmin
+                            FROM tblusercredentials""")
 
-            cursor.execute(query, (finished_id,))
+            rows = cursor.fetchall()
 
-            #fetchall to get all matching results
-            results = cursor.fetchall()
+            if not rows:
+                raise ValueError(f"No data found in user credentials table")
 
-            #converting tuples to list of dictionary objects
-            output = []
-            for row in results:
-                output.append({
-                    "FinishedGoodID": row[0],
-                    "FinishedGoodName": row[1]
-                })
+            else:
+                return rows
 
-            return output
-
-    except Exception as e:
-        raise e
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(f"Database error: {error}")
+        raise
 
     finally:
-        #ensure connection is closed
-        conn.close()
+        if conn:
+            conn.close()
 
 
-def search_inventory_by_id(finished_id: str):
-    #open db connection
-    conn = get_connection()
 
-    try:
-        with conn.cursor() as cursor:
-            #ILIKE is for case-insensitive and % is for wildcards
-            query = ("""SELECT pi.finishedgoodid,fg.finishedgoodname, pi.intavailableparts 
-                     FROM tblproductioninventory pi
-                     INNER JOIN tblfinishedgoods fg on pi.finishedgoodid = fg.finishedgoodid
-                     WHERE pi.finishedgoodid = %s""")
-
-
-            cursor.execute(query, (finished_id,))
-
-            #fetchall to get all matching results
-            results = cursor.fetchall()
-
-            #converting tuples to list of dictionary objects
-            output = []
-
-            for row in results:
-                output.append({
-                    "FinishedGoodID": row[0],
-                    "FinishedGoodName": row[1],
-                    "AvailableInventory": row[2]
-                })
-
-            return output
-
-    except Exception as e:
-        raise e
-
-    finally:
-        #ensure connection is closed
-        conn.close()
-
-
-def search_inventory_by_name(finished_name: str):
-    #open db connection
-    conn = get_connection()
-
-    try:
-        with conn.cursor() as cursor:
-            #ILIKE is for case-insensitive and % is for wildcards
-            query = ("""SELECT fg.finishedgoodid, fg.finishedgoodname, pi.intavailableparts 
-                     FROM tblfinishedgoods fg
-                     INNER JOIN tblproductioninventory pi on fg.finishedgoodid = pi.finishedgoodid
-                     WHERE fg.finishedgoodname ILIKE %s""")
-
-            #format the search for wildcards
-            like_pattern = f"%{finished_name}%"
-
-            cursor.execute(query, (like_pattern,))
-
-            #fetchall to get all matching results
-            results = cursor.fetchall()
-
-            #converting tuples to list of dictionary objects
-            output = []
-            for row in results:
-                output.append({
-                    "FinishedGoodID": row[0],
-                    "FinishedGoodName": row[1],
-                    "AvailableInventory": row[2]
-                })
-
-            return output
-
-    except Exception as e:
-        raise e
-
-    finally:
-        #ensure connection is closed
-        conn.close()
 
 
