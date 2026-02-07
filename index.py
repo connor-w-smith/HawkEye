@@ -3,6 +3,14 @@ import requests
 
 # serve production server on flask
 from waitress import serve
+'''
+In terminal run: uvicorn main:app --reload
+
+In another terminal run: python3 index.py
+
+web app will be available at: http://127.0.0.1:5000/
+
+'''
 
 app = Flask(__name__)
 
