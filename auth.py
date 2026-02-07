@@ -39,6 +39,11 @@ class AddFinishedGood(BaseModel):
 class DeleteFinishedGood(BaseModel):
     finished_good_name: str
 
+class PasswordResetWithToken(BaseModel):
+    email: EmailStr
+    token: str
+    new_password: str
+
 #endpoint for user login
 @router.post("/login")
 def login(data: LoginRequest):
@@ -62,14 +67,6 @@ def get_current_user(request: Request):
         return {"username": username}
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
-
-#endpoint to logout
-@router.post("/logout")
-def logout(request: Request):
-    try:
-        return {"status": "success", "message": "Logged out successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
 #endpoint to add user
 @router.post("/add-user")
@@ -107,18 +104,14 @@ def request_password_reset(data: PasswordResetRequest):
 @router.post("/user-reset-password")
 def user_password_update(data: PasswordUpdateRequest):
     try:
-        return update_user_password(data.user_name, data.old_password, data.new_password)
+        return update_user_password(data.username, data.old_password, data.new_password)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/reset-password")
-def reset_password(data: PasswordResetConfirm):
+def reset_password_endpoint(data: PasswordResetConfirm):
     try:
-        verify_token_password_reset(
-            data.token,
-            data.new_password
-        )
-        return {"status": "success"}
+        return reset_password_with_token(data.email, data.token, data.new_password)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
 
@@ -135,7 +128,7 @@ def logout(authorization: str = Header(...)):
 
 
 @router.post("/add-finished-good")
-def add_finished_good(data: AddFinishedGood):
+def add_finished_good_endpoint(data: AddFinishedGood):
     try:
         #call function from inventory.py
         return add_finished_good(data.finished_good_name)
@@ -144,7 +137,7 @@ def add_finished_good(data: AddFinishedGood):
         #Convert errors to HTTP responses
         raise HTTPException(status_code=400, detail=str(e))
 
-def delete_finished_good(finished_good_id: str = Query(...)):
+def delete_finished_good_endpoint(finished_good_id: str = Query(...)):
     try:
         #call function from inventory.py
         return delete_finished_good(finished_good_id)
@@ -152,9 +145,3 @@ def delete_finished_good(finished_good_id: str = Query(...)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-
-class PasswordResetWithToken(BaseModel):
-    email: EmailStr
-    token: str
-    new_password: str
-# request-password-reset endpoint defined above
