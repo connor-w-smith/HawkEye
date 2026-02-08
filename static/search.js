@@ -16,6 +16,10 @@ function renderResults(data) {
 
     data.forEach(item => {
         const row = document.createElement("tr");
+        row.style.cursor = "pointer";
+        row.addEventListener("click", () => {
+            window.location.href = `/product/${item.FinishedGoodID}`;
+        });
         row.innerHTML = `
             <td>${item.FinishedGoodID}</td>
             <td>${item.FinishedGoodName}</td>
