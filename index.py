@@ -139,6 +139,19 @@ def proxy_finished_good_id_search():
 
     return jsonify(resp.json()), resp.status_code
 
+#new updated search    
+@app.route("/api/search/finished-goods")
+def proxy_finished_goods_search():
+    search = request.args.get("search")
+
+    resp = requests.get(
+        f"{BACKEND_URL}/finished-goods",
+        params={"search": search},
+        timeout=5
+    )
+
+    return jsonify(resp.json()), resp.status_code
+
 if __name__ == "__main__":
     #app.run(host='0.0.0.0', port=5000, debug=True)
     serve(app, host='0.0.0.0', port=5000)
