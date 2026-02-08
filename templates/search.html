@@ -7,6 +7,17 @@
     <link rel="stylesheet" href="/static/index.css">
 </head>
 <body>
+<!-- Top toolbar -->
+<div class="top-toolbar">
+    <img src="{{ url_for('static', filename='CapstoneLogoWhiteText.png') }}"
+         alt="HawkEye Inventory Systems Logo">
+
+    <div class="toolbar-content">
+        <p id="user-greeting">Hi, <span id="username"></span></p>
+        <span class="separator">|</span>
+        <a href="/" id="logout-link">Log out</a>
+    </div>
+</div>
 
 <div class="header-display">
     <h1>Inventory Search</h1>
@@ -22,7 +33,6 @@
         autocomplete="off"
     >
 </div>
-
 
 <table class="data-display" id="searchResults">
     <thead>
