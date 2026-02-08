@@ -143,7 +143,7 @@ def finished_good_name_search(finished_good_name: str = Query(...)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/finished-good-ID-search")
+@router.get("/finished-good-id-search")
 def finished_good_id_search(finished_good_id: str = Query(...)):
 
     try:

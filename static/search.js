@@ -26,7 +26,7 @@ document.getElementById("searchNameBtn").addEventListener("click", async () => {
     if (!query) return;
 
     try {
-        const response = await fetch(`/finished-good-name-search?finished_good_name=${encodeURIComponent(query)}`);
+        const response = await fetch(`/api/search/finished-good-name?finished_good_name=${encodeURIComponent(query)}`);
         const data = await response.json();
         renderResults(data.results);
     } catch (err) {
@@ -40,7 +40,7 @@ document.getElementById("searchIdBtn").addEventListener("click", async () => {
     if (!query) return;
 
     try {
-        const response = await fetch(`/finished-good-ID-search?finished_good_id=${encodeURIComponent(query)}`);
+        const response = await fetch(`/api/search/finished-good-id?finished_good_id=${encodeURIComponent(query)}`);
         const data = await response.json();
         renderResults(data.results);
     } catch (err) {

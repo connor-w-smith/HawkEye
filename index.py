@@ -115,6 +115,30 @@ def logout():
 def search_page():
     return render_template("search.html")
 
+@app.route("/api/search/finished-good-name")
+def proxy_finished_good_name_search():
+    name = request.args.get("finished_good_name")
+
+    resp = requests.get(
+        f"{BACKEND_URL}/finished-good-name-search",
+        params={"finished_good_name": name},
+        timeout=5
+    )
+
+    return jsonify(resp.json()), resp.status_code
+
+@app.route("/api/search/finished-good-id")
+def proxy_finished_good_id_search():
+    finished_good_id = request.args.get("finished_good_id")
+
+    resp = requests.get(
+        f"{BACKEND_URL}/finished-good-id-search",
+        params={"finished_good_id": finished_good_id},
+        timeout=5
+    )
+
+    return jsonify(resp.json()), resp.status_code
+
 if __name__ == "__main__":
     #app.run(host='0.0.0.0', port=5000, debug=True)
     serve(app, host='0.0.0.0', port=5000)
