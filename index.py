@@ -152,6 +152,10 @@ def proxy_finished_goods_search():
 
     return jsonify(resp.json()), resp.status_code
 
+#frontend product page endpoint
+@app.route("/product/<finished_good_id>")
+def product_page(finished_good_id):
+    return render_template("product.html")
 if __name__ == "__main__":
     #app.run(host='0.0.0.0', port=5000, debug=True)
     serve(app, host='0.0.0.0', port=5000)

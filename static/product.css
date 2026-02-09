@@ -1,0 +1,109 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fa;
+    margin: 0;
+}
+
+/* Toolbar */
+.top-toolbar {
+    background: linear-gradient(90deg, #3a9ad9, #1c6ba0);
+    display: flex;
+    align-items: center;
+    color: white;
+}
+
+.top-toolbar img {
+    height: 75px;
+    width: 75px;
+}
+
+.toolbar-content {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: 25px;
+}
+
+.toolbar-content a {
+    color: white;
+    text-decoration: none;
+}
+
+/* Header */
+.page-header {
+    background: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-header h1 {
+    color: #1c6ba0;
+}
+
+.time-filters button {
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    background: white;
+    cursor: pointer;
+}
+
+.time-filters .active {
+    background: #1c6ba0;
+    color: white;
+}
+
+/* Status Banner */
+.status-banner {
+    margin: 20px;
+    padding: 15px;
+    background: #f3e4cf;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+/* Main Content */
+.content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+/* Live Counter */
+.counter-value {
+    font-size: 48px;
+    font-weight: bold;
+    margin: 20px 0;
+}
+
+.progress-bar {
+    height: 12px;
+    background: #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #3a9ad9;
+}
+
+/* Inventory Table */
+.inventory table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.inventory th, .inventory td {
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
