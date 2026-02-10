@@ -240,4 +240,37 @@ def delete_finished_good_endpoint(finished_good_id: str = Query(...)):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
+
+
+"""May need to correct this variable inputs"""
+@router.get("/inventory/{finished_good_id}")
+def read_available_inventory(item_id: UUID):
+    try:
+        #Call function from search.py
+        return get_production_inventory_by_finishedgoodid(item_id)
+
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.get("/production-data/{finished_good_id}")
+def read_order_history(item_id: UUID):
+    try:
+        return get_orders_by_finishedgoodid(item_id)
+
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.get("/inventory/{finished_good_id}")
+def read_raw_material_recipe_table(item_id: UUID):
+    try:
+        return get_raw_material_recipe(item_id)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.get("/production-data/{finished_good_id}")
+def read_current_order_table(item_id: UUID):
+    try:
+        return get_current_orders(item_id)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
