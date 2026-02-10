@@ -182,7 +182,7 @@ def get_current_orders(finishedgoodid):
 
     output_data = {
         'Order ID': [1234,5678],
-        'Sensor ID': [1357,2468]
+        'Sensor ID': [1357,2468],
         'Parts Made': [10,250]
     }
 
