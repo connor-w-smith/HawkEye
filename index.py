@@ -14,7 +14,6 @@ from db import get_connection
 app = Flask(__name__)
 
 BACKEND_URL = "http://127.0.0.1:8000"
-############################ LEGACY CODE ############################
 
 
 #This route runs when someone visits the root URL
