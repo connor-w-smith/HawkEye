@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HawkEye | Product</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='product.css') }}">
+</head>
+<body>
+
+<!-- Top Toolbar -->
+<div class="top-toolbar">
+    <img src="{{ url_for('static', filename='CapstoneLogoWhiteText.png') }}" alt="Logo">
+    <div class="toolbar-content">
+        <p>Hi, <span id="username">User</span></p>
+        <span class="separator">|</span>
+        <a href="/">Log out</a>
+    </div>
+</div>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1 id="finished-good-name">Finished Good Name</h1>
+
+    <div class="time-filters">
+        <button>Last 7 Days</button>
+        <button>Last 14 Days</button>
+        <button class="active">Last 30 Days</button>
+    </div>
+</div>
+
+<!-- Status Banner -->
+<div class="status-banner">
+    <p>No active production orders</p>
+</div>
+
+<!-- Main Content -->
+<div class="content-grid">
+
+    <!-- Live Counter -->
+    <div class="card live-counter">
+        <h2>Live Counter</h2>
+        <div class="counter-value">1,420</div>
+        <p class="sensor-label">SENSOR-07</p>
+
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: 71%;"></div>
+        </div>
+        <p class="progress-text">71% - Parts Made so far</p>
+    </div>
+
+    <!-- Inventory -->
+    <div class="card inventory">
+        <h2>Available Inventory</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Finished Good</th>
+                    <th>Units</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Finished Good A</td>
+                    <td>3,450</td>
+                </tr>
+                <tr>
+                    <td>Finished Good B</td>
+                    <td>1,080</td>
+                </tr>
+                <tr>
+                    <td>Finished Good C</td>
+                    <td>720</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>

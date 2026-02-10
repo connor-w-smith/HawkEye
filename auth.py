@@ -126,7 +126,103 @@ def logout(authorization: str = Header(...)):
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid session")
 
+#new backend endpoint for search
+@router.get("/finished-goods")
+def finished_goods_search(search: str | None = None):
+    try:
+        #return all on empty search
+        if not search:
+            results = search_finished_by_name("")
+        #ID search
+        elif len(search) == 36:
+            results = search_finished_by_id(search)
+        #otherwise name search
+        else:
+            results = search_finished_by_name(search)
 
+        return {
+            "status": "success",
+            "count": len(results),
+            "results": results
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+'''
+legacy code
+@router.get("/finished-good-name-search")
+def finished_good_name_search(finished_good_name: str = Query(...)):
+
+    try:
+        finished_good_list = search_finished_by_name(finished_good_name)
+
+        return{
+            "status": "success",
+            "count": len(finished_good_list),
+            "results": finished_good_list
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/finished-good-id-search")
+def finished_good_id_search(finished_good_id: str = Query(...)):
+
+    try:
+        finished_good_list = search_finished_by_id(finished_good_id)
+
+        return{
+            "status": "success",
+            "count": len(finished_good_list),
+            "results": finished_good_list
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+
+@router.get("/inventory-id")
+def inventory_id_search(finished_good_id: str = Query(...)):
+
+    try:
+        finished_good_inventory_list = search_inventory_by_id(finished_good_id)
+
+        if len(finished_good_inventory_list) == 0:
+            raise HTTPException(status_code=404, detail=f"No inventory found for ID {finished_good_id}")
+        return{
+            "status": "success",
+            "count": len(finished_good_inventory_list),
+            "results": finished_good_inventory_list
+        }
+
+    except HTTPException:
+        # Re-raise the 404 so FastAPI handles it
+        raise
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/inventory-name")
+def inventory_name_search(finished_good_name: str = Query(...)):
+    try:
+        finished_good_inventory_list = search_inventory_by_name(finished_good_name)
+
+        if len(finished_good_inventory_list) == 0:
+            raise HTTPException(status_code=404, detail=f"No inventory found for ID {finished_good_name}")
+
+        return {
+            "status": "success",
+            "count": len(finished_good_inventory_list),
+            "results": finished_good_inventory_list
+        }
+
+    except HTTPException:
+        # Re-raise the 404 so FastAPI handles it
+        raise
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+'''
 @router.post("/add-finished-good")
 def add_finished_good_endpoint(data: AddFinishedGood):
     try:
