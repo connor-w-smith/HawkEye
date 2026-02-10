@@ -1,0 +1,155 @@
+name: Test Flask Server & Database Connections
+
+on:
+  push:
+    branches: [ main, development ]
+  pull_request:
+    branches: [ main, development ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest requests  # Added for testing
+        
+    - name: Create test configuration files
+      run: |
+        # Create db.py with test credentials
+        cat > db.py << 'EOF'
+        import psycopg2
+        
+        DB_CONFIG = {
+            "host": "${{ secrets.POSTGRES_HOST }}",
+            "port": ${{ secrets.POSTGRES_PORT || 5432 }},
+            "database": "${{ secrets.POSTGRES_DB }}",
+            "user": "${{ secrets.POSTGRES_USER }}",
+            "password": "${{ secrets.POSTGRES_PASSWORD }}"
+        }
+        
+        def get_connection():
+            return psycopg2.connect(**DB_CONFIG)
+        EOF
+        
+        # Create influx_details.py with test credentials
+        cat > influx_details.py << 'EOF'
+        INFLUX_URL = "${{ secrets.INFLUX_URL }}"
+        INFLUX_TOKEN = "${{ secrets.INFLUX_TOKEN }}"
+        INFLUX_ORG = "${{ secrets.INFLUX_ORG }}"
+        INFLUX_BUCKET = "${{ secrets.INFLUX_BUCKET }}"
+        EOF
+        
+    - name: Start FastAPI server
+      run: |
+        uvicorn main:app --host 0.0.0.0 --port 8000 &
+        FASTAPI_PID=$!
+        echo "FASTAPI_PID=$FASTAPI_PID" >> $GITHUB_ENV
+        echo "FastAPI server started with PID $FASTAPI_PID"
+        sleep 5
+        
+    - name: Start Flask server
+      run: |
+        python index.py &
+        FLASK_PID=$!
+        echo "FLASK_PID=$FLASK_PID" >> $GITHUB_ENV
+        echo "Flask server started with PID $FLASK_PID"
+        sleep 5
+        
+    - name: Wait for servers to be ready
+      run: |
+        echo "Waiting for servers to start..."
+        for i in {1..30}; do
+          if curl -f http://localhost:8000/docs > /dev/null 2>&1 && \
+             curl -f http://localhost:5000 > /dev/null 2>&1; then
+            echo "Both servers are up!"
+            exit 0
+          fi
+          echo "Attempt $i: Servers not ready yet..."
+          sleep 2
+        done
+        echo "Servers failed to start in time"
+        exit 1
+        
+    - name: Test FastAPI server
+      run: |
+        echo "Testing FastAPI server..."
+        curl -f http://localhost:8000/docs || exit 1
+        echo "FastAPI server is responding!"
+        
+    - name: Test Flask server
+      run: |
+        echo "Testing Flask server..."
+        curl -f http://localhost:5000 || exit 1
+        echo "Flask server is responding!"
+        
+    - name: Test PostgreSQL connection
+      run: |
+        python << 'EOF'
+        import sys
+        try:
+            from db import get_connection
+            conn = get_connection()
+            cur = conn.cursor()
+            cur.execute("SELECT version();")
+            version = cur.fetchone()
+            print(f"✓ PostgreSQL connection successful!")
+            print(f"  Version: {version[0]}")
+            cur.close()
+            conn.close()
+            sys.exit(0)
+        except Exception as e:
+            print(f"✗ PostgreSQL connection failed: {e}", file=sys.stderr)
+            sys.exit(1)
+        EOF
+        
+    - name: Test InfluxDB connection
+      run: |
+        python << 'EOF'
+        import sys
+        try:
+            from influxdb_client import InfluxDBClient
+            from influx_details import INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG
+            
+            client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
+            health = client.health()
+            print(f"✓ InfluxDB connection successful!")
+            print(f"  Status: {health.status}")
+            print(f"  Version: {health.version}")
+            client.close()
+            sys.exit(0)
+        except Exception as e:
+            print(f"✗ InfluxDB connection failed: {e}", file=sys.stderr)
+            sys.exit(1)
+        EOF
+        
+    - name: Test API endpoints
+      run: |
+        echo "Testing API endpoints..."
+        # Test FastAPI endpoint
+        curl -f http://localhost:8000/finishedgoods || echo "Note: /finishedgoods may require auth"
+        
+    - name: Cleanup
+      if: always()
+      run: |
+        echo "Stopping servers..."
+        kill $FASTAPI_PID 2>/dev/null || true
+        kill $FLASK_PID 2>/dev/null || true
+        sleep 2
+        # Force kill if still running
+        kill -9 $FASTAPI_PID 2>/dev/null || true
+        kill -9 $FLASK_PID 2>/dev/null || true
+        echo "Cleanup complete"
