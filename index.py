@@ -2,6 +2,7 @@
 # Importing jsonify to return JSON to the browser
 # Importing render_template to serve HTML files
 from flask import Flask, jsonify, render_template, request
+import requests
 
 #serve production server on flask
 from waitress import serve
@@ -20,6 +21,7 @@ from db import get_connection
 # __name__ will tell Flask where the file is
 app = Flask(__name__)
 
+BACKEND_URL = "http://127.0.0.1:8000"
 ############################ LEGACY CODE ############################
 
 # Function to create a new database connection
@@ -47,51 +49,113 @@ def index():
 def login():
     return render_template("login.html")
 
-#API endpoint for user login verification
+#login endpoint to sned data to backend
 @app.route("/api/login", methods=["POST"])
 def api_login():
-    try:
-        data = request.get_json()
-        username = data.get("username")
-        password = data.get("password")
-        
-        if not username or not password:
-            return jsonify({"status": "error", "message": "Username and password are required"}), 400
-        
-        # Call the login verification function from inventory.py
-        user_validated = user_login_verification(username, password)
-        
-        if user_validated:
-            return jsonify({"status": "success", "message": "Login successful"}), 200
-        else:
-            return jsonify({"status": "error", "message": "Invalid credentials"}), 401
-            
-    except ValueError as e:
-        return jsonify({"status": "error", "message": str(e)}), 401
-    except Exception as e:
-        return jsonify({"status": "error", "message": "An error occurred during login"}), 500
+    data = request.get_json()
 
-#Route to the API endpoint that returns JSON data
+    try:
+        resp = requests.post(
+            f"{BACKEND_URL}/login",
+            json={
+                "username": data.get("username"),
+                "password": data.get("password")
+            },
+            timeout=5
+        )
+
+        if resp.status_code != 200:
+            return jsonify(resp.json()), 401
+
+        result = resp.json()
+
+        response = make_response(jsonify({"status": "success"}))
+        response.set_cookie(
+            "session_token",
+            result["session_token"],
+            httponly=True,
+            samesite="Lax"
+        )
+        return response
+
+    except requests.RequestException:
+        return jsonify({"error": "Backend unavailable"}), 503
+
+#checks session token before asking backend for data
 @app.route("/api/finishedgoods")
+def finished_goods():
+    token = request.cookies.get("session_token")
+    if not token:
+        return jsonify({"error": "Unauthorized"}), 401
 def get_finished_goods():
     conn = get_connection() #function imported from db.py
 
-    cur = conn.cursor(
-        cursor_factory=psycopg2.extras.RealDictCursor
+    resp = requests.get(
+        f"{BACKEND_URL}/finishedgoods",
+        headers={"Authorization": f"Bearer {token}"}
     )
 
-    #SQL query with PostgresSQL
-    cur.execute("""
-        SELECT finishedgoodid, finishedgoodname FROM 
-        tblfinishedgoods ORDER BY finishedgoodname;""")
-    
-    goods = cur.fetchall()
+    return jsonify(resp.json()), resp.status_code
 
-    cur.close()
-    conn.close()
+#deletes token once user is logged out
+@app.route("/api/logout", methods=["POST"])
+def logout():
+    token = request.cookies.get("session_token")
+    if token:
+        requests.post(
+            f"{BACKEND_URL}/logout",
+            headers={"Authorization": f"Bearer {token}"}
+        )
 
-    return jsonify(goods)
+    response = make_response(jsonify({"status": "logged out"}))
+    response.delete_cookie("session_token")
+    return response
 
+@app.route("/search")
+def search_page():
+    return render_template("search.html")
+
+@app.route("/api/search/finished-good-name")
+def proxy_finished_good_name_search():
+    name = request.args.get("finished_good_name")
+
+    resp = requests.get(
+        f"{BACKEND_URL}/finished-good-name-search",
+        params={"finished_good_name": name},
+        timeout=5
+    )
+
+    return jsonify(resp.json()), resp.status_code
+
+@app.route("/api/search/finished-good-id")
+def proxy_finished_good_id_search():
+    finished_good_id = request.args.get("finished_good_id")
+
+    resp = requests.get(
+        f"{BACKEND_URL}/finished-good-id-search",
+        params={"finished_good_id": finished_good_id},
+        timeout=5
+    )
+
+    return jsonify(resp.json()), resp.status_code
+
+#new updated search    
+@app.route("/api/search/finished-goods")
+def proxy_finished_goods_search():
+    search = request.args.get("search")
+
+    resp = requests.get(
+        f"{BACKEND_URL}/finished-goods",
+        params={"search": search},
+        timeout=5
+    )
+
+    return jsonify(resp.json()), resp.status_code
+
+#frontend product page endpoint
+@app.route("/product/<finished_good_id>")
+def product_page(finished_good_id):
+    return render_template("product.html")
 if __name__ == "__main__":
     #app.run(host='0.0.0.0', port=5000, debug=True)
     serve(app, host='0.0.0.0', port=5000)
