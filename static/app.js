@@ -1,28 +1,43 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // Password visibility toggle for login page
+    const togglePassword = document.getElementById("togglePassword");
+    const inputPassword = document.getElementById("inputPassword");
+    
+    if (togglePassword && inputPassword) {
+        togglePassword.addEventListener("click", function () {
+            const type = inputPassword.getAttribute("type") === "password" ? "text" : "password";
+            inputPassword.setAttribute("type", type);
+            this.classList.toggle("fa-eye");
+            this.classList.toggle("fa-eye-slash");
+        });
+    }
+
     // Display current user
     const username = sessionStorage.getItem("username");
     if (username) {
         document.getElementById("username").textContent = username;
     }
 
-    // Fetch finished goods
-    fetch("/api/finishedgoods")
-    .then(response => response.json())
-    .then(data => {
-        const table = document.getElementById("data-table");
+    // Fetch finished goods (only if data-table exists)
+    const table = document.getElementById("data-table");
+    if (table) {
+        fetch("/api/finished-goods")
+        .then(response => response.json())
+        .then(data => {
+            const results = data.results || [];
+            results.forEach(item => {
+                const row = document.createElement("tr");
 
-        data.forEach(item => {
-            const row = document.createElement("tr");
+                row.innerHTML = `
+                <td>${item.FinishedGoodID}</td>
+                <td>${item.FinishedGoodName}</td>
+                `;
 
-            row.innerHTML = `
-            <td>${item.finishedgoodid}</td>
-            <td>${item.finishedgoodname}</td>
-            `;
-
-            table.appendChild(row);
-        });
-    })
-    .catch(err => console.error("Error loading goods: ", err));
+                table.appendChild(row);
+            });
+        })
+        .catch(err => console.error("Error loading goods: ", err));
+    }
 
     // Handle logout
     document.getElementById("logout-link").addEventListener("click", async (e) => {
@@ -153,11 +168,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 const confirmPassword = document.getElementById('pm_confirmPassword').value;
 
                 if (!newPassword || !confirmPassword) {
-                    if (messageBox) { messageBox.textContent = 'Please enter and confirm your new password'; messageBox.classList.add('error'); messageBox.style.display = 'block'; }
+                    if (messageBox) { messageBox.textContent = 'Please enter and confirm your new password'; messageBox.classList.add('error'); messageBox.style.display = 'block'; messageBox.style.color= 'red'; }
                     return;
                 }
                 if (newPassword !== confirmPassword) {
-                    if (messageBox) { messageBox.textContent = 'Passwords do not match'; messageBox.classList.add('error'); messageBox.style.display = 'block'; }
+                    if (messageBox) { messageBox.textContent = 'Passwords do not match'; messageBox.classList.add('error'); messageBox.style.display = 'block'; messageBox.style.color= 'red'; }
                     return;
                 }
 
@@ -169,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                     const data = await res.json();
                     if (res.ok) {
-                        if (messageBox) { messageBox.textContent = data.message || 'Password reset successful'; messageBox.classList.add('success'); messageBox.style.display = 'block'; }
+                        if (messageBox) { messageBox.textContent = data.message || 'Password reset successful'; messageBox.classList.add('success'); messageBox.style.display = 'block'; messageBox.style.color= 'green'; }
                         setTimeout(() => { window.location.href = '/'; }, 1500);
                     } else {
                         if (messageBox) { messageBox.textContent = data.message || data.detail || 'Unable to reset password'; messageBox.classList.add('error'); messageBox.style.display = 'block'; }
@@ -223,6 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         messageBox.textContent = "Password reset link sent to your email. Please check your inbox.";
                         messageBox.classList.add("success");
                         messageBox.style.display = "block";
+                        messageBox.style.color = "green";
                     }
                     if (emailEl) emailEl.value = "";
                 } else {
@@ -230,6 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         messageBox.textContent = data.detail || data.message || "Email not found in our system";
                         messageBox.classList.add("error");
                         messageBox.style.display = "block";
+                        messageBox.style.color = "red";
                     }
                 }
             } catch (error) {
@@ -237,6 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     messageBox.textContent = "An error occurred. Please try again.";
                     messageBox.classList.add("error");
                     messageBox.style.display = "block";
+                    messageBox.style.color = "red";
                 }
                 console.error("Password reset error:", error);
             }
@@ -256,14 +274,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const confirmPassword = document.getElementById("confirmPassword").value;
         const msg = document.getElementById("resetMessage");
 
-        if (msg) { msg.style.display = 'none'; msg.textContent = ''; msg.className = 'message-box'; }
+        if (msg) { msg.style.display = 'none'; msg.textContent = ''; msg.className = 'message-box'; msg.style.color = ''; }
 
         if (!newPassword || !confirmPassword) {
-            if (msg) { msg.textContent = 'Please enter and confirm your new password'; msg.classList.add('error'); msg.style.display = 'block'; }
+            if (msg) { msg.textContent = 'Please enter and confirm your new password'; msg.classList.add('error'); msg.style.display = 'block'; msg.style.color = 'black'; }
             return;
         }
         if (newPassword !== confirmPassword) {
-            if (msg) { msg.textContent = 'Passwords do not match'; msg.classList.add('error'); msg.style.display = 'block'; }
+            if (msg) { msg.textContent = 'Passwords do not match'; msg.classList.add('error'); msg.style.display = 'block'; msg.style.color = 'red'; }
             return;
         }
 
@@ -276,13 +294,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const data = await res.json();
             if (res.ok) {
-                if (msg) { msg.textContent = data.message || 'Password reset successful'; msg.classList.add('success'); msg.style.display = 'block'; }
+                if (msg) { msg.textContent = data.message || 'Password reset successful'; msg.classList.add('success'); msg.style.display = 'block'; msg.style.color = 'green'; }
                 setTimeout(() => { window.location.href = '/'; }, 2000);
             } else {
-                if (msg) { msg.textContent = data.message || data.detail || 'Unable to reset password'; msg.classList.add('error'); msg.style.display = 'block'; }
+                if (msg) { msg.textContent = data.message || data.detail || 'Unable to reset password'; msg.classList.add('error'); msg.style.display = 'block'; msg.style.color = 'red'; }
             }
         } catch (e) {
-            if (msg) { msg.textContent = 'An error occurred. Please try again.'; msg.classList.add('error'); msg.style.display = 'block'; }
+            if (msg) { msg.textContent = 'An error occurred. Please try again.'; msg.classList.add('error'); msg.style.display = 'block'; msg.style.color = 'red'; }
             console.error('Reset password error', e);
         }
     });

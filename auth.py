@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException, Request, Header, Query
 from pydantic import BaseModel, EmailStr
 from inventory import *
 from search import *
+from uuid import UUID
+
 
 router = APIRouter()
 
@@ -241,8 +243,62 @@ def delete_finished_good_endpoint(finished_good_id: str = Query(...)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.get("/finished-goods/{finished_good_id}")
+def read_finished_good(finished_good_id: str):
+    finished_good = get_finished_good_by_id(finished_good_id)
+    if not finished_good:
+        raise HTTPException(status_code=404, detail="Finished good not found")
 
-"""May need to correct this variable inputs"""
+    # Convert list to dict if needed
+    if isinstance(finished_good, list):
+        finished_good = finished_good[0]
+
+    # Fetch inventory
+    inventory_list = search_inventory_by_id(finished_good_id)
+    inventory_count = inventory_list[0]["AvailableInventory"] if inventory_list else 0
+
+    return {
+        "finished_good": {
+            "FinishedGoodID": finished_good["FinishedGoodID"],
+            "FinishedGoodName": finished_good["FinishedGoodName"]
+        },
+        "inventory": {"AvailableInventory": inventory_count}
+    }
+
+
+@router.get("/inventory/{finished_good_id}")
+def read_available_inventory(finished_good_id: str):
+    try:
+        return get_production_inventory_by_finishedgoodid(finished_good_id)
+    except Exception:
+        return {"AvailableInventory": 0}
+
+@router.get("/production-data/{finished_good_id}")
+def read_order_history(finished_good_id: str):
+    try:
+        return get_orders_by_finishedgoodid(finished_good_id)
+    except Exception:
+        return []
+
+@router.get("/inventory/raw-materials/{finished_good_id}")
+def read_raw_material_recipe_table(finished_good_id: str):
+    try:
+        data = get_raw_material_recipe(finished_good_id)
+        return {"raw_materials": data}  # already a list of dicts
+    except Exception:
+        return {"raw_materials": []}
+
+
+@router.get("/production-data/current-orders/{finished_good_id}")
+def read_current_order_table(finished_good_id: str):
+    try:
+        df = get_current_orders(finished_good_id)
+        return {"current_orders": df.to_dict(orient="records")}
+    except Exception:
+        return {"current_orders": []}
+
+
+""" """May need to correct this variable inputs"""
 @router.get("/inventory/{finished_good_id}")
 def read_available_inventory(item_id: UUID):
     try:
@@ -272,5 +328,5 @@ def read_current_order_table(item_id: UUID):
     try:
         return get_current_orders(item_id)
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) """
 
