@@ -207,6 +207,67 @@ def proxy_finished_goods_search():
 def product_page(finished_good_id):
     return render_template("product.html")
 
+# Users management route
+@app.route("/users")
+def users_page():
+    return render_template("users.html")
+
+# API endpoint to get all users
+@app.route("/api/users", methods=["GET"])
+def api_get_users():
+    try:
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cur.execute("""
+            SELECT username, isadmin
+            FROM tblusercredentials
+            ORDER BY username;
+        """)
+
+        results = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        return jsonify(results), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# API endpoint to add a new user
+@app.route("/api/users", methods=["POST"])
+def api_add_user():
+    try:
+        data = request.get_json()
+        username = data.get("username")
+        password = data.get("password")
+        is_admin = data.get("is_admin", False)
+
+        if not username or not password:
+            return jsonify({"status": "error", "message": "Username and password are required"}), 400
+
+        from inventory import add_user_credentials
+        result = add_user_credentials(username, password, is_admin)
+        return jsonify(result), 200
+
+    except ValueError as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": "An error occurred"}), 500
+
+# API endpoint to delete a user
+@app.route("/api/users/<username>", methods=["DELETE"])
+def api_delete_user(username):
+    try:
+        from inventory import delete_user_credentials
+        result = delete_user_credentials(username)
+        return jsonify(result), 200
+
+    except ValueError as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": "An error occurred"}), 500
+
     
 if __name__ == "__main__":
     #app.run(host='0.0.0.0', port=5000, debug=True)

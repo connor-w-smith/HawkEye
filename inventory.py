@@ -225,6 +225,9 @@ def delete_user_credentials(username):
             cur.execute("""DELETE FROM tblusercredentials 
                            WHERE username = %s""",
                            (str(username),))
+            
+            #commit the deletion to the database
+            conn.commit()
 
     except Exception as e:
         #rollback in case of data validity issues
