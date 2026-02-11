@@ -14,6 +14,7 @@ def get_active_orders():
         conn = get_connection()
         cur = conn.cursor()
         
+        #this uses aliases i think what is happening
         query = """
             SELECT ap.orderid, ap.target_quantity, ap.last_processed_timestamp, 
                    COALESCE(pd.partsproduced, 0) as current_count
