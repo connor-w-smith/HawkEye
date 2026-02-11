@@ -298,7 +298,9 @@ def read_current_order_table(finished_good_id: str):
         return {"current_orders": []}
 
 
-""" """May need to correct this variable inputs"""
+""" Ashley's Code Below. I believe she is rewriting the above functions, so I simply commented them to avoid conflicting function/var names."""
+
+""" May need to correct this variable inputs
 @router.get("/inventory/{finished_good_id}")
 def read_available_inventory(item_id: UUID):
     try:
