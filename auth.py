@@ -3,6 +3,7 @@ from pydantic import BaseModel, EmailStr
 from inventory import *
 from search import *
 from uuid import UUID
+from db import get_connection
 
 
 router = APIRouter()
@@ -40,6 +41,10 @@ class AddFinishedGood(BaseModel):
 
 class DeleteFinishedGood(BaseModel):
     finished_good_name: str
+
+class CreateProductionOrderRequest(BaseModel):
+    finishedgoodid: str
+    target_quantity: int
 
 class PasswordResetWithToken(BaseModel):
     email: EmailStr
@@ -292,3 +297,89 @@ def read_current_order_table(finished_good_id: str):
         return {"current_orders": df.to_dict(orient="records")}
     except Exception:
         return {"current_orders": []}
+
+
+@router.post("/create-production-order")
+def create_production_order_endpoint(data: CreateProductionOrderRequest):
+    try:
+        result = create_production_order(data.finishedgoodid, data.target_quantity)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+def create_production_order(finishedgoodid: str, target_quantity: int):
+    """
+    Creates a new production order in tblproductiondata.
+    The database trigger automatically creates a corresponding tracking row in tblactiveproduction.
+    
+    Args:
+        finishedgoodid (str): UUID of the product to produce
+        target_quantity (int): How many parts to produce
+    
+    Returns:
+        dict: {"status": "success", "orderid": order_id_value}
+    """
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        
+        # Insert new production order with partsproduced starting at 0
+        # The trigger automatically creates the tblactiveproduction row
+        cur.execute("""
+            INSERT INTO tblproductiondata (finishedgoodid, partsproduced, target_quantity)
+            VALUES (%s, 0, %s)
+            RETURNING orderid
+        """, (finishedgoodid, target_quantity))
+        
+        orderid = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return {
+            "status": "success",
+            "message": f"Production order created",
+            "orderid": orderid,
+            "target_quantity": target_quantity
+        }
+        
+    except Exception as e:
+        print(f"Error creating production order: {e}")
+        raise Exception(f"Failed to create production order: {str(e)}")
+
+
+""" Ashley's Code Below. I believe she is rewriting the above functions, so I simply commented them to avoid conflicting function/var names."""
+
+""" May need to correct this variable inputs
+@router.get("/inventory/{finished_good_id}")
+def read_available_inventory(item_id: UUID):
+    try:
+        #Call function from search.py
+        return get_production_inventory_by_finishedgoodid(item_id)
+
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.get("/production-data/{finished_good_id}")
+def read_order_history(item_id: UUID):
+    try:
+        return get_orders_by_finishedgoodid(item_id)
+
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.get("/inventory/{finished_good_id}")
+def read_raw_material_recipe_table(item_id: UUID):
+    try:
+        return get_raw_material_recipe(item_id)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.get("/production-data/{finished_good_id}")
+def read_current_order_table(item_id: UUID):
+    try:
+        return get_current_orders(item_id)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e)) """
+
