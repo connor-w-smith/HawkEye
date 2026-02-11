@@ -8,6 +8,8 @@ from waitress import serve
 # Importing inventory functions
 from inventory import user_login_verification 
 from db import get_connection
+from search import get_finished_good_by_id, search_inventory_by_id
+
 
 # Creating the Flask application
 # __name__ will tell Flask where the file is
@@ -59,21 +61,6 @@ def api_login():
     except requests.RequestException:
         return jsonify({"error": "Backend unavailable"}), 503
 
-#checks session token before asking backend for data
-@app.route("/api/finishedgoods")
-def finished_goods():
-    token = request.cookies.get("session_token")
-
-    if not token:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    resp = requests.get(
-        f"{BACKEND_URL}/finishedgoods",
-        headers={"Authorization": f"Bearer {token}"},
-        timeout=5
-    )
-
-    return jsonify(resp.json()), resp.status_code
 
 
 #deletes token once user is logged out
@@ -131,10 +118,92 @@ def proxy_finished_goods_search():
 
     return jsonify(resp.json()), resp.status_code
 
-#frontend product page endpoint
+# Specific route for a single finished good
+@app.route("/api/finished-goods/<finished_good_id>")
+def read_finished_good(finished_good_id):
+    try:
+        finished_good = get_finished_good_by_id(finished_good_id)
+        if not finished_good:
+            return jsonify({"error": "Finished good not found"}), 404
+
+        # Make sure it's a dict
+        if isinstance(finished_good, list):
+            finished_good = finished_good[0]
+
+        inventory_list = search_inventory_by_id(finished_good_id)
+        inventory_count = inventory_list[0]["AvailableInventory"] if inventory_list else 0
+
+        return jsonify({
+            "finished_good": {
+                "FinishedGoodID": finished_good["FinishedGoodID"],
+                "FinishedGoodName": finished_good["FinishedGoodName"]
+            },
+            "inventory": {"AvailableInventory": inventory_count}
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 404
+
+
+#Generic finished goods search/list route
+@app.route("/api/finished-goods")
+def finished_goods():
+    token = request.cookies.get("session_token")
+    search_query = request.args.get("search")
+    try:
+        resp = requests.get(
+            f"{BACKEND_URL}/finished-goods",
+            params={"search": search_query},
+            headers={"Authorization": f"Bearer {token}"} if token else {},
+            timeout=5
+        )
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        return jsonify({"error": str(e)}), 503
+
+    
+
+# Frontend product page
 @app.route("/product/<finished_good_id>")
 def product_page(finished_good_id):
-    return render_template("product.html")
+    print(f"Serving product page for ID: {finished_good_id}")  # Debug log
+    return render_template(
+        "product.html",
+        finished_good_id=finished_good_id
+    )
+
+@app.route("/api/production-data/<finished_good_id>")
+def proxy_production_data(finished_good_id):
+    try:
+        resp = requests.get(
+            f"{BACKEND_URL}/production-data/{finished_good_id}",
+            timeout=5
+        )
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        return jsonify({"error": str(e)}), 503
+
+@app.route("/api/inventory/raw-materials/<finished_good_id>")
+def proxy_raw_materials(finished_good_id):
+    try:
+        resp = requests.get(
+            f"{BACKEND_URL}/inventory/raw-materials/{finished_good_id}",
+            timeout=5
+        )
+        return jsonify(resp.json()), resp.status_code
+    except Exception:
+        return jsonify({"raw_materials": []}), 200
+        ç
+@app.route("/api/production-data/current-orders/<finished_good_id>")
+def proxy_current_orders(finished_good_id):
+    try:
+        resp = requests.get(
+            f"{BACKEND_URL}/production-data/current-orders/{finished_good_id}",
+            timeout=5
+        )
+        return jsonify(resp.json()), resp.status_code
+    except Exception:
+        return jsonify({"current_orders": []}), 200
 
     
 if __name__ == "__main__":
