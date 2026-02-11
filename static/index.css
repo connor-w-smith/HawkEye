@@ -104,3 +104,22 @@ h1 {
 .data-display tbody tr:last-child {
     border-bottom: none;
 }
+.search-container {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+#searchInput {
+    width: 400px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+#searchInput:focus {
+    outline: none;
+    border-color: #3a9ad9;
+    box-shadow: 0 0 6px rgba(58, 154, 217, 0.4);
+}

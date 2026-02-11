@@ -18,6 +18,7 @@ from db import get_connection
 from search import get_finished_good_by_id, search_inventory_by_id
 
 
+
 # Creating the Flask application
 # __name__ will tell Flask where the file is
 app = Flask(__name__)
@@ -264,7 +265,7 @@ def proxy_raw_materials(finished_good_id):
         return jsonify(resp.json()), resp.status_code
     except Exception:
         return jsonify({"raw_materials": []}), 200
-        ç
+        
 @app.route("/api/production-data/current-orders/<finished_good_id>")
 def proxy_current_orders(finished_good_id):
     try:
