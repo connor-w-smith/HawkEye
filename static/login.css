@@ -59,6 +59,17 @@ i {
     color: gray;
 }
 
+.toggle-password {
+    left: auto;
+    right: 10px;
+    cursor: pointer;
+    color: gray;
+}
+
+.toggle-password:hover {
+    color: #333;
+}
+
  input {
     width: 85%;
     padding-left: 35px;

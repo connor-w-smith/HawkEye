@@ -1,4 +1,17 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // Password visibility toggle for login page
+    const togglePassword = document.getElementById("togglePassword");
+    const inputPassword = document.getElementById("inputPassword");
+    
+    if (togglePassword && inputPassword) {
+        togglePassword.addEventListener("click", function () {
+            const type = inputPassword.getAttribute("type") === "password" ? "text" : "password";
+            inputPassword.setAttribute("type", type);
+            this.classList.toggle("fa-eye");
+            this.classList.toggle("fa-eye-slash");
+        });
+    }
+
     // Display current user
     const username = sessionStorage.getItem("username");
     if (username) {
