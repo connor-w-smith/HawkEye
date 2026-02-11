@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>HawkEye | Product</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='product.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='navbar.css') }}">
 </head>
 <body>
 
@@ -16,6 +17,22 @@
         <a href="/">Log out</a>
     </div>
 </div>
+
+<!-- Responsive Navbar -->
+<nav class="navbar">
+    <div class="nav-container">
+        <ul class="nav-links">
+            <li><a href="/index" class="nav-link">Finished Products</a></li>
+            <li><a href="/search" class="nav-link">Search</a></li>
+            <li><a href="/users" class="nav-link">Users</a></li>
+        </ul>
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+</nav>
 
 <!-- Page Header -->
 <div class="page-header">
@@ -248,5 +265,8 @@
 
     
 
+<script src="/static/app.js"></script>
+<script src="/static/search.js"></script>
+<script src="/static/navbar.js"></script>
 </body>
 </html>
