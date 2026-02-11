@@ -152,6 +152,10 @@ def logout():
 def search_page():
     return render_template("search.html")
 
+@app.route("/start-order")
+def start_order_page():
+    return render_template("start-order.html")
+
 @app.route("/api/search/finished-good-name")
 def proxy_finished_good_name_search():
     name = request.args.get("finished_good_name")
@@ -187,6 +191,18 @@ def proxy_finished_goods_search():
         timeout=5
     )
 
+    return jsonify(resp.json()), resp.status_code
+
+@app.route("/api/create-production-order", methods=["POST"])
+def proxy_create_production_order():
+    data = request.get_json()
+    
+    resp = requests.post(
+        f"{BACKEND_URL}/create-production-order",
+        json=data,
+        timeout=5
+    )
+    
     return jsonify(resp.json()), resp.status_code
 
 # Specific route for a single finished good
