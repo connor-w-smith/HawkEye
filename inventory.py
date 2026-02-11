@@ -241,8 +241,8 @@ def delete_user_credentials(username):
 #args: username(Email address), raw_token, Returns True(Sent) or False(Not Sent)
 def send_recovery_email(username, raw_token):
     #creating variables for our email
-    sender_email = "hawkeyeinventorysystems@gmail.com"
-    app_password = "vduv utnk slzo idfr"
+    sender_email = "h.einventorysystems@gmail.com"
+    app_password = "jtco shcy myej oesr"
 
     #Create email to send
     subject = "Password Recovery Code"
