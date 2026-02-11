@@ -18,6 +18,7 @@ from db import get_connection
 from search import get_finished_good_by_id, search_inventory_by_id
 
 
+
 # Creating the Flask application
 # __name__ will tell Flask where the file is
 app = Flask(__name__)
@@ -152,6 +153,10 @@ def logout():
 def search_page():
     return render_template("search.html")
 
+@app.route("/start-order")
+def start_order_page():
+    return render_template("start-order.html")
+
 @app.route("/api/search/finished-good-name")
 def proxy_finished_good_name_search():
     name = request.args.get("finished_good_name")
@@ -187,6 +192,18 @@ def proxy_finished_goods_search():
         timeout=5
     )
 
+    return jsonify(resp.json()), resp.status_code
+
+@app.route("/api/create-production-order", methods=["POST"])
+def proxy_create_production_order():
+    data = request.get_json()
+    
+    resp = requests.post(
+        f"{BACKEND_URL}/create-production-order",
+        json=data,
+        timeout=5
+    )
+    
     return jsonify(resp.json()), resp.status_code
 
 # Specific route for a single finished good
@@ -264,7 +281,7 @@ def proxy_raw_materials(finished_good_id):
         return jsonify(resp.json()), resp.status_code
     except Exception:
         return jsonify({"raw_materials": []}), 200
-        ç
+        
 @app.route("/api/production-data/current-orders/<finished_good_id>")
 def proxy_current_orders(finished_good_id):
     try:
