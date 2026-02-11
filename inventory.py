@@ -244,14 +244,47 @@ def send_recovery_email(username, raw_token):
     sender_email = "h.einventorysystems@gmail.com"
     app_password = "jtco shcy myej oesr"
 
-    #Create email to send
-    subject = "Password Recovery Code"
-    body = f"Hello,\n\nYour recovery code is {raw_token}\n\nThis token will expire in 15 minutes."
+    #Create the password reset link
+    base_url = "http://127.0.0.1:5000"  # Update this to your production URL when deploying
+    reset_link = f"{base_url}/reset-password?token={urllib.parse.quote(raw_token)}&email={urllib.parse.quote(username)}"
 
-    msg = MIMEText(body)
+    #Create email to send with HTML
+    subject = "Password Recovery Link"
+    
+    # Plain text version
+    text_body = f"""Hello,
+
+Click the link below to reset your password:
+
+{reset_link}
+
+This link will expire in 15 minutes.
+
+If you did not request a password reset, please ignore this email."""
+
+    # HTML version with clickable link
+    html_body = f"""
+    <html>
+        <body>
+            <p>Hello,</p>
+            <p>Click the link below to reset your password:</p>
+            <p><a href="{reset_link}">Reset Password Here</a></p>
+            <p>This link will expire in 15 minutes.</p>
+            <p>If you did not request a password reset, please ignore this email.</p>
+        </body>
+    </html>
+    """
+
+    msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
     msg['From'] = sender_email
     msg['To'] = username
+    
+    # Attach both plain text and HTML versions
+    part1 = MIMEText(text_body, 'plain')
+    part2 = MIMEText(html_body, 'html')
+    msg.attach(part1)
+    msg.attach(part2)
 
     try:
         #connect to Gmail's SMTP server on port 587
@@ -267,7 +300,7 @@ def send_recovery_email(username, raw_token):
 
 
 #function to reset password if forgotten
-#arg: username (email), returns: success message
+#arg: username (email), returns: raw_token (for sending in email)
 def password_recovery(username):
 
     #open connection
@@ -302,13 +335,8 @@ def password_recovery(username):
             #commit changes
             conn.commit()
 
-            email_sent = send_recovery_email(username, raw_token)
-
-            if email_sent:
-                return token_hash
-
-            else:
-                return None
+            # Return raw token so the calling function can send the email
+            return raw_token
 
     except Exception as e:
         #roll back in case of error
