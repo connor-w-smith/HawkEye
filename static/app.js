@@ -18,24 +18,26 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("username").textContent = username;
     }
 
-    // Fetch finished goods
-    fetch("/api/finishedgoods")
-    .then(response => response.json())
-    .then(data => {
-        const table = document.getElementById("data-table");
+    // Fetch finished goods (only if data-table exists)
+    const table = document.getElementById("data-table");
+    if (table) {
+        fetch("/api/finished-goods")
+        .then(response => response.json())
+        .then(data => {
+            const results = data.results || [];
+            results.forEach(item => {
+                const row = document.createElement("tr");
 
-        data.forEach(item => {
-            const row = document.createElement("tr");
+                row.innerHTML = `
+                <td>${item.FinishedGoodID}</td>
+                <td>${item.FinishedGoodName}</td>
+                `;
 
-            row.innerHTML = `
-            <td>${item.finishedgoodid}</td>
-            <td>${item.finishedgoodname}</td>
-            `;
-
-            table.appendChild(row);
-        });
-    })
-    .catch(err => console.error("Error loading goods: ", err));
+                table.appendChild(row);
+            });
+        })
+        .catch(err => console.error("Error loading goods: ", err));
+    }
 
     // Handle logout
     document.getElementById("logout-link").addEventListener("click", async (e) => {

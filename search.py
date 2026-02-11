@@ -1,4 +1,5 @@
 from db import get_connection
+import psycopg2
 
 
 
