@@ -265,7 +265,7 @@ def proxy_raw_materials(finished_good_id):
         return jsonify(resp.json()), resp.status_code
     except Exception:
         return jsonify({"raw_materials": []}), 200
-        ç
+        
 @app.route("/api/production-data/current-orders/<finished_good_id>")
 def proxy_current_orders(finished_good_id):
     try:
