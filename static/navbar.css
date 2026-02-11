@@ -1,0 +1,118 @@
+/* Responsive Navbar Styling */
+.navbar {
+    background-color: #f5f7fa;
+    padding: 0;
+    margin: 0;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.nav-container {
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.nav-links li {
+    margin: 0;
+    padding: 0;
+}
+
+.nav-links a {
+    display: block;
+    padding: 15px 20px;
+    color: #333;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+    font-weight: 500;
+}
+
+.nav-links a:hover {
+    background-color: #e9ecef;
+    border-bottom-color: #ffa500;
+    color: #ffa500;
+}
+
+.nav-links a.active {
+    border-bottom-color: #ffa500;
+    color: #ffa500;
+}
+
+/* Hamburger Menu for Mobile */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    cursor: pointer;
+    margin-left: auto;
+}
+
+.hamburger span {
+    width: 25px;
+    height: 3px;
+    background-color: #333;
+    margin: 5px 0;
+    transition: 0.3s;
+    border-radius: 2px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .hamburger {
+        display: flex;
+    }
+
+    .nav-links {
+        position: absolute;
+        top: 75px;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        background-color: #f5f7fa;
+        width: 100%;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        border-bottom: 2px solid #e0e0e0;
+    }
+
+    .nav-links.active {
+        max-height: 500px;
+    }
+
+    .nav-links a {
+        padding: 15px 20px;
+        border-bottom: 1px solid #e0e0e0;
+        border-right: 3px solid transparent;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+        border-bottom: 1px solid #e0e0e0;
+        border-right-color: #ffa500;
+        background-color: #e9ecef;
+    }
+
+    .nav-container {
+        padding: 0 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-links a {
+        padding: 12px 15px;
+        font-size: 14px;
+    }
+
+    .hamburger span {
+        width: 22px;
+    }
+}
