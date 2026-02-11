@@ -36,7 +36,7 @@
 
 <!-- Page Header -->
 <div class="page-header">
-    <h1 id="finished-good-name">Finished Good Name</h1>
+    <h1 id="finished-good-name">Loading...</h1>
 
     <div class="time-filters">
         <button>Last 7 Days</button>
@@ -47,7 +47,7 @@
 
 <!-- Status Banner -->
 <div class="status-banner">
-    <p>No active production orders</p>
+    <p id="status-text">No active production orders</p>
 </div>
 
 <!-- Main Content -->
@@ -56,13 +56,13 @@
     <!-- Live Counter -->
     <div class="card live-counter">
         <h2>Live Counter</h2>
-        <div class="counter-value">1,420</div>
-        <p class="sensor-label">SENSOR-07</p>
+        <div class="counter-value" id="live-counter">--</div>
+        <p class="sensor-label" id="sensor-id">--</p>
 
         <div class="progress-bar">
-            <div class="progress-fill" style="width: 71%;"></div>
+            <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
         </div>
-        <p class="progress-text">71% - Parts Made so far</p>
+        <p class="progress-text" id="progress-text">--% - Parts Made so far</p>
     </div>
 
     <!-- Inventory -->
@@ -76,24 +76,194 @@
                     <th>Units</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr>
-                    <td>Finished Good A</td>
-                    <td>3,450</td>
-                </tr>
-                <tr>
-                    <td>Finished Good B</td>
-                    <td>1,080</td>
-                </tr>
-                <tr>
-                    <td>Finished Good C</td>
-                    <td>720</td>
-                </tr>
+            <tbody id="inventory-table">
+                <!-- Filled dynamically -->
             </tbody>
         </table>
     </div>
 
+
+<!-- Production History -->
+<div class="card production-history">
+    <h2>Production History</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Parts Produced</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+            </tr>
+        </thead>
+        <tbody id="production-history-body"></tbody>
+    </table>
 </div>
+
+<!-- Raw Materials -->
+<div class="card raw-materials">
+    <h2>Raw Materials</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Raw Material</th>
+                <th>Consumption per Part</th>
+            </tr>
+        </thead>
+        <tbody id="raw-materials-body"></tbody>
+    </table>
+</div>
+</div>
+
+<script>
+    const FINISHED_GOOD_ID = "{{ finished_good_id }}";
+    
+    // Helper to safely update text
+    function setText(id, text) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    }
+    
+    // =====================
+    // Load Product + Inventory
+    // =====================
+    async function loadProduct() {
+        try {
+            const resp = await fetch(`/api/finished-goods/${FINISHED_GOOD_ID}`);
+            if (!resp.ok) throw new Error("Failed to fetch product data");
+    
+            const data = await resp.json();
+            console.log("Finished Good:", data);
+    
+            // Update product name
+            setText("finished-good-name", data.finished_good.FinishedGoodName);
+    
+            // Update inventory table
+            const inventory = data.inventory.AvailableInventory ?? 0;
+            document.getElementById("inventory-table").innerHTML = `
+                <tr>
+                    <td>${data.finished_good.FinishedGoodName}</td>
+                    <td>${inventory}</td>
+                </tr>
+            `;
+        } catch (err) {
+            console.error("Error loading product:", err);
+            setText("finished-good-name", "Product not found");
+            document.getElementById("inventory-table").innerHTML = "";
+        }
+    }
+    
+    // =====================
+    // Load Production History
+    // =====================
+    async function loadProductionHistory() {
+        try {
+            const resp = await fetch(`/api/production-data/${FINISHED_GOOD_ID}`);
+            if (!resp.ok) throw new Error("Failed to fetch production history");
+    
+            const orders = await resp.json();
+            console.log("Production history:", orders);
+    
+            const tbody = document.getElementById("production-history-body");
+            if (!tbody) return; // skip if no placeholder
+    
+            tbody.innerHTML = "";
+            orders.forEach(o => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${o.orderid ?? "--"}</td>
+                        <td>${o.partsproduced ?? "--"}</td>
+                        <td>${o.productionstartdate ?? "--"}</td>
+                        <td>${o.productionenddate ?? "--"}</td>
+                    </tr>
+                `;
+            });
+        } catch (err) {
+            console.info("Production history unavailable");
+        }
+    }
+    
+    // =====================
+    // Load Raw Materials
+    // =====================
+    async function loadRawMaterials() {
+        try {
+            const resp = await fetch(`/api/inventory/raw-materials/${FINISHED_GOOD_ID}`);
+            if (!resp.ok) throw new Error("Failed to fetch raw materials");
+    
+            const data = await resp.json();
+            console.log("Raw materials:", data);
+    
+            const tbody = document.getElementById("raw-materials-body");
+            if (!tbody) return;
+    
+            tbody.innerHTML = "";
+            (data.raw_materials || []).forEach(rm => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${rm["Raw Material Name"] ?? "--"}</td>
+                        <td>${rm["Consumption Per Part Produced"] ?? "--"}</td>
+                    </tr>
+                `;
+            });
+        } catch (err) {
+            console.info("Raw materials unavailable");
+        }
+    }
+    
+    // =====================
+    // Load Current Orders / Live Counter
+    // =====================
+    async function loadCurrentOrders() {
+        try {
+            const resp = await fetch(`/api/production-data/current-orders/${FINISHED_GOOD_ID}`);
+            if (!resp.ok) throw new Error("Failed to fetch current orders");
+    
+            const data = await resp.json();
+            console.log("Current orders:", data);
+    
+            const orders = data.current_orders || [];
+            if (orders.length === 0) {
+                setText("status-text", "No active production orders");
+                setText("live-counter", "--");
+                setText("sensor-id", "--");
+                setText("progress-text", "--% - Parts Made so far");
+                document.getElementById("progress-fill").style.width = "0%";
+                return;
+            }
+    
+            // Just take the first active order for display
+            const order = orders[0];
+            setText("status-text", "Active production order running");
+            setText("live-counter", order["Parts Made"] ?? "--");
+            setText("sensor-id", `SENSOR-${order["Sensor ID"] ?? "--"}`);
+    
+            // Progress bar (placeholder target, replace when DB has target)
+            const target = 1000;
+            const percent = Math.min(Math.round((order["Parts Made"] / target) * 100), 100);
+            document.getElementById("progress-fill").style.width = percent + "%";
+            setText("progress-text", percent + "% - Parts Made so far");
+    
+        } catch (err) {
+            console.info("Current orders unavailable");
+        }
+    }
+    
+    // =====================
+    // Load everything
+    // =====================
+    function init() {
+        loadProduct();
+        loadProductionHistory();
+        loadRawMaterials();
+        loadCurrentOrders();
+    }
+    
+    window.addEventListener("DOMContentLoaded", init);
+</script>
+    
+
+
+    
 
 <script src="/static/app.js"></script>
 <script src="/static/search.js"></script>
