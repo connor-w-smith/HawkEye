@@ -15,7 +15,8 @@ import psycopg2.extras
 # Importing inventory functions
 from inventory import password_recovery, reset_password_with_token  
 from db import get_connection
-from search import get_finished_good_by_id, search_inventory_by_id
+from search import get_finished_good_by_id
+
 
 
 # Creating the Flask application

@@ -20,8 +20,44 @@ import psycopg2
 # def get_current_orders(finishedgoodid):
 
 # def get_user_credentials_table():
+def search_finished_goods_fuzzy(search: str):
+    conn = get_connection()
 
+    try:
+        with conn.cursor() as cur:
 
+            if search == "":
+                cur.execute("""
+                    SELECT FinishedGoodID, FinishedGoodName
+                    FROM tblFinishedGoods
+                    ORDER BY FinishedGoodName
+                """)
+            else:
+                like_pattern = f"%{search}%"
+
+                cur.execute("""
+                    SELECT FinishedGoodID, FinishedGoodName
+                    FROM tblFinishedGoods
+                    WHERE
+                        CAST(FinishedGoodID AS TEXT) ILIKE %s
+                        OR FinishedGoodName ILIKE %s
+                    ORDER BY FinishedGoodName
+                """, (like_pattern, like_pattern))
+
+            rows = cur.fetchall()
+
+            return [
+                {
+                    "FinishedGoodID": r[0],
+                    "FinishedGoodName": r[1]
+                }
+                for r in rows
+            ]
+
+    finally:
+        conn.close()
+
+'''
 #searches tblfinishedgoods using finishedgoodname
 def search_finished_by_name(finished_name: str):
     #open db connection
@@ -130,7 +166,7 @@ def search_inventory_by_id(finished_id: str):
     finally:
         #ensure connection is closed
         conn.close()
-
+'''
 
 def search_inventory_by_name(finished_name: str):
     #open db connection

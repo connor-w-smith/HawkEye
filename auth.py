@@ -128,19 +128,14 @@ def logout(authorization: str = Header(...)):
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid session")
 
-#new backend endpoint for search
+#finished goods search endpoint
 @router.get("/finished-goods")
 def finished_goods_search(search: str | None = None):
     try:
-        #return all on empty search
-        if not search:
-            results = search_finished_by_name("")
-        #ID search
-        elif len(search) == 36:
-            results = search_finished_by_id(search)
-        #otherwise name search
-        else:
-            results = search_finished_by_name(search)
+        search = (search or "").strip()
+
+        # Always call ONE function that searches both fields
+        results = search_finished_goods_fuzzy(search)
 
         return {
             "status": "success",
@@ -150,6 +145,7 @@ def finished_goods_search(search: str | None = None):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 '''
 legacy code
 @router.get("/finished-good-name-search")
