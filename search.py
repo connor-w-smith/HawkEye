@@ -57,7 +57,6 @@ def search_finished_goods_fuzzy(search: str):
     finally:
         conn.close()
 
-'''
 #searches tblfinishedgoods using finishedgoodname
 def search_finished_by_name(finished_name: str):
     #open db connection
@@ -166,7 +165,7 @@ def search_inventory_by_id(finished_id: str):
     finally:
         #ensure connection is closed
         conn.close()
-'''
+
 
 def search_inventory_by_name(finished_name: str):
     #open db connection
