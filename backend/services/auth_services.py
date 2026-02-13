@@ -1,4 +1,4 @@
-from db import get_connection
+from ...db import get_connection
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
