@@ -77,7 +77,8 @@ h1 {
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0, .05);
-    margin: auto;
+    margin-right: 50px;
+    float: right;
 }
 
 .data-display th,
@@ -104,6 +105,82 @@ h1 {
 .data-display tbody tr:last-child {
     border-bottom: none;
 }
+
+/*Start of the search table styling*/
+.search-data-display {
+    margin: 20px auto 0 auto;
+    width: 50%;
+    border-collapse: collapse;
+    background: orange;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0, .05);
+}
+
+.search-data-display th,
+.search-data-display td {
+    padding: 12px 16px;
+    text-align: left;
+}
+
+.search-data-display thead {
+    background: linear-gradient(90deg, #3a9ad9, #1c6ba0);
+    color: white;
+}
+
+.search-data-display tbody tr {
+    background: white;
+    transition: background 0.3s;
+    border-bottom: 1px solid black;
+}
+
+.search-data-display tbody tr:hover {
+    background: #ffa500;
+}
+
+.search-data-display tbody tr:last-child {
+    border-bottom: none;
+}
+
+/*Start of the sensor data display styling*/
+.sensor-data-display {
+    margin-top: 20px;
+    width: 40%;
+    border-collapse: collapse;
+    background: orange;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0, .05);
+    float: left;
+    margin-left: 20px;
+}
+
+.sensor-data-display th,
+.sensor-data-display td {
+    padding: 12px 16px;
+    text-align: left;
+}
+
+.sensor-data-display thead {
+    background: linear-gradient(90deg, #3a9ad9, #1c6ba0);
+    color: white;
+}
+
+
+.sensor-data-display tbody tr {
+    background: white;
+    transition: background 0.3s;
+    border-bottom: 1px solid black;
+}
+
+.sensor-data-display tbody tr:hover {
+    background: #ffa500;
+}
+
+.sensor-data-display tbody tr:last-child {
+    border-bottom: none;
+}
+
 .search-container {
     text-align: center;
     margin-bottom: 30px;
