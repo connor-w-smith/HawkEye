@@ -45,6 +45,7 @@
     </div>
 
     <table class="sensor-data-display">
+         <caption>Sensor Production Amounts</caption>
         <thead>
             <tr>
                 <th>Sensor ID</th>
@@ -62,7 +63,29 @@
         </thead>
     </table>
 
+        <table class="packaging-data-display">
+         <caption>Currently Packaging</caption>
+        <thead>
+            <tr>
+                <th>Order Number</th>
+                <th>Finished Good</th>
+                <th>Sensor ID</th>
+                <th>Parts Produced</th>
+            </tr>
+            <tbody id="packaging-data-table">
+                <!--Temporary Data-->
+                <tr>
+                    <td>Order #1234</td>
+                    <td>Widget A</td>
+                    <td>Sensor 1</td>
+                    <td>500 units</td>
+                </tr>
+            </tbody>
+        </thead>
+    </table>
+
     <table class="data-display">
+        <caption>Available Inventory</caption>
         <thead>
             <tr>
                 <th>ID</th>
