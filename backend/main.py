@@ -1,39 +1,44 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-
 from pydantic import BaseModel
+import uuid
 import psycopg2
 import psycopg2.extras
-import uuid
 
-
-from inventory import *
-from search import *
 from db import get_connection
-from auth import router as auth_router
+#from inventory import add_inventory
 
+# Import routers ONLY from api package
+from .api import (
+    auth_router,
+    search_router,
+    order_router,
+    user_router,
+    product_router,
+    material_router
+)
 
-###use uvicorn to run
-#uvicorn main:app --reload
-
-###code to open psql for database
-#psql -h 98.92.53.251 -U postgres -d postgres
-
-#start fast api
 app = FastAPI(title="HawkEye Backend")
 
-#auth.py
-app.include_router(auth_router)
+# Include all routers
+app.include_router(auth_router, prefix="/auth", tags=["Auth"])
+app.include_router(search_router)
+app.include_router(order_router)
+app.include_router(user_router)
+app.include_router(product_router)
+app.include_router(material_router)
 
-#request validation
+# =============================
+# Request validation model
+# =============================
 class ManualEntry(BaseModel):
     finished_good_id: uuid.UUID
     quantity: int
 
-##test##
-
-# serve templates and static assets
+# =============================
+# Templates & Static
+# =============================
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -41,7 +46,9 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 def search_page(request: Request):
     return templates.TemplateResponse("search.html", {"request": request})
 
-#connects to database and sends data to web app @ /finishedgoods
+# =============================
+# Finished Goods Endpoint
+# =============================
 @app.get("/finishedgoods")
 def get_finished_goods():
     try:
@@ -64,14 +71,14 @@ def get_finished_goods():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-#http endpoint
+# =============================
+# Manual Inventory Endpoint
+# =============================
 @app.post("/inventory/manual")
 def manual_inventory(entry: ManualEntry):
-    #positive validation
     if entry.quantity <= 0:
         raise HTTPException(status_code=400, detail="Quantity must be positive")
 
-    #inventory addition
     try:
         add_inventory(entry.finished_good_id, entry.quantity)
     except ValueError as e:
@@ -80,5 +87,4 @@ def manual_inventory(entry: ManualEntry):
         raise HTTPException(status_code=500, detail="Database error")
 
     return {"status": "inventory updated"}
-
 

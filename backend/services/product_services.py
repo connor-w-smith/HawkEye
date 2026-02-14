@@ -1,6 +1,6 @@
 import uuid6
 
-from ...db import get_connection
+from db import get_connection
 
 # Adds a new finished to tblfinishedgoods,
 # arg:finishedgoodname, returns: finishedgoodid

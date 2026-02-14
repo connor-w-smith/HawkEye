@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 import bcrypt
 
-from ...db import get_connection
+from db import get_connection
 
 
 # function sends the email with the recovery token to the user

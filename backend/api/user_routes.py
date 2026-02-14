@@ -1,3 +1,34 @@
+"""
+===========================================
+user_routes.py
+===========================================
+Purpose:
+Defines all user-related API endpoints.
+
+This file ONLY contains:
+- FastAPI route definitions
+- Request validation
+- HTTPException handling
+
+Business logic is handled in:
+services/user_services.py
+
+Models are defined in:
+models/user_models.py
+"""
+
+from fastapi import APIRouter, HTTPException
+from ..services.user_services import (
+    password_recovery,
+    send_recovery_email,
+    #get_user_credentials_table
+)
+from ..models.user_models import PasswordResetRequest
+
+router = APIRouter(
+    prefix="/users",
+    tags=["Users"]
+)
 
 
 #calls password reset

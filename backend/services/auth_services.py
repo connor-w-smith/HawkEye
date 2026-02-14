@@ -1,4 +1,4 @@
-from ...db import get_connection
+from db import get_connection
 from datetime import datetime, timedelta
 
 import bcrypt

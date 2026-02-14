@@ -25,7 +25,19 @@ app = Flask(__name__)
 
 BACKEND_URL = "http://127.0.0.1:8000"
 
-
+# in Flask dev server, using requests
+@app.route("/auth/<path:path>", methods=["GET", "POST"])
+def proxy_auth(path):
+    import requests
+    resp = requests.request(
+        method=request.method,
+        url=f"http://127.0.0.1:8000/auth/{path}",
+        headers={key: value for key, value in request.headers},
+        data=request.get_data(),
+        cookies=request.cookies,
+        allow_redirects=False,
+    )
+    return (resp.content, resp.status_code, resp.headers.items())
 #This route runs when someone visits the root URL
 @app.route("/index")
 def index():

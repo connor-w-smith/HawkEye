@@ -1,3 +1,37 @@
+"""
+===========================================
+order_routes.py
+===========================================
+Purpose:
+Defines all production order-related API endpoints.
+
+This file ONLY contains:
+- FastAPI route definitions
+- Request validation
+- HTTPException handling
+
+Business logic is handled in:
+services/order_services.py
+
+Models are defined in:
+models/order_models.py
+"""
+
+from fastapi import APIRouter, HTTPException
+'''
+not implemented yet ;p
+from ..services.order_services import (
+    get_orders_by_finishedgoodid,
+    get_current_orders,
+    create_production_order as create_production_order_service
+)
+'''
+from ..models.order_models import CreateProductionOrderRequest
+
+router = APIRouter(
+    prefix="/orders",
+    tags=["Orders"]
+)
 
 
 @router.get("/production-data/{finished_good_id}")
@@ -17,6 +51,8 @@ def read_current_order_table(finished_good_id: str):
         return {"current_orders": []}
 
 #TODO: Break this apart and add DB portion to order_services file
+# Create a new production order
+@router.post("/create")
 def create_production_order(finishedgoodid: str, target_quantity: int):
     """
     Creates a new production order in tblproductiondata.

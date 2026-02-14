@@ -554,9 +554,10 @@ def add_finished_good(finished_good_name):
 
             #Insert new record, passing in both the UUID and FinishedGoodName
             cur.execute("""
-                INSERT INTO tblfinishedgoods 
-                    (finishedgoodid, finishedgoodname)
-                Values (%s, %s)""",
+                #INSERT INTO tblfinishedgoods 
+                   # (finishedgoodid, finishedgoodname)
+               # Values (%s, %s)
+               """,
                         (str(new_id), str(finished_good_name)))
 
         #If everything passed commit the change
@@ -588,9 +589,9 @@ def delete_finished_good(finished_good_name): #Can add an id argument if needed
 
             # Check that the FinishedGoodName exists
             cur.execute("""
-                    SELECT 1
-                    FROM tblfinishedgoods
-                    WHERE finishedgoodname = %s
+                    #SELECT 1
+                    #FROM tblfinishedgoods
+                    #WHERE finishedgoodname = %s
                 """, (str(finished_good_name),))
 
             # If no row is returned, the ID is invalid
@@ -599,8 +600,8 @@ def delete_finished_good(finished_good_name): #Can add an id argument if needed
 
             #Delete finished good name record
             cur.execute("""
-                DELETE FROM tblfinishedgoods 
-                WHERE finishedgoodname = %s
+                #DELETE FROM tblfinishedgoods 
+                #WHERE finishedgoodname = %s
                 """, (str(finished_good_name),))
 
         #Commit the transaction
@@ -633,9 +634,9 @@ def get_finished_good(finished_good_name):
 
             # Execute search query
             cur.execute("""
-                    SELECT finishedgoodid 
-                    FROM tblfinishedgoods 
-                    WHERE finishedgoodname = %s
+                    #SELECT finishedgoodid 
+                    #FROM tblfinishedgoods 
+                    #WHERE finishedgoodname = %s
                 """, (str(finished_good_name),))
 
             # Fetch the result

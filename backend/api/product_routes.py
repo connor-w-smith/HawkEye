@@ -1,4 +1,46 @@
-import router
+"""
+===========================================
+product_routes.py
+===========================================
+Purpose:
+Defines all product and inventory-related API endpoints.
+
+This file ONLY contains:
+- FastAPI route definitions
+- Request validation
+- HTTPException handling
+
+Business logic is handled in:
+services/product_services.py
+
+Models are defined in:
+models/product_models.py
+"""
+
+from fastapi import APIRouter, HTTPException, Query
+
+
+from ..models.product_models import (
+    AddFinishedGood,
+    DeleteFinishedGood,
+)
+
+from ..services.product_services import (
+    add_finished_good,
+    delete_finished_good,
+    add_inventory,
+    delete_inventory,
+)
+
+from ..services.search_services import (
+    search_finished_goods_fuzzy,
+    search_inventory_by_id,
+)
+
+router = APIRouter(
+    prefix="/products",
+    tags=["Products"]
+)
 
 
 #finished goods search endpoint
@@ -29,13 +71,14 @@ def add_finished_good_endpoint(data: AddFinishedGood):
         #Convert errors to HTTP responses
         raise HTTPException(status_code=400, detail=str(e))
 
-def delete_finished_good_endpoint(finished_good_id: str = Query(...)):
+@router.delete("/delete-finished-good")
+def delete_finished_good_endpoint(data: DeleteFinishedGood):
     try:
-        #call function from inventory.py
-        return delete_finished_good(finished_good_id)
+        return delete_finished_good(data.finished_good_name)
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 
 @router.get("/finished-goods/{finished_good_id}")
 def read_finished_good(finished_good_id: str):

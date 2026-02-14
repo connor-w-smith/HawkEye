@@ -1,6 +1,6 @@
 import psycopg2
 
-from ...db import get_connection
+from db import get_connection
 
 
 

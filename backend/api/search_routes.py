@@ -1,9 +1,37 @@
-"""ADD IN fastapi routers!!!!!"""
+"""
+===========================================
+search_routes.py
+===========================================
+Purpose:
+Defines all search-related API endpoints.
 
+This file ONLY contains:
+- FastAPI route definitions
+- Request handling
+- HTTPException handling
 
-"""Finished Good table searches"""
+Business logic is handled in:
+services/search_services.py
 
+No Pydantic models are used for search routes.
+"""
+
+from fastapi import APIRouter, HTTPException
 from backend.services import search_finished_by_id
+
+from ..services.search_services import (
+    search_finished_goods_fuzzy,
+    search_finished_by_id,
+    search_inventory_by_id,
+    get_orders_by_finishedgoodid,
+    get_raw_material_recipe,
+    get_current_orders,
+)
+
+router = APIRouter(
+    prefix="/search",
+    tags=["Search"]
+)
 
 
 #finished goods search endpoint

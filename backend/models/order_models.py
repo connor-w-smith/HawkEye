@@ -1,4 +1,4 @@
-import BaseModel
+from pydantic import BaseModel
 
 
 class CreateProductionOrderRequest(BaseModel):

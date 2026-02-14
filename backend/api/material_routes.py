@@ -1,3 +1,30 @@
+"""
+===========================================
+material_routes.py
+===========================================
+Purpose:
+Defines all raw-material-related API endpoints.
+
+This file ONLY contains:
+- FastAPI route definitions
+- Request validation
+- HTTPException handling
+
+Business logic is handled in:
+services/material_services.py
+
+Models are defined in:
+models/material_models.py
+"""
+
+from fastapi import APIRouter, HTTPException
+from ..services.material_services import get_raw_material_recipe
+from ..models.material_models import RawMaterialRequest
+
+router = APIRouter(
+    prefix="/materials",
+    tags=["Materials"]
+)
 
 
 

@@ -1,5 +1,4 @@
-import BaseModel
-
+from pydantic import BaseModel
 
 class FinishedGoodNameRequest(BaseModel):
     finished_good_name: str
