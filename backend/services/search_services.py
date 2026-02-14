@@ -1,3 +1,5 @@
+import psycopg2
+
 from ...db import get_connection
 
 
@@ -163,3 +165,28 @@ def get_current_orders(finishedgoodid):
         {"FinishedGoodID": finishedgoodid, "OrderID": 5678, "SensorID": 2468, "PartsMade": 250},
     ]
     return all_orders
+
+def get_user_credentials_table():
+    # db connection
+    conn = get_connection()
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""SELECT username, isadmin
+                            FROM tblusercredentials""")
+
+            rows = cursor.fetchall()
+
+            if not rows:
+                raise ValueError(f"No data found in user credentials table")
+
+            else:
+                return rows
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(f"Database error: {error}")
+        raise
+
+    finally:
+        if conn:
+            conn.close()

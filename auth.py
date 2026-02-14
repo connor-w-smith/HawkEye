@@ -309,8 +309,8 @@ def create_production_order_endpoint(data: CreateProductionOrderRequest):
         return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-
+"""
+#TODO: Move this into order_services
 def create_production_order(finishedgoodid: str, target_quantity: int):
     """
     Creates a new production order in tblproductiondata.

@@ -239,7 +239,7 @@ def delete_user_credentials(username):
         conn.close()
 
     return {"status":"success"}
-'''
+
 #function sends the email with the recovery token to the user
 #args: username(Email address), raw_token, Returns True(Sent) or False(Not Sent)
 def send_recovery_email(username, raw_token):
@@ -300,7 +300,7 @@ If you did not request a password reset, please ignore this email."""
     except Exception as e:
         print(f"Error sending email: {e}")
         return False
-'''
+
 
 #function to reset password if forgotten
 #arg: username (email), returns: raw_token (for sending in email)
@@ -524,7 +524,7 @@ def delete_session(session_token):
 """
 
 """tblfinishedgoods functions"""
-
+"""
 # Adds a new finished to tblfinishedgoods,
 # arg:finishedgoodname, returns: finishedgoodid
 def add_finished_good(finished_good_name):
@@ -660,12 +660,12 @@ def get_finished_good(finished_good_name):
         conn.close()
 '''
 
-
+"""
 
 
 """TblProductionInventory Functions"""
 
-
+'''
 #Adds inventory quantity to finished good, if no finishedgood record exists, adds part and quantity to table
 #args: finishedgoodid, quantity, returns success statement
 def add_inventory(finished_good_id, quantity):
