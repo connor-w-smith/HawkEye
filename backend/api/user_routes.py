@@ -21,7 +21,7 @@ from fastapi import APIRouter, HTTPException
 from ..services.user_services import (
     password_recovery,
     send_recovery_email,
-    #get_user_credentials_table
+    get_user_credentials_table
 )
 from ..models.user_models import PasswordResetRequest
 
@@ -56,4 +56,7 @@ def request_password_reset(data: PasswordResetRequest):
 @router.get("/users")
 def get_users():
     #returns the users table with username and isadmin
-    return get_user_credentials_table()
+    rows = get_user_credentials_table()
+    # Convert tuples to dicts for JSON
+    users = [{"username": r[0], "isadmin": r[1]} for r in rows]
+    return users

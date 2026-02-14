@@ -26,13 +26,15 @@ app = Flask(__name__)
 BACKEND_URL = "http://127.0.0.1:8000"
 
 # in Flask dev server, using requests
-@app.route("/auth/<path:path>", methods=["GET", "POST"])
-def proxy_auth(path):
+@app.route("/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
+def proxy_all(path):
     import requests
+    # Forward everything to FastAPI
     resp = requests.request(
         method=request.method,
-        url=f"http://127.0.0.1:8000/auth/{path}",
+        url=f"http://127.0.0.1:8000/{path}",
         headers={key: value for key, value in request.headers},
+        params=request.args,
         data=request.get_data(),
         cookies=request.cookies,
         allow_redirects=False,

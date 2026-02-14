@@ -32,7 +32,7 @@ function renderResults(data) {
 async function fetchResults(query = "") {
     try {
         const response = await fetch(
-            `/api/search/finished-goods?search=${encodeURIComponent(query)}`
+            `/search/finished-goods?search=${encodeURIComponent(query)}`
         );
         const data = await response.json();
         renderResults(data.results);

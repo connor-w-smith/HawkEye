@@ -129,7 +129,7 @@
     // =====================
     async function loadProduct() {
         try {
-            const resp = await fetch(`/api/finished-goods/${FINISHED_GOOD_ID}`);
+            const resp = await fetch(`/search/finished-goods/${FINISHED_GOOD_ID}`);
             if (!resp.ok) throw new Error("Failed to fetch product data");
     
             const data = await resp.json();
@@ -158,7 +158,7 @@
     // =====================
     async function loadProductionHistory() {
         try {
-            const resp = await fetch(`/api/production-data/${FINISHED_GOOD_ID}`);
+            const resp = await fetch(`/search/production-data/${FINISHED_GOOD_ID}`);
             if (!resp.ok) throw new Error("Failed to fetch production history");
     
             const orders = await resp.json();
@@ -188,7 +188,7 @@
     // =====================
     async function loadRawMaterials() {
         try {
-            const resp = await fetch(`/api/inventory/raw-materials/${FINISHED_GOOD_ID}`);
+            const resp = await fetch(`/material/inventory/raw-materials/${FINISHED_GOOD_ID}`);
             if (!resp.ok) throw new Error("Failed to fetch raw materials");
     
             const data = await resp.json();
@@ -216,7 +216,7 @@
     // =====================
     async function loadCurrentOrders() {
         try {
-            const resp = await fetch(`/api/production-data/current-orders/${FINISHED_GOOD_ID}`);
+            const resp = await fetch(`/search/production-data/current-orders/${FINISHED_GOOD_ID}`);
             if (!resp.ok) throw new Error("Failed to fetch current orders");
     
             const data = await resp.json();

@@ -22,7 +22,7 @@ from .api import (
 app = FastAPI(title="HawkEye Backend")
 
 # Include all routers
-app.include_router(auth_router, prefix="/auth", tags=["Auth"])
+app.include_router(auth_router)
 app.include_router(search_router)
 app.include_router(order_router)
 app.include_router(user_router)
