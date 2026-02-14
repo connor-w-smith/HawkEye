@@ -38,7 +38,7 @@ class PasswordResetWithToken(BaseModel):
     token: str
     new_password: str
 """
-
+"""
 class FinishedGoodNameRequest(BaseModel):
     finished_good_name: str
 
@@ -51,7 +51,7 @@ class DeleteFinishedGood(BaseModel):
 class CreateProductionOrderRequest(BaseModel):
     finishedgoodid: str
     target_quantity: int
-
+"""
 
 #endpoint for user login
 @router.post("/login")
