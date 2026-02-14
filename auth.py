@@ -95,6 +95,7 @@ def delete_user(data: DeleteUserRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+#TODO: this one should be corrected in the user_routes file but double check
 @router.post("/request-password-reset")
 def request_password_reset(data: PasswordResetRequest):
     try:
@@ -109,6 +110,7 @@ def request_password_reset(data: PasswordResetRequest):
         traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
 
+
 #endpoint to verify and reset password
 @router.post("/user-reset-password")
 def user_password_update(data: PasswordUpdateRequest):
@@ -117,6 +119,7 @@ def user_password_update(data: PasswordUpdateRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+#TODO: this should also be in the user_services file, it will be combined the function of request_password_reset: Check function request_password_reset
 @router.post("/reset-password")
 def reset_password_endpoint(data: PasswordResetConfirm):
     try:
@@ -135,6 +138,7 @@ def logout(authorization: str = Header(...)):
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid session")
 
+"""
 #finished goods search endpoint
 @router.get("/finished-goods")
 def finished_goods_search(search: str | None = None):
@@ -152,7 +156,7 @@ def finished_goods_search(search: str | None = None):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
+"""
 '''
 legacy code
 @router.get("/finished-good-name-search")
@@ -228,6 +232,7 @@ def inventory_name_search(finished_good_name: str = Query(...)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 '''
+"""
 @router.post("/add-finished-good")
 def add_finished_good_endpoint(data: AddFinishedGood):
     try:
@@ -245,7 +250,8 @@ def delete_finished_good_endpoint(finished_good_id: str = Query(...)):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
+"""
+'''
 @router.get("/finished-goods/{finished_good_id}")
 def read_finished_good(finished_good_id: str):
     finished_good = get_finished_good_by_id(finished_good_id)
@@ -275,7 +281,8 @@ def read_available_inventory(finished_good_id: str):
         return get_production_inventory_by_finishedgoodid(finished_good_id)
     except Exception:
         return {"AvailableInventory": 0}
-
+'''
+"""
 @router.get("/production-data/{finished_good_id}")
 def read_order_history(finished_good_id: str):
     try:
@@ -301,6 +308,7 @@ def read_current_order_table(finished_good_id: str):
         return {"current_orders": []}
 
 """
+"""
 
 @router.post("/create-production-order")
 def create_production_order_endpoint(data: CreateProductionOrderRequest):
@@ -310,7 +318,7 @@ def create_production_order_endpoint(data: CreateProductionOrderRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 """
-#TODO: Move this into order_services
+"""
 def create_production_order(finishedgoodid: str, target_quantity: int):
     """
     Creates a new production order in tblproductiondata.
@@ -351,7 +359,7 @@ def create_production_order(finishedgoodid: str, target_quantity: int):
         print(f"Error creating production order: {e}")
         raise Exception(f"Failed to create production order: {str(e)}")
 
-
+"""
 """ Ashley's Code Below. I believe she is rewriting the above functions, so I simply commented them to avoid conflicting function/var names."""
 
 """ May need to correct this variable inputs
