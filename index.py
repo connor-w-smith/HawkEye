@@ -12,10 +12,10 @@ import psycopg2
 # Importing extra helpers from psycopg2
 import psycopg2.extras
 
+from backend.models import AddUserRequest
 # Importing inventory functions
-from inventory import password_recovery, reset_password_with_token  
 from db import get_connection
-from search import get_finished_good_by_id, search_inventory_by_id
+
 
 
 
@@ -116,13 +116,10 @@ def api_request_password_reset():
         if not email:
             return jsonify({"status": "error", "message": "Email is required"}), 400
         
-        # Call password recovery to generate and store token; it returns the raw token
-        raw_token = password_recovery(email)
-
-        # Send email using the working recovery email function
-        from inventory import send_recovery_email
-        send_recovery_email(email, raw_token)
-
+        response = requests.post(f"{BACKEND_URL}/request-password-reset",
+            json=data,
+            timeout=5
+        )
         print(f"Password recovery initiated for {email}, reset link sent")
         return jsonify({"status": "success", "message": "Password reset link sent to your email"}), 200
             
@@ -298,42 +295,36 @@ def proxy_current_orders(finished_good_id):
 def users_page():
     return render_template("users.html")
 
+
 # API endpoint to get all users
 @app.route("/api/users", methods=["GET"])
 def api_get_users():
     try:
-        conn = get_connection()
-        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
-        cur.execute("""
-            SELECT username, isadmin
-            FROM tblusercredentials
-            ORDER BY username;
-        """)
-
-        results = cur.fetchall()
-        cur.close()
-        conn.close()
+        results = get_users()
 
         return jsonify(results), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+#
 # API endpoint to add a new user
 @app.route("/api/users", methods=["POST"])
 def api_add_user():
     try:
         data = request.get_json()
-        username = data.get("username")
-        password = data.get("password")
-        is_admin = data.get("is_admin", False)
+
+        users_data = AddUserRequest(
+            username = data.get("username"),
+            password = data.get("password"),
+            is_admin = data.get("is_admin", False)
+        )
 
         if not username or not password:
             return jsonify({"status": "error", "message": "Username and password are required"}), 400
 
-        from inventory import add_user_credentials
-        result = add_user_credentials(username, password, is_admin)
+        result = add_user(users_data)
         return jsonify(result), 200
 
     except ValueError as e:
@@ -345,8 +336,7 @@ def api_add_user():
 @app.route("/api/users/<username>", methods=["DELETE"])
 def api_delete_user(username):
     try:
-        from inventory import delete_user_credentials
-        result = delete_user_credentials(username)
+        result= delete_user(username)
         return jsonify(result), 200
 
     except ValueError as e:

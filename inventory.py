@@ -55,7 +55,7 @@ from search import *
 
 """tblusercredentials functions"""
 
-#verifies user login to webpage
+"""#verifies user login to webpage
 #args: username, password, Returns: {"Status":"Success"}
 def user_login_verification(username, password):
 
@@ -67,7 +67,7 @@ def user_login_verification(username, password):
     try:
         with conn.cursor() as cur:
 
-            cur.execute("""SELECT password
+            cur.execute("""'''SELECT password
                             FROM tblusercredentials
                             WHERE username = %s""",
                         (str(username),))
@@ -239,7 +239,7 @@ def delete_user_credentials(username):
         conn.close()
 
     return {"status":"success"}
-
+'''
 #function sends the email with the recovery token to the user
 #args: username(Email address), raw_token, Returns True(Sent) or False(Not Sent)
 def send_recovery_email(username, raw_token):
@@ -300,7 +300,7 @@ If you did not request a password reset, please ignore this email."""
     except Exception as e:
         print(f"Error sending email: {e}")
         return False
-
+'''
 
 #function to reset password if forgotten
 #arg: username (email), returns: raw_token (for sending in email)
@@ -446,8 +446,9 @@ def verify_token_password_reset(username, token):
         #Ensure connection closed in case of error
         if conn and conn.is_connected():
             conn.close()
+""""'''
 
-#create session token when user logs in
+""""#create session token when user logs in
 def create_session(username):
     conn = get_connection()
     conn.autocommit = False
@@ -459,10 +460,10 @@ def create_session(username):
 
         with conn.cursor() as cur:
             #inserts into tblsessions table in db
-            cur.execute("""
+            cur.execute("""'''
                 INSERT INTO tblsessions (session_token, username, expires_at)
                 VALUES (%s, %s, %s)
-            """, (session_token, username, expires_at))
+            '''""", (session_token, username, expires_at))
 
             conn.commit()
 
@@ -482,11 +483,11 @@ def validate_session(session_token):
     try:
         #on connection check token row
         with conn.cursor() as cur:
-            cur.execute("""
+            cur.execute("""'''
                 SELECT username, expires_at
                 FROM tblsessions
                 WHERE session_token = %s
-            """, (session_token,))
+            '''""", (session_token,))
 
             row = cur.fetchone()
 
@@ -514,13 +515,13 @@ def delete_session(session_token):
     try:
         #remove token from db when logout
         with conn.cursor() as cur:
-            cur.execute("""
+            cur.execute("""'''
                 DELETE FROM tblsessions
                 WHERE session_token = %s
-            """, (session_token,))
+            '''""", (session_token,))
     finally:
         conn.close()
-
+"""
 
 """tblfinishedgoods functions"""
 
@@ -616,6 +617,7 @@ def delete_finished_good(finished_good_name): #Can add an id argument if needed
 
     return {"status": "success"}
 
+'''
 #Searches tblfinishedgoods for a finished good name
 #arg: finishedgoodname returns: finishedgoodid
 def get_finished_good(finished_good_name):
@@ -656,7 +658,7 @@ def get_finished_good(finished_good_name):
     finally:
         #close the connection
         conn.close()
-
+'''
 
 
 
@@ -769,6 +771,7 @@ def delete_inventory(finished_good_id, quantity_to_subtract):
 
     return {"status": "success"}
 
+"""
 #searches the available inventory for a given finishedgoodid
 #arg: finished_good_id, returns:inventory value if any
 def get_inventory(finished_good_id):
@@ -805,7 +808,7 @@ def get_inventory(finished_good_id):
     finally:
         #Close connection
         conn.close()
-
+"""
 
 
 
@@ -918,7 +921,7 @@ if __name__ == "__main__":
         print(f"User test failed: {e}")
 """
 
-#function to reset password if forgotten - uses email
+"""#function to reset password if forgotten - uses email
 #arg: email (username), returns: success message
 def password_recovery_email(email):
     
@@ -929,10 +932,10 @@ def password_recovery_email(email):
 
     try:
         with conn.cursor() as cur:
-            cur.execute(""" 
+            cur.execute(""""""
                         SELECT 1 
                         FROM tblusercredentials
-                        WHERE username = %s""", (str(email),))
+                        WHERE username = %s"""""", (str(email),))
 
             #verify that the user exists
             if cur.fetchone() is None:
@@ -946,10 +949,10 @@ def password_recovery_email(email):
             #set token expiration
             token_expiration = datetime.now() + timedelta(minutes=15)
 
-            cur.execute("""
+            cur.execute(""""""
                         UPDATE tblusercredentials
                         SET token = %s, tokenexpiration = %s
-                        WHERE username = %s""",(token_hash, token_expiration, email),)
+                        WHERE username = %s"""""",(token_hash, token_expiration, email),)
             #commit changes
             conn.commit()
 
@@ -973,7 +976,7 @@ def password_recovery_email(email):
 
 
 def send_password_reset_email(email, reset_link):
-    """Send password reset email using a fully constructed reset_link"""
+    """"""Send password reset email using a fully constructed reset_link""""""
     # Email configuration (update with your email settings)
     sender_email = "hawkeyeinventorysystems@gmail.com"
     sender_password = "mhlw dmkq vvvq jjiq"
@@ -984,9 +987,9 @@ def send_password_reset_email(email, reset_link):
         message["From"] = sender_email
         message["To"] = email
 
-        text = f"""Hello,\n\nYou requested a password reset. Click the link below to reset your password.\n\n{reset_link}\n\nThis link will expire in 15 minutes.\n\nIf you did not request this, please ignore this email.\n\nBest regards,\nHawkEye Inventory System"""
+        text = f""""""Hello,\n\nYou requested a password reset. Click the link below to reset your password.\n\n{reset_link}\n\nThis link will expire in 15 minutes.\n\nIf you did not request this, please ignore this email.\n\nBest regards,\nHawkEye Inventory System""""""
 
-        html = f"""<html><body><p>Hello,</p><p>You requested a password reset. Click the link below to reset your password.</p><p><a href=\"{reset_link}\">Reset Password</a></p><p>This link will expire in 15 minutes.</p><p>If you did not request this, please ignore this email.</p><p>Best regards,<br>HawkEye Inventory System</p></body></html>"""
+        html = f"""""""<html><body><p>Hello,</p><p>You requested a password reset. Click the link below to reset your password.</p><p><a href=\"{reset_link}\">Reset Password</a></p><p>This link will expire in 15 minutes.</p><p>If you did not request this, please ignore this email.</p><p>Best regards,<br>HawkEye Inventory System</p></body></html>""""""
 
         part1 = MIMEText(text, "plain")
         part2 = MIMEText(html, "html")
@@ -1003,8 +1006,9 @@ def send_password_reset_email(email, reset_link):
     except Exception as e:
         print(f"Error sending email: {e}")
         raise e
-
-# --- Testing Search & Inventory Joins ---
+"""
+"""
+# -- Testing Search & Inventory Joins ---
     print("\n--- Testing Search Functions ---")
     try:
         # 1. Setup a product for searching
@@ -1038,4 +1042,4 @@ def send_password_reset_email(email, reset_link):
 
     except Exception as e:
         print(f"Search test failed: {e}")
-
+"""

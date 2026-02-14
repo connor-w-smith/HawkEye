@@ -8,6 +8,7 @@ from db import get_connection
 
 router = APIRouter()
 
+"""
 class LoginRequest(BaseModel):
     username: EmailStr      # ensures valid email
     password: str
@@ -31,7 +32,12 @@ class PasswordUpdateRequest(BaseModel):
     username:str
     old_password: str
     new_password:str
-
+    
+class PasswordResetWithToken(BaseModel):
+    email: EmailStr
+    token: str
+    new_password: str
+"""
 
 class FinishedGoodNameRequest(BaseModel):
     finished_good_name: str
@@ -46,10 +52,6 @@ class CreateProductionOrderRequest(BaseModel):
     finishedgoodid: str
     target_quantity: int
 
-class PasswordResetWithToken(BaseModel):
-    email: EmailStr
-    token: str
-    new_password: str
 
 #endpoint for user login
 @router.post("/login")
@@ -298,6 +300,7 @@ def read_current_order_table(finished_good_id: str):
     except Exception:
         return {"current_orders": []}
 
+"""
 
 @router.post("/create-production-order")
 def create_production_order_endpoint(data: CreateProductionOrderRequest):

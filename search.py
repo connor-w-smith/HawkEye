@@ -57,6 +57,7 @@ def search_finished_goods_fuzzy(search: str):
     finally:
         conn.close()
 
+"""
 #searches tblfinishedgoods using finishedgoodname
 def search_finished_by_name(finished_name: str):
     #open db connection
@@ -65,9 +66,9 @@ def search_finished_by_name(finished_name: str):
     try:
         with conn.cursor() as cursor:
             #ILIKE is for case-insensitive and % is for wildcards
-            query = ("""SELECT finishedgoodid, finishedgoodname
+            query = ("""'''SELECT finishedgoodid, finishedgoodname
                      FROM tblfinishedgoods 
-                     WHERE finishedgoodname ILIKE %s""")
+                     WHERE finishedgoodname ILIKE %s'''""")
 
             #format the search for wildcards
             like_pattern = f"%{finished_name}%"
@@ -93,6 +94,7 @@ def search_finished_by_name(finished_name: str):
     finally:
         #ensure connection is closed
         conn.close()
+"""
 
 #searches tblfinishedgoods by finishedgoodid
 def search_finished_by_id(finished_id: str):
@@ -411,7 +413,7 @@ def get_user_credentials_table():
 
     try:
         with conn.cursor() as cursor:
-            cursor.execute("""SELECT userid, username, password, isadmin
+            cursor.execute("""SELECT username, isadmin
                             FROM tblusercredentials""")
 
             rows = cursor.fetchall()
