@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("username").textContent = username;
     }
 
-    // Fetch finished goods (only if data-table exists)
+    // Fetch finished goods (only if data-table exists and NOT on search page)
     const table = document.getElementById("data-table");
     if (table) {
         fetch("/search/finished-goods")

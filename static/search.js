@@ -2,6 +2,7 @@ const table = document.getElementById("data-table");
 const searchInput = document.getElementById("searchInput");
 
 let debounceTimer;
+let abortController;
 
 //render results
 function renderResults(data) {
@@ -31,17 +32,27 @@ function renderResults(data) {
 //fetch results
 async function fetchResults(query = "") {
     try {
+        // Cancel any previous request
+        if (abortController) {
+            abortController.abort();
+        }
+        abortController = new AbortController();
+        
         const response = await fetch(
             `/search/finished-goods?search=${encodeURIComponent(query)}`
+            `/api/search/finished-goods?search=${encodeURIComponent(query)}`,
+            { signal: abortController.signal }
         );
         const data = await response.json();
         renderResults(data.results);
     } catch (err) {
-        console.error("Search error:", err);
+        if (err.name !== 'AbortError') {
+            console.error("Search error:", err);
+        }
     }
 }
 
-//live typing
+//live typing - using event delegation to avoid duplicate listeners
 searchInput.addEventListener("input", () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
@@ -50,6 +61,4 @@ searchInput.addEventListener("input", () => {
 });
 
 //load all results on page load
-document.addEventListener("DOMContentLoaded", () => {
-    fetchResults();
-});
+fetchResults();
