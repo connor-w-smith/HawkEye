@@ -71,15 +71,15 @@ h1 {
 /*Start of the table styling*/
 .data-display {
     margin-top: 20px;
-    width: 50%;
+    width: 48%;
     border-collapse: collapse;
-    background: orange;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0, .05);
-    margin-right: 50px;
-    float: right;
-    clear: none;
+    margin-left: 200px;
+    float: none;
+    display: inline-block;
+    vertical-align: top;
 }
 
 .data-display th,
@@ -184,7 +184,7 @@ h1 {
 
 /*Start of the packaging data display styling*/
 .packaging-data-display {
-    margin-top: 20px;
+    margin-top: 100px;
     width: 40%;
     border-collapse: collapse;
     background: orange;
