@@ -88,11 +88,11 @@ def add_user(data: AddUserRequest):
         #Convert errors to HTTP responses
         raise HTTPException(status_code=400, detail=str(e))
 
-#endpoint to delete user
+#delete user updated endpoint
 @router.delete("/delete-user/{username}")
-def delete_user(data: DeleteUserRequest):
+def delete_user(username: str):
     try:
-        return delete_user_credentials(data.username)
+        return delete_user_credentials(username)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 """
