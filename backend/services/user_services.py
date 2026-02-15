@@ -286,3 +286,99 @@ def get_user_credentials_table():
     finally:
         if conn:
             conn.close()
+
+def reset_password_with_token(email, token, new_password):
+    """Verify token and set a new password for the given email."""
+    conn = get_connection()
+    conn.autocommit = False
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT token, tokenexpiration
+                FROM tblusercredentials
+                WHERE username = %s""",
+                        (str(email),))
+
+            row = cur.fetchone()
+            if row is None:
+                raise ValueError(f"{email} does not exist")
+
+            stored_token_hash = row[0]
+            expiration_time = row[1]
+
+            # Hash the provided raw token to compare
+            provided_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+
+            if stored_token_hash is None or provided_hash != stored_token_hash:
+                raise ValueError("Invalid reset token")
+
+            if datetime.now() > expiration_time:
+                raise ValueError("Reset token has expired")
+
+            # Hash new password and update
+            password_bytes = new_password.encode('utf-8')
+            password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+            hashed_password = password_hash.decode('utf-8')
+
+            cur.execute("""
+                UPDATE tblusercredentials
+                SET password = %s, token = NULL, tokenexpiration = NULL
+                WHERE username = %s""",
+                        (hashed_password, str(email),))
+
+        conn.commit()
+        return {"status": "success", "message": "Password reset successfully"}
+
+    except Exception as e:
+        conn.rollback()
+        raise e
+
+    finally:
+        conn.close()
+
+
+#verifies the token from the user for password recovery
+#args: user name and token, returns: {"status":"success"}
+def verify_token_password_reset(username, token):
+
+    #open connection
+    conn = get_connection()
+    #disable autocommit
+    conn.autocommit = False
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                        SELECT * FROM tblusercredentials
+                        WHERE username = %s""",
+                        (str(username),))
+
+            row = cur.fetchone()
+
+            if row is None:
+                raise ValueError(f"{username} does not exist")
+
+            """Add in the part to check the token and expiration here"""
+            #checks token_hash abd expiration
+            stored_token_hash = row[4]
+            expiration_time = row[5]
+
+
+            if stored_token_hash == token and datetime.now() < expiration_time:
+                # This function is legacy/incomplete. Use reset_password_with_token instead.
+                return True
+
+        # commit changes
+        conn.commit()
+
+        return False
+
+    except Exception as e:
+        conn.rollback()
+        raise e
+
+    finally:
+        #Ensure connection closed in case of error
+        if conn:
+            conn.close()

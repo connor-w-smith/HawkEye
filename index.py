@@ -6,6 +6,7 @@ import requests
 #serve production server on flask
 from waitress import serve
 
+
 # Importing psycopg2 to connect Python to PostgresSQL
 import psycopg2
 
@@ -66,24 +67,21 @@ def reset_password():
 # API endpoint to confirm password reset using token
 @app.route("/api/reset-password-confirm", methods=["POST"])
 def api_reset_password_confirm():
-    try:
-        data = request.get_json()
-        email = data.get('email')
-        token = data.get('token')
-        new_password = data.get('new_password')
+    data = request.get_json()
+    print(f"DEBUG - Data being sent to FastAPI: {data}")
 
-        if not email or not token or not new_password:
-            return jsonify({"status": "error", "message": "email, token and new_password are required"}), 400
+    # Send the data to FastAPI
+    # Note: We use /auth/reset-password because that's where the 404 is happening
+    response = requests.post(
+        f"{BACKEND_URL}/users/reset-password",
+        json=data,
+        timeout=5
+    )
 
-        result = reset_password_with_token(email, token, new_password)
-        return jsonify(result), 200
+    if response.status_code == 404:
+        return jsonify({"status": "error", "message": "Backend route not found"}), 404
 
-    except ValueError as e:
-        return jsonify({"status": "error", "message": str(e)}), 400
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({"status": "error", "message": "An error occurred"}), 500
+    return jsonify(response.json()), response.status_code
     
 
 #login endpoint to sned data to backend
@@ -130,11 +128,14 @@ def api_request_password_reset():
         if not email:
             return jsonify({"status": "error", "message": "Email is required"}), 400
         
-        response = requests.post(f"{BACKEND_URL}/request-password-reset",
+        response = requests.post(f"{BACKEND_URL}/users/request-password-reset",
             json=data,
             timeout=5
         )
-        print(f"Password recovery initiated for {email}, reset link sent")
+        if response.status_code == 404:
+            return jsonify({"status": "error", "message": "Backend Route Not Found (404)"}), 404
+        if response.status_code == 200:
+            print(f"Password recovery initiated for {email}, reset link sent")
         return jsonify({"status": "success", "message": "Password reset link sent to your email"}), 200
             
     except ValueError as e:

@@ -221,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             try {
-                const response = await fetch("/auth/request-password-reset", {
+                const response = await fetch("/api/request-password-reset", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -286,7 +286,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const res = await fetch('/auth/reset-password', {
+            const res = await fetch('/users/reset-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: email, token: token, new_password: newPassword })
