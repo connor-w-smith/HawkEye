@@ -18,12 +18,21 @@ models/user_models.py
 """
 
 from fastapi import APIRouter, HTTPException
+from flask import jsonify
+
+from ..models import DeleteUserRequest
+from ..services import add_user_credentials
 from ..services.user_services import (
     password_recovery,
     send_recovery_email,
-    get_user_credentials_table
+    get_user_credentials_table,
+    add_user_credentials,
+    delete_user_credentials
 )
-from ..models.user_models import PasswordResetRequest
+from ..models.user_models import (
+    PasswordResetRequest,
+    AddUserRequest
+)
 
 router = APIRouter(
     prefix="/users",
@@ -60,3 +69,21 @@ def get_users():
     # Convert tuples to dicts for JSON
     users = [{"username": r[0], "isadmin": r[1]} for r in rows]
     return users
+
+#endpoint to add user
+@router.post("/add-user")
+def add_user(data: AddUserRequest):
+    try:
+        #Call function from inventory.py
+        return add_user_credentials(data.username, data.password, data.is_admin)
+    except Exception as e:
+        #Convert errors to HTTP responses
+        raise HTTPException(status_code=400, detail=str(e))
+
+#endpoint to delete user
+@router.delete("/delete-user/{username}")
+def delete_user(username: str):
+    try:
+        return delete_user_credentials(username)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

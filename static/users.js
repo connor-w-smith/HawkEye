@@ -63,7 +63,7 @@ function handleAddUser(event) {
         return;
     }
 
-    fetch("/users/users", {
+    fetch("/users/add-user", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -97,7 +97,7 @@ function deleteUser(username) {
         return;
     }
 
-    fetch(`/users/users/${username}`, {
+    fetch(`/users/delete-user/${username}`, {
         method: "DELETE"
     })
         .then(response => response.json())
