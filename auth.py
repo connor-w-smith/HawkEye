@@ -51,7 +51,7 @@ class DeleteFinishedGood(BaseModel):
 class CreateProductionOrderRequest(BaseModel):
     finishedgoodid: str
     target_quantity: int
-"""
+
 
 #endpoint for user login
 @router.post("/login")
@@ -138,7 +138,7 @@ def logout(authorization: str = Header(...)):
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid session")
 
-"""
+
 #finished goods search endpoint
 @router.get("/finished-goods")
 def finished_goods_search(search: str | None = None):
@@ -320,7 +320,7 @@ def create_production_order_endpoint(data: CreateProductionOrderRequest):
 """
 """
 def create_production_order(finishedgoodid: str, target_quantity: int):
-    """
+    
     Creates a new production order in tblproductiondata.
     The database trigger automatically creates a corresponding tracking row in tblactiveproduction.
     
@@ -330,18 +330,18 @@ def create_production_order(finishedgoodid: str, target_quantity: int):
     
     Returns:
         dict: {"status": "success", "orderid": order_id_value}
-    """
+    
     try:
         conn = get_connection()
         cur = conn.cursor()
         
         # Insert new production order with partsproduced starting at 0
         # The trigger automatically creates the tblactiveproduction row
-        cur.execute("""
+        cur.execute(
             INSERT INTO tblproductiondata (finishedgoodid, partsproduced, target_quantity)
             VALUES (%s, 0, %s)
             RETURNING orderid
-        """, (finishedgoodid, target_quantity))
+        , (finishedgoodid, target_quantity))
         
         orderid = cur.fetchone()[0]
         conn.commit()

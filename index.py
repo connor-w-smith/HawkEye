@@ -1,4 +1,5 @@
-# Importing the Flask class to create the Web app.
+
+'''# Importing the Flask class to create the Web app.
 # Importing jsonify to return JSON to the browser
 # Importing render_template to serve HTML files
 from flask import Flask, jsonify, render_template, request, make_response
