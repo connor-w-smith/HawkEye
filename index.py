@@ -312,6 +312,7 @@ def users_page():
     return render_template("users.html")
 
 
+#TODO: fix call on this
 # API endpoint to get all users
 @app.route("/api/users", methods=["GET"])
 def api_get_users():
@@ -360,6 +361,32 @@ def api_delete_user(username):
     except Exception as e:
         return jsonify({"status": "error", "message": "An error occurred"}), 500
 
+#API endpoint to get sensor production data
+@app.route("api/search/sensor_production_data")
+def api_get_sensor_prod_data():
+    try:
+        sensor_prod_data = requests.get(f"{BACKEND_URL}/sensor-stats",
+                                        timeout=5)
+        return jsonify(sensor_prod_data.json()), 200
+
+    except ValueError as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": "An error occurred"}), 500
+
+@app.route("/api/production/active-orders")
+def api_active_orders():
+    try:
+        result = requests.get(f"{BACKEND_URL}/active-orders",
+                              timeout = 5)
+
+        return jsonify(result.json()), 200
+
+    except ValueError as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": "An error occurred"}), 500
     
 if __name__ == "__main__":
     #app.run(host='0.0.0.0', port=5000, debug=True)
