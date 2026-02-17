@@ -39,8 +39,7 @@ async function fetchResults(query = "") {
         abortController = new AbortController();
         
         const response = await fetch(
-            `/search/finished-goods?search=${encodeURIComponent(query)}`
-            `/api/search/finished-goods?search=${encodeURIComponent(query)}`,
+            `/search/finished-goods?search=${encodeURIComponent(query)}`,
             { signal: abortController.signal }
         );
         const data = await response.json();

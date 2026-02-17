@@ -1,9 +1,22 @@
-HawkEye Inventory System – 
-Running the Application
+ /$$   /$$                         /$$       /$$$$$$$$                    
+| $$  | $$                        | $$      | $$_____/                    
+| $$  | $$  /$$$$$$  /$$  /$$  /$$| $$   /$$| $$       /$$   /$$  /$$$$$$ 
+| $$$$$$$$ |____  $$| $$ | $$ | $$| $$  /$$/| $$$$$   | $$  | $$ /$$__  $$
+| $$__  $$  /$$$$$$$| $$ | $$ | $$| $$$$$$/ | $$__/   | $$  | $$| $$$$$$$$
+| $$  | $$ /$$__  $$| $$ | $$ | $$| $$_  $$ | $$      | $$  | $$| $$_____/
+| $$  | $$|  $$$$$$$|  $$$$$/$$$$/| $$ \  $$| $$$$$$$$|  $$$$$$$|  $$$$$$$
+|__/  |__/ \_______/ \_____/\___/ |__/  \__/|________/ \____  $$ \_______/
+                                                       /$$  | $$          
+                                                      |  $$$$$$/          
+                                                       \______/           
 
+            -----------Inventory systems-----------
+
+Running the Application
+~~~~ UPDATED ~~~~
 TLDR//
 in terminal:
--1. uvicorn main:app --reload
+-1. uvicorn backend.main:app --reload
 -2. python3 index.py
 -3. url once started - http://127.0.0.1:5000
 
@@ -23,7 +36,7 @@ Starting the Backend (FastAPI):
 The backend must be started first.
 
 Command:
-uvicorn main:app --reload
+uvicorn backend.main:app --reload
 
 Expected Output:
 Uvicorn running on http://127.0.0.1:8000
@@ -51,17 +64,6 @@ http://127.0.0.1:5000
 
 This will load the login page.
 
-Search Page:
-After logging in, the search page is available at:
-http://127.0.0.1:5000/search
-currently the search page isnt linked to the home page so you have to access it this way
-
-The search page:
--Automatically loads all finished goods
--Supports searching by name or ID
--Displays results in a table
-
-Each row is clickable and will link to a product page (product page is not implemented yet)
 
 !Important Notes!
 Both servers must be running at the same time
