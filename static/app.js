@@ -18,10 +18,10 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("username").textContent = username;
     }
 
-    // Fetch finished goods (only if data-table exists)
+    // Fetch finished goods (only if data-table exists and NOT on search page)
     const table = document.getElementById("data-table");
     if (table) {
-        fetch("/api/finished-goods")
+        fetch("/search/finished-goods")
         .then(response => response.json())
         .then(data => {
             const results = data.results || [];
@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("logout-link").addEventListener("click", async (e) => {
         e.preventDefault();
         try {
-            await fetch("/api/logout", {
+            await fetch("/auth/logout", {
                 method: "POST"
             });
             sessionStorage.removeItem("username");
@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             try {
-                const response = await fetch("/api/login", {
+                const response = await fetch("/auth/login", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -177,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 try {
-                    const res = await fetch('/api/reset-password-confirm', {
+                    const res = await fetch('/auth/reset-password', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email: emailParam, token: tokenParam, new_password: newPassword })
@@ -286,7 +286,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const res = await fetch('/api/reset-password-confirm', {
+            const res = await fetch('/users/reset-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: email, token: token, new_password: newPassword })

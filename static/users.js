@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // Load and display all users
 function loadUsers() {
-    fetch("/api/users")
+    fetch("/users/users")
         .then(response => response.json())
         .then(users => {
             const tbody = document.getElementById("usersTableBody");
@@ -63,7 +63,7 @@ function handleAddUser(event) {
         return;
     }
 
-    fetch("/api/users", {
+    fetch("/users/add-user", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -97,7 +97,7 @@ function deleteUser(username) {
         return;
     }
 
-    fetch(`/api/users/${username}`, {
+    fetch(`/users/delete-user/${username}`, {
         method: "DELETE"
     })
         .then(response => response.json())
