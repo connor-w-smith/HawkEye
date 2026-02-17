@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2.extras import RealDictCursor
 
 from db import get_connection
 
@@ -158,11 +159,56 @@ def get_raw_material_recipe(finishedgoodid):
 
 """Active Production Table Searches"""
 #TODO: correct when logic is figured out
-def get_current_orders(finishedgoodid):
-    # Temporary: show something for every finished_good
-    all_orders = [
-        {"FinishedGoodID": finishedgoodid, "OrderID": 1234, "SensorID": 1357, "PartsMade": 10},
-        {"FinishedGoodID": finishedgoodid, "OrderID": 5678, "SensorID": 2468, "PartsMade": 250},
-    ]
-    return all_orders
+def get_currently_packaging():
+    #open connection
+    conn = get_connection()
 
+    query = """
+        SELECT 
+            pd.orderid, 
+            fg.finishedgoodname, 
+            si.sensorid, 
+            pd.partsproduced
+        FROM tblproductiondata pd
+        JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
+        JOIN tblsensorinfeeddata si ON pd.orderid = si.orderid
+        JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
+        WHERE ap.is_active = TRUE;
+        """
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(query)
+            results = cursor.fetchall()
+            return results
+
+    except Exception as e:
+        raise e
+
+    finally:
+        conn.close()
+
+
+def get_current_finishedgood_orders(finishedgoodid):
+
+
+def get_sensor_production_amounts():
+    conn = get_connection()
+    query = """
+            SELECT 
+                sensorid,
+                COALESCE(SUM(inventorycount) FILTER (WHERE "TimeStamp" >= NOW() - INTERVAL '1 hour'), 0) AS last_hour,
+                COALESCE(SUM(inventorycount) FILTER (WHERE "TimeStamp"::date = CURRENT_DATE), 0) AS total_today
+            FROM tblsensorinfeeddata
+            GROUP BY sensorid;
+        """
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(query)
+            return cursor.fetchall()
+
+    except Exception as e:
+        raise e
+
+    finally:
+        conn.close()
