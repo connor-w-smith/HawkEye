@@ -1,9 +1,66 @@
 import time
+import os
+import importlib.util
+from importlib.machinery import ModuleSpec
 from datetime import datetime, timezone
+import logging
+import signal
+import threading
 from influxdb_client.client.influxdb_client import InfluxDBClient
 from influxdb_client.client.query_api import QueryApi
-from influx_details import INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET
 from db import get_connection
+
+
+def _load_influx_details():
+    """Load Influx connection constants from influx_details.py.
+    Tries normal import first, then falls back to loading the file from the parent directory.
+    """
+    try:
+        # Try regular import (works when project root is on PYTHONPATH)
+        from influx_details import INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET
+        return INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET
+    except Exception:
+        # Fallback: load influx_details.py relative to this file (parent directory)
+        here = os.path.dirname(__file__)
+        candidate = os.path.abspath(os.path.join(here, '..', 'influx_details.py'))
+        if os.path.exists(candidate):
+            spec = importlib.util.spec_from_file_location('influx_details', candidate)
+            if spec is None or not isinstance(spec, ModuleSpec):
+                raise ImportError(f"Could not create module spec from {candidate}")
+            if spec.loader is None or not hasattr(spec.loader, 'exec_module'):
+                raise ImportError(f"Module spec for {candidate} has no loader")
+            module = importlib.util.module_from_spec(spec)
+            # type: ignore[attr-defined]
+            spec.loader.exec_module(module)
+            return module.INFLUX_URL, module.INFLUX_TOKEN, module.INFLUX_ORG, module.INFLUX_BUCKET
+        raise
+
+
+# Load Influx configuration values
+INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET = _load_influx_details()
+
+
+# Runtime configuration via environment (useful for systemd)
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
+_level = getattr(logging, LOG_LEVEL, logging.INFO)
+logging.basicConfig(level=_level, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
+logger = logging.getLogger('flux_query')
+
+POLL_INTERVAL = int(os.getenv('HAWKEYE_POLL_INTERVAL', os.getenv('POLL_INTERVAL', '10')))
+RUN_ONCE = os.getenv('HAWKEYE_RUN_ONCE', os.getenv('RUN_ONCE', 'false')).lower() in ('1', 'true', 'yes')
+
+# Event used to detect shutdown signals
+_stop_event = threading.Event()
+
+
+def _handle_signal(signum, frame):
+    logger.info('Received signal %s, initiating shutdown', signum)
+    _stop_event.set()
+
+
+# register signals for graceful shutdown
+signal.signal(signal.SIGTERM, _handle_signal)
+signal.signal(signal.SIGINT, _handle_signal)
 
 def get_active_orders():
     """
@@ -38,8 +95,8 @@ def get_active_orders():
         conn.close()
         return orders
         
-    except Exception as e:
-        print(f"Error fetching active orders: {e}")
+    except Exception:
+        logger.exception('Error fetching active orders')
         return []
 
 def get_influx_count_since(timestamp):
@@ -50,31 +107,41 @@ def get_influx_count_since(timestamp):
     try:
         client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
         query_api = client.query_api()
-        
-        # If no timestamp, use last 60 seconds as default
+
+        # If no timestamp, use last 60 seconds as default (duration literal)
         if timestamp is None:
             time_filter = "start: -60s"
         else:
-            #weird influx crap with timestamps
-            #i wish influx would blow up with a bomb
-            #thanks copilot
+            # Ensure timestamp is timezone-aware and convert to UTC RFC3339 with trailing Z
             if timestamp.tzinfo is None:
                 timestamp = timestamp.replace(tzinfo=timezone.utc)
-            time_filter = f'start: {timestamp.isoformat()}'
-        
+            ts_utc = timestamp.astimezone(timezone.utc)
+            # Format like 2026-02-18T12:34:56Z which Flux accepts
+            time_str = ts_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+            time_filter = f"start: {time_str}"
+
         query = f'from(bucket: "{INFLUX_BUCKET}") |> range({time_filter}) |> count()'
-        result = query_api.query(query)
-        
+        # Provide org explicitly to the query API
+        result = query_api.query(query=query, org=INFLUX_ORG)
+
         count = 0
         for table in result:
             for record in table.records:
-                count += record.get_value()
-        
+                val = record.get_value()
+                try:
+                    count += int(val)
+                except Exception:
+                    # If value cannot be converted to int, attempt float then int
+                    try:
+                        count += int(float(val))
+                    except Exception:
+                        pass
+
         client.close()
         return count
-        
-    except Exception as e:
-        print(f"Error querying InfluxDB: {e}")
+
+    except Exception:
+        logger.exception('Error querying InfluxDB')
         return 0
 
 def update_production_data(orderid, new_parts_count):
@@ -101,8 +168,8 @@ def update_production_data(orderid, new_parts_count):
         #this will return to process_active_orders() to check if we are at target production quantity or not
         return new_total
         
-    except Exception as e:
-        print(f"Error updating production data for order {orderid}: {e}")
+    except Exception:
+        logger.exception('Error updating production data for order %s', orderid)
         return None
 
 def update_active_production(order_id, new_timestamp, mark_inactive=False):
@@ -132,8 +199,8 @@ def update_active_production(order_id, new_timestamp, mark_inactive=False):
         conn.close()
         return True
         
-    except Exception as e:
-        print(f"Error updating active production for order {order_id}: {e}")
+    except Exception:
+        logger.exception('Error updating active production for order %s', order_id)
         return False
 
 def process_active_orders():
@@ -145,13 +212,13 @@ def process_active_orders():
     active_orders = get_active_orders()
     
     if not active_orders:
-        print("No active production orders found.")
+        logger.debug('No active production orders found.')
         return
     
     #stupid orders have been checked stupidly
-    print(f"\n{'='*60}")
-    print(f"Processing {len(active_orders)} active order(s) at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"{'='*60}")
+    logger.info('\n%s', '=' * 60)
+    logger.info('Processing %d active order(s) at %s', len(active_orders), datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    logger.info('%s', '=' * 60)
     #output if there were stupid orders
     
 
@@ -161,20 +228,20 @@ def process_active_orders():
         last_timestamp = order['last_processed_timestamp']
         current_count = order['current_count']
         
-        print(f"\nOrder {order_id}: {current_count}/{target} parts")
+        logger.info('Order %s: %s/%s parts', order_id, current_count, target)
         
         #get new sensor hits since last check
         new_hits = get_influx_count_since(last_timestamp)
         
         #got any?
         if new_hits > 0:
-            print(f"Detected {new_hits} new sensor hit(s)")
+            logger.info('Detected %d new sensor hit(s)', new_hits)
             
             #update production data with new count
             new_total = update_production_data(order_id, new_hits)
             
             if new_total is not None:
-                print(f"Updated total: {new_total}/{target} parts")
+                logger.info('Updated total: %s/%s parts', new_total, target)
                 
                 # Update timestamp
                 current_time = datetime.now(timezone.utc)
@@ -184,22 +251,34 @@ def process_active_orders():
                     update_active_production(order_id, current_time, mark_inactive=True)
                 else:
                     update_active_production(order_id, current_time, mark_inactive=False)
-                    print(f"Progress: {(new_total/target*100):.1f}% complete" if target else " Updated")
+                    if target:
+                        logger.info('Progress: %.1f%% complete', (new_total / target * 100))
+                    else:
+                        logger.info('Updated')
         #no hits
         else:
-            print(f"No new parts detected")
+            logger.debug('No new parts detected')
+
+def _run_loop():
+    logger.info('Starting HawkEye Production Monitor...')
+    logger.info('Monitoring active production orders for sensor data from InfluxDB')
+
+    try:
+        while not _stop_event.is_set():
+            try:
+                process_active_orders()
+            except Exception:
+                logger.exception('Error in processing loop')
+
+            # If configured to run once, break after a single iteration
+            if RUN_ONCE:
+                break
+
+            # Wait with stop_event so we can exit early on signal
+            _stop_event.wait(POLL_INTERVAL)
+    finally:
+        logger.info('Shutting down HawkEye Production Monitor')
+
 
 if __name__ == "__main__":
-    #stupid debug
-    print("Starting HawkEye Production Monitor...")
-    print("Monitoring active production orders for sensor data from InfluxDB\n")
-    
-    #stupid error checking
-    while True:
-        try:
-            process_active_orders()
-        except Exception as e:
-            print(f"\nError in main loop: {e}")
-        
-        # Wait before next check
-        time.sleep(10)  # Check every 10 seconds for more responsive updates
+    _run_loop()
