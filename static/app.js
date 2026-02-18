@@ -39,6 +39,75 @@ document.addEventListener("DOMContentLoaded", () => {
         .catch(err => console.error("Error loading goods: ", err));
     }
 
+    // Fetch sensor production amounts
+    const sensorTable = document.getElementById("sensor-data-table");
+    if (sensorTable) {
+        fetch("/search/sensor-stats")
+        .then(response => response.json())
+        .then(data => {
+            // Clear any existing rows
+            sensorTable.innerHTML = '';
+            
+            // Check if data exists
+            if (!data || data.length === 0) {
+                const row = document.createElement("tr");
+                row.innerHTML = `<td colspan="3" style="text-align: center;">No sensor data available</td>`;
+                sensorTable.appendChild(row);
+                return;
+            }
+
+            // Add each sensor to the table
+            data.forEach(sensor => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${sensor.sensorid || 'N/A'}</td>
+                    <td>${sensor.last_hour || 0}</td>
+                    <td>${sensor.total_today || 0}</td>
+                `;
+                sensorTable.appendChild(row);
+            });
+        })
+        .catch(err => {
+            console.error("Error loading sensor data: ", err);
+            sensorTable.innerHTML = '<tr><td colspan="3" style="text-align: center;">Error loading sensor data</td></tr>';
+        });
+    }
+
+    // Fetch currently packaging orders
+    const packagingTable = document.getElementById("packaging-data-table");
+    if (packagingTable) {
+        fetch("/search/active-orders")
+        .then(response => response.json())
+        .then(data => {
+            // Clear any existing rows
+            packagingTable.innerHTML = '';
+            
+            // Check if data exists
+            if (!data || data.length === 0) {
+                const row = document.createElement("tr");
+                row.innerHTML = `<td colspan="4" style="text-align: center;">No active packaging orders</td>`;
+                packagingTable.appendChild(row);
+                return;
+            }
+
+            // Add each order to the table
+            data.forEach(order => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${order.orderid || 'N/A'}</td>
+                    <td>${order.finishedgoodname || 'N/A'}</td>
+                    <td>${order.sensorid || 'N/A'}</td>
+                    <td>${order.partsproduced || 0}</td>
+                `;
+                packagingTable.appendChild(row);
+            });
+        })
+        .catch(err => {
+            console.error("Error loading packaging data: ", err);
+            packagingTable.innerHTML = '<tr><td colspan="4" style="text-align: center;">Error loading packaging data</td></tr>';
+        });
+    }
+
     // Handle logout
     document.getElementById("logout-link").addEventListener("click", async (e) => {
         e.preventDefault();
