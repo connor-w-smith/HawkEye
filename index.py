@@ -85,7 +85,7 @@ def api_reset_password_confirm():
     return jsonify(response.json()), response.status_code
     
 
-#login endpoint to sned data to backend
+#login endpoint to send data to backend
 @app.route("/api/login", methods=["POST"])
 def api_login():
     data = request.get_json()
@@ -223,21 +223,24 @@ def proxy_create_production_order():
 @app.route("/api/finished-goods/<finished_good_id>")
 def read_finished_good(finished_good_id):
     try:
-        finished_good = get_finished_good_by_id(finished_good_id)
-        if not finished_good:
-            return jsonify({"error": "Finished good not found"}), 404
+        resp = requests.get(
+            f"{BACKEND_URL}/finished-goods/{finished_good_id}",
+            timeout=5
+        )
 
-        # Make sure it's a dict
-        if isinstance(finished_good, list):
-            finished_good = finished_good[0]
+        #check if successful
+        resp.raise_for_status()
 
-        inventory_list = search_inventory_by_id(finished_good_id)
+        inventory_list = resp.json()
+
+
         inventory_count = inventory_list[0]["AvailableInventory"] if inventory_list else 0
+        finished_good_item = inventory_list[0] if inventory_list else {}
 
         return jsonify({
             "finished_good": {
-                "FinishedGoodID": finished_good["FinishedGoodID"],
-                "FinishedGoodName": finished_good["FinishedGoodName"]
+                "FinishedGoodID": finished_good_item.get("FinishedGoodID"),
+                "FinishedGoodName": finished_good_item.get("FinishedGoodName")
             },
             "inventory": {"AvailableInventory": inventory_count}
         })
@@ -317,9 +320,17 @@ def users_page():
 @app.route("/api/users", methods=["GET"])
 def api_get_users():
     try:
-        results = get_users()
+        response = requests.get(f"{BACKEND_URL}/users", timeout=5)
 
-        return jsonify(results), 200
+        #check for errors
+        response.raise_for_status()
+
+        user_data = response.json()
+
+        return jsonify(user_data), 200
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Backend connection failed: {str(e)}"}), 500
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -338,14 +349,20 @@ def api_add_user():
             is_admin = data.get("is_admin", False)
         )
 
+        #TODO: Not sure why these are red or how to fix them
         if not username or not password:
             return jsonify({"status": "error", "message": "Username and password are required"}), 400
 
-        result = add_user(users_data)
+        result = requests.post(f"{BACKEND_URL}/add-user", json=users_data, timeout=5)
+
+        result.raise_for_status()
         return jsonify(result), 200
 
     except ValueError as e:
         return jsonify({"status": "error", "message": str(e)}), 400
+    except requests.exceptions.HTTPError as e:
+        error_detail = e.response.json().get("detail",str(e))
+        return jsonify({"status": "error", "message": error_detail}), 400
     except Exception as e:
         return jsonify({"status": "error", "message": "An error occurred"}), 500
 
@@ -353,20 +370,29 @@ def api_add_user():
 @app.route("/api/users/<username>", methods=["DELETE"])
 def api_delete_user(username):
     try:
-        result= delete_user(username)
-        return jsonify(result), 200
+        response = requests.delete(f"{BACKEND_URL}/delete-user/{username}",
+                                   timeout=5)
 
+        response.raise_for_status()
+
+        return jsonify(response.json()), 200
+
+
+    except requests.exceptions.HTTPError as e:
+        error_detail = e.response.json().get("detail",str(e))
+        return jsonify({"status": "error", "message": error_detail}), 400
     except ValueError as e:
         return jsonify({"status": "error", "message": str(e)}), 400
     except Exception as e:
         return jsonify({"status": "error", "message": "An error occurred"}), 500
 
 #API endpoint to get sensor production data
-@app.route("api/search/sensor_production_data")
+@app.route("/api/search/sensor_production_data")
 def api_get_sensor_prod_data():
     try:
         sensor_prod_data = requests.get(f"{BACKEND_URL}/sensor-stats",
                                         timeout=5)
+        print(f"sensor_prod_data: {sensor_prod_data}")
         return jsonify(sensor_prod_data.json()), 200
 
     except ValueError as e:
@@ -380,7 +406,7 @@ def api_active_orders():
     try:
         result = requests.get(f"{BACKEND_URL}/active-orders",
                               timeout = 5)
-
+        print(f"result: {result}")
         return jsonify(result.json()), 200
 
     except ValueError as e:

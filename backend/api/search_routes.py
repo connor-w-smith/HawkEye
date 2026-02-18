@@ -110,7 +110,7 @@ def read_current_order_table(finished_good_id: str):
         return {"current_orders": []}
 
 
-@router.get("/active-orders", repsonse_model=List[Dict])
+@router.get("/active-orders", response_model=List[Dict])
 async def read_active_orders():
     try:
         data = get_currently_packaging()

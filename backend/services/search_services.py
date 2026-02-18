@@ -190,7 +190,32 @@ def get_currently_packaging():
 
 
 def get_current_finishedgood_orders(finishedgoodid):
+    #open connection
+    conn = get_connection()
 
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            query = """SELECT 
+                        pd.orderid, 
+                        fg.finishedgoodname, 
+                        si.sensorid, 
+                        pd.partsproduced
+                    FROM tblproductiondata pd
+                    JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
+                    JOIN tblsensorinfeeddata si ON pd.orderid = si.orderid
+                    JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
+                    WHERE fg.finishedgoodid = %s;"""
+
+            cursor.execute(query, (finishedgoodid,))
+            results = cursor.fetchall()
+
+            return results
+
+    except Exception as e:
+        raise e
+
+    finally:
+        conn.close()
 
 def get_sensor_production_amounts():
     conn = get_connection()
