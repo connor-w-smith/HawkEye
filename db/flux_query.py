@@ -230,6 +230,13 @@ def process_active_orders():
         
         logger.info('Order %s: %s/%s parts', order_id, current_count, target)
         
+        # Check if order already at/past target and should be marked inactive
+        if target is not None and current_count >= target:
+            logger.info('Order %s already at target, marking inactive', order_id)
+            current_time = datetime.now(timezone.utc)
+            update_active_production(order_id, current_time, mark_inactive=True)
+            continue
+        
         #get new sensor hits since last check
         new_hits = get_influx_count_since(last_timestamp)
         
