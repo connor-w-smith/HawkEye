@@ -59,6 +59,12 @@ def create_session(username):
         expires_at = datetime.now() + timedelta(minutes=30)
 
         with conn.cursor() as cur:
+            # Delete any existing sessions for this user (upsert pattern)
+            cur.execute("""
+                DELETE FROM tblsessions
+                WHERE username = %s
+            """, (username,))
+            
             #inserts into tblsessions table in db
             cur.execute("""
                 INSERT INTO tblsessions (session_token, username, expires_at)
