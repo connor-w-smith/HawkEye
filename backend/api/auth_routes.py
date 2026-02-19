@@ -17,7 +17,7 @@ Models are defined in:
 models/auth_models.py
 """
 
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Depends
 
 from ..models.auth_models import (
     LoginRequest,
@@ -33,6 +33,7 @@ from ..services.auth_services import (
     delete_session,
 
 )
+from ..dependencies.permissions import get_current_user
 
 router = APIRouter(
     prefix="/auth",
@@ -62,3 +63,13 @@ def logout(authorization: str = Header(...)):
         return {"status": "logged out"}
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid session")
+
+
+@router.get("/me")
+def get_me(user=Depends(get_current_user)):
+    return {
+        "username": user["username"],
+        "isadmin": user["isadmin"],
+        "canviewtables": user["canviewtables"],
+        "canedittables": user["canedittables"]
+    }

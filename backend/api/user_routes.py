@@ -17,7 +17,7 @@ Models are defined in:
 models/user_models.py
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from flask import jsonify
 from fastapi.responses import JSONResponse
 
@@ -30,6 +30,7 @@ from ..models.user_models import (
     AddUserRequest,
     PasswordResetRequest
 )
+from ..dependencies.permissions import require_admin
 
 router = APIRouter(
     prefix="/users",
@@ -71,7 +72,7 @@ def reset_password_endpoint(data: PasswordResetConfirm):
 
 #returns table for users page
 @router.get("/users")
-def get_users():
+def get_users(admin=Depends(require_admin)):
     #returns the users table with username and isadmin
     rows = get_user_credentials_table()
     # Convert tuples to dicts for JSON
@@ -80,7 +81,7 @@ def get_users():
 
 #endpoint to add user
 @router.post("/add-user")
-def add_user(data: AddUserRequest):
+def add_user(data: AddUserRequest, admin=Depends(require_admin)):
     try:
         #Call function from inventory.py
         return add_user_credentials(data.username, data.password, data.is_admin)
@@ -90,7 +91,7 @@ def add_user(data: AddUserRequest):
 
 #delete user updated endpoint
 @router.delete("/delete-user/{username}")
-def delete_user(username: str):
+def delete_user(username: str, admin=Depends(require_admin)):
     try:
         return delete_user_credentials(username)
     except Exception as e:

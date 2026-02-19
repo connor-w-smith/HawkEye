@@ -1,13 +1,31 @@
 // Users Management Page JavaScript
 
 document.addEventListener("DOMContentLoaded", function() {
+    initializeUsersPage();
+});
+
+async function initializeUsersPage() {
+    if (typeof syncCurrentUserPermissions === "function") {
+        await syncCurrentUserPermissions();
+    }
+
+    const isAdmin = sessionStorage.getItem("is_admin") === "true";
+    if (!isAdmin) {
+        window.location.href = "/index";
+        return;
+    }
+
     loadUsers();
     document.getElementById("addUserForm").addEventListener("submit", handleAddUser);
-});
+}
 
 // Load and display all users
 function loadUsers() {
-    fetch("/users/users")
+    fetch("/users/users", {
+        headers: {
+            ...(typeof getAuthHeaders === "function" ? getAuthHeaders() : {})
+        }
+    })
         .then(response => response.json())
         .then(users => {
             const tbody = document.getElementById("usersTableBody");
@@ -66,7 +84,8 @@ function handleAddUser(event) {
     fetch("/users/add-user", {
         method: "POST",
         headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            ...(typeof getAuthHeaders === "function" ? getAuthHeaders() : {})
         },
         body: JSON.stringify({
             username: username,
@@ -98,7 +117,10 @@ function deleteUser(username) {
     }
 
     fetch(`/users/delete-user/${username}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: {
+            ...(typeof getAuthHeaders === "function" ? getAuthHeaders() : {})
+        }
     })
         .then(response => response.json())
         .then(data => {
