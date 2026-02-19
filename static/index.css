@@ -50,7 +50,22 @@ img {
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f5f7fa;
-    color: #333
+    color: #333;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 20px;
+    row-gap: 8px;
+    align-items: start;
+}
+
+body > * {
+    grid-column: 1 / -1;
+}
+
+.top-toolbar,
+.navbar,
+.header-display {
+    grid-column: 1 / -1;
 }
 
 /*Start of the header styling*/
@@ -71,15 +86,18 @@ h1 {
 /*Start of the table styling*/
 .data-display {
     margin-top: 20px;
-    width: 48%;
+    width: auto;
     border-collapse: collapse;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0, .05);
-    margin-left: 200px;
+    margin-left: 10px;
+    margin-right: 20px;
     float: none;
-    display: inline-block;
+    display: table;
     vertical-align: top;
+    grid-column: 2;
+    grid-row: 4;
 }
 
 .data-display th,
@@ -146,14 +164,17 @@ h1 {
 /*Start of the sensor data display styling*/
 .sensor-data-display {
     margin-top: 20px;
-    width: 40%;
+    width: auto;
     border-collapse: collapse;
     background: orange;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0, .05);
-    float: left;
+    float: none;
     margin-left: 20px;
+    margin-right: 10px;
+    grid-column: 1;
+    grid-row: 4;
 }
 
 .sensor-data-display th,
@@ -184,16 +205,20 @@ h1 {
 
 /*Start of the packaging data display styling*/
 .packaging-data-display {
-    margin-top: 100px;
-    width: 40%;
+    margin-top: 260px;
+    margin-left: 20px;
+    margin-right: 10px;
+    margin-bottom: 20px;
+    width: auto;
     border-collapse: collapse;
     background: orange;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0, .05);
-    float: left;
-    margin-left: 20px;
-    clear: left;
+    float: none;
+    clear: none;
+    grid-column: 1;
+    grid-row: 4;
 }
 
 .packaging-data-display th,
@@ -248,3 +273,4 @@ caption {
     margin-bottom: 10px;
     color: #333;
 }
+

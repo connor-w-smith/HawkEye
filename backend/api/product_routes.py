@@ -17,8 +17,8 @@ Models are defined in:
 models/product_models.py
 """
 
-from fastapi import APIRouter, HTTPException, Query
-
+from fastapi import APIRouter, HTTPException, Query, Depends
+from..dependencies.permissions import require_admin, require_edit_permission
 
 from ..models.product_models import (
     AddFinishedGood,
@@ -62,7 +62,7 @@ def finished_goods_search(search: str | None = None):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/add-finished-good")
-def add_finished_good_endpoint(data: AddFinishedGood):
+def add_finished_good_endpoint(data: AddFinishedGood,user=Depends(require_edit_permission)):
     try:
         #call function from inventory.py
         return add_finished_good(data.finished_good_name)
@@ -72,7 +72,7 @@ def add_finished_good_endpoint(data: AddFinishedGood):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.delete("/delete-finished-good")
-def delete_finished_good_endpoint(data: DeleteFinishedGood):
+def delete_finished_good_endpoint(data: DeleteFinishedGood,user=Depends(require_edit_permission)):
     try:
         return delete_finished_good(data.finished_good_name)
 

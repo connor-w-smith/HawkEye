@@ -18,16 +18,17 @@ models/material_models.py
 """
 
 from fastapi import APIRouter, HTTPException
+'''
 from ..services.material_services import get_raw_material_recipe
 from ..models.material_models import RawMaterialRequest
-
+'''
 router = APIRouter(
     prefix="/materials",
     tags=["Materials"]
 )
 
 
-
+"""
 @router.get("/inventory/raw-materials/{finished_good_id}")
 def read_raw_material_recipe_table(finished_good_id: str):
     try:
@@ -35,3 +36,4 @@ def read_raw_material_recipe_table(finished_good_id: str):
         return {"raw_materials": data}  # already a list of dicts
     except Exception:
         return {"raw_materials": []}
+"""
