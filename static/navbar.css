@@ -26,6 +26,10 @@
     padding: 0;
 }
 
+.nav-links li.admin-only {
+    display: none;
+}
+
 .nav-links a {
     display: block;
     padding: 15px 20px;
