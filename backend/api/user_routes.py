@@ -17,13 +17,14 @@ Models are defined in:
 models/user_models.py
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from flask import jsonify
 from fastapi.responses import JSONResponse
 
 from ..models import DeleteUserRequest
 from ..services import add_user_credentials
 from ..services.user_services import *
+from..dependencies.permissions import require_admin
 from ..models.user_models import (
     PasswordResetConfirm,
     DeleteUserRequest,
@@ -80,7 +81,7 @@ def get_users():
 
 #endpoint to add user
 @router.post("/add-user")
-def add_user(data: AddUserRequest):
+def add_user(data: AddUserRequest,user=Depends(require_admin)):
     try:
         #Call function from inventory.py
         return add_user_credentials(data.username, data.password, data.is_admin)
@@ -90,11 +91,12 @@ def add_user(data: AddUserRequest):
 
 #delete user updated endpoint
 @router.delete("/delete-user/{username}")
-def delete_user(username: str):
+def delete_user(username: str, user=Depends(require_admin)):
     try:
         return delete_user_credentials(username)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 """
 # Endpoint to update password (logged-in user)
 @router.post("/user-reset-password")
