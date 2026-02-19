@@ -87,12 +87,18 @@ def validate_session(session_token):
     conn = get_connection()
 
     try:
-        #on connection check token row
+        #UPDATE: Admin rights
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT username, expires_at
-                FROM tblsessions
-                WHERE session_token = %s
+                SELECT s.username,
+                       s.expires_at,
+                       u.isadmin,
+                       u.canviewtables,
+                       u.canedittables
+                FROM tblsessions s
+                JOIN tblusercredentials u
+                    ON s.username = u.username
+                WHERE s.session_token = %s
             """, (session_token,))
 
             row = cur.fetchone()
@@ -101,14 +107,25 @@ def validate_session(session_token):
             if row is None:
                 raise ValueError("Invalid session")
 
-            username, expires_at = row
+            username = row[0]
+            expires_at = row[1]
+            isadmin = row[2]
+            canviewtables = row[3]
+            canedittables = row[4]
+
 
             #if token is expired session will end
             if datetime.now() > expires_at:
                 delete_session(session_token)
                 raise ValueError("Session expired")
 
-            return username
+            return {
+                "username": username,
+                "isadmin": isadmin,
+                "canviewtables": canviewtables,
+                "canedittables": canedittables
+            }
+
 
     finally:
         conn.close()
