@@ -9,6 +9,15 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
 
     const isAdmin = sessionStorage.getItem("is_admin") === "true";
+    const adminOnlyItems = document.querySelectorAll(".nav-links li.admin-only");
+    adminOnlyItems.forEach(item => {
+        if (isAdmin) {
+            item.style.display = "list-item";
+        } else {
+            item.remove();
+        }
+    });
+
     const usersLink = document.querySelector('.nav-links a[href="/users"]');
     if (usersLink && !isAdmin) {
         const usersListItem = usersLink.closest("li");
