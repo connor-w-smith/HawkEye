@@ -18,6 +18,9 @@ models/order_models.py
 """
 
 from fastapi import APIRouter, HTTPException
+
+from ..services import create_new_order
+
 '''
 not implemented yet ;p
 from ..services.order_services import (
@@ -50,44 +53,16 @@ def read_current_order_table(finished_good_id: str):
     except Exception:
         return {"current_orders": []}
 
+
 #TODO: Break this apart and add DB portion to order_services file
 # Create a new production order
 @router.post("/create")
-def create_production_order(finishedgoodid: str, target_quantity: int):
-    """
-    Creates a new production order in tblproductiondata.
-    The database trigger automatically creates a corresponding tracking row in tblactiveproduction.
+async def create_production_order(finishedgoodid: str, target_quantity: int):
 
-    Args:
-        finishedgoodid (str): UUID of the product to produce
-        target_quantity (int): How many parts to produce
-
-    Returns:
-        dict: {"status": "success", "orderid": order_id_value}
-    """
     try:
-        conn = get_connection()
-        cur = conn.cursor()
+        result = create_new_order(finishedgoodid, target_quantity)
 
-        # Insert new production order with partsproduced starting at 0
-        # The trigger automatically creates the tblactiveproduction row
-        cur.execute("""
-            INSERT INTO tblproductiondata (finishedgoodid, partsproduced, target_quantity)
-            VALUES (%s, 0, %s)
-            RETURNING orderid
-        """, (finishedgoodid, target_quantity))
-
-        orderid = cur.fetchone()[0]
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        return {
-            "status": "success",
-            "message": f"Production order created",
-            "orderid": orderid,
-            "target_quantity": target_quantity
-        }
+        return result
 
     except Exception as e:
         print(f"Error creating production order: {e}")
