@@ -10,7 +10,9 @@
 
 <!-- Top Toolbar -->
 <div class="top-toolbar">
-    <img src="{{ url_for('static', filename='CapstoneLogoWhiteText.png') }}" alt="Logo">
+    <a href="/index" aria-label="Go to home page">
+        <img src="{{ url_for('static', filename='CapstoneLogoWhiteText.png') }}" alt="Logo">
+    </a>
     <div class="toolbar-content">
         <p>Hi, <span id="username">User</span></p>
         <span class="separator">|</span>
