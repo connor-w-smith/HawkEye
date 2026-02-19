@@ -1,4 +1,46 @@
-document.addEventListener("DOMContentLoaded", () => {
+const SESSION_TOKEN_KEY = "session_token";
+const IS_ADMIN_KEY = "is_admin";
+
+function getAuthHeaders() {
+    const token = sessionStorage.getItem(SESSION_TOKEN_KEY);
+    if (!token) {
+        return {};
+    }
+    return { "Authorization": `Bearer ${token}` };
+}
+
+async function syncCurrentUserPermissions() {
+    const token = sessionStorage.getItem(SESSION_TOKEN_KEY);
+    if (!token) {
+        sessionStorage.removeItem(IS_ADMIN_KEY);
+        return null;
+    }
+
+    try {
+        const response = await fetch("/auth/me", {
+            headers: {
+                ...getAuthHeaders()
+            }
+        });
+
+        if (!response.ok) {
+            sessionStorage.removeItem(IS_ADMIN_KEY);
+            return null;
+        }
+
+        const user = await response.json();
+        sessionStorage.setItem(IS_ADMIN_KEY, String(!!user.isadmin));
+        if (user.username) {
+            sessionStorage.setItem("username", user.username);
+        }
+        return user;
+    } catch (error) {
+        sessionStorage.removeItem(IS_ADMIN_KEY);
+        return null;
+    }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
     // Password visibility toggle for login page
     const togglePassword = document.getElementById("togglePassword");
     const inputPassword = document.getElementById("inputPassword");
@@ -14,13 +56,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Display current user
     const username = sessionStorage.getItem("username");
-    if (username) {
-        document.getElementById("username").textContent = username;
+    const usernameElement = document.getElementById("username");
+    if (username && usernameElement) {
+        usernameElement.textContent = username;
+    }
+
+    if (sessionStorage.getItem(SESSION_TOKEN_KEY)) {
+        const user = await syncCurrentUserPermissions();
+        if (user && usernameElement) {
+            usernameElement.textContent = user.username;
+        }
     }
 
     // Fetch finished goods (only if data-table exists and NOT on search page)
     const table = document.getElementById("data-table");
-    if (table) {
+    const searchInput = document.getElementById("searchInput");
+    if (table && !searchInput) {
         fetch("/search/finished-goods")
         .then(response => response.json())
         .then(data => {
@@ -109,20 +160,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Handle logout
-    document.getElementById("logout-link").addEventListener("click", async (e) => {
-        e.preventDefault();
-        try {
-            await fetch("/auth/logout", {
-                method: "POST"
-            });
-            sessionStorage.removeItem("username");
-            window.location.href = "/";
-        } catch (error) {
-            console.error("Logout error:", error);
-            sessionStorage.removeItem("username");
-            window.location.href = "/";
-        }
-    });
+    const logoutLink = document.getElementById("logout-link");
+    if (logoutLink) {
+        logoutLink.addEventListener("click", async (e) => {
+            e.preventDefault();
+            try {
+                await fetch("/auth/logout", {
+                    method: "POST",
+                    headers: {
+                        ...getAuthHeaders()
+                    }
+                });
+            } catch (error) {
+                console.error("Logout error:", error);
+            } finally {
+                sessionStorage.removeItem("username");
+                sessionStorage.removeItem(SESSION_TOKEN_KEY);
+                sessionStorage.removeItem(IS_ADMIN_KEY);
+                window.location.href = "/";
+            }
+        });
+    }
 });
 
 
@@ -174,6 +232,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     // Store username in sessionStorage
                     sessionStorage.setItem("username", username);
+                    if (data.session_token) {
+                        sessionStorage.setItem(SESSION_TOKEN_KEY, data.session_token);
+                        await syncCurrentUserPermissions();
+                    }
 
                     // Redirect to index page after successful login
                     setTimeout(() => {
