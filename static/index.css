@@ -191,9 +191,9 @@ h1 {
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0, .05);
-    float: left;
+    /* float: left;
     margin-left: 20px;
-    clear: left;
+    clear: left; */
 }
 
 .packaging-data-display th,

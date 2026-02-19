@@ -20,7 +20,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Fetch finished goods (only if data-table exists and NOT on search page)
     const table = document.getElementById("data-table");
-    if (table) {
+    const searchInput = document.getElementById("searchInput");
+    if (table && !searchInput) {
         fetch("/search/finished-goods")
         .then(response => response.json())
         .then(data => {
