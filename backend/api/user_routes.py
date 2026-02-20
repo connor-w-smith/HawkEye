@@ -31,6 +31,7 @@ from ..models.user_models import (
     AddUserRequest,
     PasswordResetRequest
 )
+from ..models.auth_models import PasswordUpdateRequest
 from ..dependencies.permissions import require_admin
 
 router = APIRouter(
@@ -98,7 +99,7 @@ def delete_user(username: str, admin=Depends(require_admin)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-"""
+
 # Endpoint to update password (logged-in user)
 @router.post("/user-reset-password")
 def user_password_update(data: PasswordUpdateRequest):
@@ -110,4 +111,3 @@ def user_password_update(data: PasswordUpdateRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-"""
