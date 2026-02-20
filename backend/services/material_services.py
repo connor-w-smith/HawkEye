@@ -13,9 +13,9 @@ This file should:
 Called by:
 api/material_routes.py
 """
-"""
-from db import get_connection
 
+from db import get_connection
+"""
 # TODO: Implement DB connection logic if needed
 def get_raw_material_recipe(finished_good_id: str):
     """'''
@@ -28,18 +28,7 @@ def get_raw_material_recipe(finished_good_id: str):
     ]
 
 def add_raw_recipe(material_name):
-    #open connection
-    conn = get_connection()
-
-    #disbale auto- commit
-    conn.autocommit = False
-
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute(
-
-            )
-
+    
 def delete_raw_recipe(material_name):
 
 def update_raw_recipe():
