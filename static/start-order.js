@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
             messageBox.style.display = "block";
 
             try {
-                const response = await fetch("/api/create-production-order", {
+                const response = await fetch("/orders/create-production-order", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"

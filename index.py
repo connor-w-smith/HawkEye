@@ -207,17 +207,23 @@ def proxy_finished_goods_search():
 
     return jsonify(resp.json()), resp.status_code
 
-@app.route("/api/create-production-order", methods=["POST"])
+@app.route("/orders/create-production-order", methods=["POST"])
 def proxy_create_production_order():
     data = request.get_json()
+
+    try:
+        resp = requests.post(
+            f"{BACKEND_URL}/orders/create-production-order",
+            json=data,
+            timeout=5
+        )
     
-    resp = requests.post(
-        f"{BACKEND_URL}/create-production-order",
-        json=data,
-        timeout=5
-    )
-    
-    return jsonify(resp.json()), resp.status_code
+        return jsonify(resp.json()), resp.status_code
+
+    except Exception as e:
+        print(f"Order creation error: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 # Specific route for a single finished good
 @app.route("/api/finished-goods/<finished_good_id>")
