@@ -38,7 +38,7 @@ def add_raw_material(material_name: str, quantity: float, unit_of_measure: str):
             #check if material already exists
             cur.execute("""
                 SELECT 1
-                FROM tblrawmaterial
+                FROM tblrawmaterialss
                 WHERE material_name = %s
             """, (str(material_name),))
             if cur.fetchone() is not None:
@@ -49,7 +49,7 @@ def add_raw_material(material_name: str, quantity: float, unit_of_measure: str):
 
             #insert new raw material
             cur.execute("""
-                INSERT INTO tblrawmaterial (materialid, material_name, quantity_in_stock, unit_of_measure, last_updated)
+                INSERT INTO tblrawmaterialss (materialid, material_name, quantity_in_stock, unit_of_measure, last_updated)
                 VALUES (%s, %s, %s, %s, NOW())
             """, (str(new_id), str(material_name), quantity, str(unit_of_measure)))
 
@@ -75,7 +75,7 @@ def update_raw_material(material_name: str, quantity: float = None, unit_of_meas
             #check material exists
             cur.execute("""
                 SELECT 1
-                FROM tblrawmaterial
+                FROM tblrawmaterials
                 WHERE material_name = %s
             """, (str(material_name),))
             if cur.fetchone() is None:
@@ -83,7 +83,7 @@ def update_raw_material(material_name: str, quantity: float = None, unit_of_meas
 
             #update material
             cur.execute("""
-                UPDATE tblrawmaterial
+                UPDATE tblrawmaterials
                 SET 
                     quantity_in_stock = COALESCE(%s, quantity_in_stock),
                     unit_of_measure = COALESCE(%s, unit_of_measure),
@@ -114,7 +114,7 @@ def delete_raw_material(material_name: str):
             #check material exists
             cur.execute("""
                 SELECT 1
-                FROM tblrawmaterial
+                FROM tblrawmaterials
                 WHERE material_name = %s
             """, (str(material_name),))
             if cur.fetchone() is None:
@@ -122,7 +122,7 @@ def delete_raw_material(material_name: str):
 
             #delete material
             cur.execute("""
-                DELETE FROM tblrawmaterial
+                DELETE FROM tblrawmaterials
                 WHERE material_name = %s
             """, (str(material_name),))
 
@@ -148,7 +148,7 @@ def add_raw_recipe(finished_good_id: str, material_name: str, quantity_required:
             #get material id
             cur.execute("""
                 SELECT materialid
-                FROM tblrawmaterial
+                FROM tblrawmaterials
                 WHERE material_name = %s
             """, (material_name,))
             material_row = cur.fetchone()
@@ -194,7 +194,7 @@ def delete_raw_recipe(finished_good_id: str, material_name: str):
             #get material id
             cur.execute("""
                 SELECT materialid
-                FROM tblrawmaterial
+                FROM tblrawmaterials
                 WHERE material_name = %s
             """, (material_name,))
             material_row = cur.fetchone()
@@ -240,9 +240,10 @@ def get_raw_materials_for_finished_good(finished_good_id: str):
                     rm.materialid,
                     rm.material_name,
                     rm.unit_of_measure,
-                    r.quantity_required
+                    r.quantity_required,
+                    rm.quantity_in_stock
                 FROM tblrecipes r
-                JOIN tblrawmaterial rm
+                JOIN tblrawmaterials rm
                     ON r.materialid = rm.materialid
                 WHERE r.finishedgoodid = %s
             """, (finished_good_id,))
@@ -256,6 +257,7 @@ def get_raw_materials_for_finished_good(finished_good_id: str):
                     "material_name": row[1],
                     "unit_of_measure": row[2],
                     "quantity_required_per_unit": row[3],
+                    "quantity_available": row[4]
                 }
                 for row in rows
             ]
