@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='index.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='navbar.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='users.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='password-modal.css')}}">
     <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
@@ -92,6 +93,49 @@
             </div>
         </div>
     </div>
+
+    <!-- Change Password Section -->
+    <div class="change-password-section">
+        <h2>Change My Password</h2>
+        <button id="btnOpenPasswordModal" class="btn-change-password">
+            <i class="fa fa-key"></i> Change Password
+        </button>
+    </div>
+
+    <!-- Password Change Modal -->
+    <div id="passwordChangeModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Change Your Password</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <div class="input-wrapper">
+                        <label for="currentPassword">Current Password:</label>
+                        <input type="password" id="currentPassword" placeholder="Enter current password" required>
+                    </div>
+                    <div class="input-wrapper">
+                        <label for="modalNewPassword">New Password:</label>
+                        <input type="password" id="modalNewPassword" placeholder="Enter new password" required>
+                    </div>
+                    <div class="input-wrapper">
+                        <label for="modalConfirmPassword">Confirm New Password:</label>
+                        <input type="password" id="modalConfirmPassword" placeholder="Confirm new password" required>
+                    </div>
+                    <button type="submit" id="btnChangePassword">Update Password</button>
+                    <div id="passwordChangeMessage" class="message-box"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+        <footer>
+        <small>
+            &copy; 2026 HawkEye Inventory Systems. All rights reserved.<br>
+            Contact Us: <p>h.einventorysystems@gmail.com</p>
+        </small>
+    </footer>
 
     <script src="{{ url_for('static', filename='app.js') }}"></script>
     <script src="{{ url_for('static', filename='navbar.js') }}"></script>
