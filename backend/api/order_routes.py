@@ -56,11 +56,11 @@ def read_current_order_table(finished_good_id: str):
 
 #TODO: Break this apart and add DB portion to order_services file
 # Create a new production order
-@router.post("/create")
-async def create_production_order(finishedgoodid: str, target_quantity: int):
+@router.post("/create-production-order")
+async def create_production_order(order: CreateProductionOrderRequest):
 
     try:
-        result = create_new_order(finishedgoodid, target_quantity)
+        result = create_new_order(order.finishedgoodid, order.target_quantity)
 
         return result
 

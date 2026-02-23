@@ -29,12 +29,12 @@ def create_new_order(finishedgoodid: str, target_quantity: int):
             RETURNING orderid
             """
 
-        cur.execute(query, (finishedgoodid, target_quantity))
+            cur.execute(query, (finishedgoodid, target_quantity))
 
-        result = cur.fetchone()
-        orderid = result["orderid"]
+            result = cur.fetchone()
+            orderid = result["orderid"]
 
-        conn.commit()
+            conn.commit()
 
         return {
             "status": "success",
