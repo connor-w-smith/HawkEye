@@ -110,6 +110,7 @@
             <tr>
                 <th>Raw Material</th>
                 <th>Consumption per Part</th>
+                <th>Available Stock</th>
             </tr>
         </thead>
         <tbody id="raw-materials-body"></tbody>
@@ -190,7 +191,7 @@
     // =====================
     async function loadRawMaterials() {
         try {
-            const resp = await fetch(`/material/inventory/raw-materials/${FINISHED_GOOD_ID}`);
+            const resp = await fetch(`/materials/recipe/${FINISHED_GOOD_ID}`);
             if (!resp.ok) throw new Error("Failed to fetch raw materials");
     
             const data = await resp.json();
@@ -203,8 +204,9 @@
             (data.raw_materials || []).forEach(rm => {
                 tbody.innerHTML += `
                     <tr>
-                        <td>${rm["Raw Material Name"] ?? "--"}</td>
-                        <td>${rm["Consumption Per Part Produced"] ?? "--"}</td>
+                        <td>${rm.material_name ?? "--"}</td>
+                        <td>${rm.quantity_required_per_unit ?? "--"} ${rm.unit_of_measure ?? ""}</td>
+                        <td>${rm.quantity_available ?? "--"}</td> 
                     </tr>
                 `;
             });
