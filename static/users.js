@@ -2,6 +2,7 @@
 
 document.addEventListener("DOMContentLoaded", function() {
     initializeUsersPage();
+    initializePasswordModal();
 });
 
 async function initializeUsersPage() {
@@ -145,3 +146,92 @@ function showMessage(element, message, type) {
         setTimeout(() => element.classList.remove("error"), 4000);
     }
 }
+
+// Initialize password change modal
+function initializePasswordModal() {
+    const modal = document.getElementById("passwordChangeModal");
+    const openBtn = document.getElementById("btnOpenPasswordModal");
+    const closeBtn = document.querySelector(".close-modal");
+    const form = document.getElementById("changePasswordForm");
+
+    // Open modal
+    openBtn.addEventListener("click", function() {
+        modal.style.display = "flex";
+        form.reset();
+        document.getElementById("passwordChangeMessage").className = "message-box";
+        document.getElementById("passwordChangeMessage").textContent = "";
+    });
+
+    // Close modal
+    closeBtn.addEventListener("click", function() {
+        modal.style.display = "none";
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener("click", function(event) {
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    });
+
+    // Handle form submission
+    form.addEventListener("submit", handlePasswordChange);
+}
+
+// Handle password change
+async function handlePasswordChange(event) {
+    event.preventDefault();
+
+    const currentPassword = document.getElementById("currentPassword").value;
+    const newPassword = document.getElementById("modalNewPassword").value;
+    const confirmPassword = document.getElementById("modalConfirmPassword").value;
+    const messageBox = document.getElementById("passwordChangeMessage");
+    const username = sessionStorage.getItem("username");
+
+    // Validation
+    if (newPassword.length < 6) {
+        showMessage(messageBox, "New password must be at least 6 characters", "error");
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        showMessage(messageBox, "New passwords do not match", "error");
+        return;
+    }
+
+    if (currentPassword === newPassword) {
+        showMessage(messageBox, "New password must be different from current password", "error");
+        return;
+    }
+
+    try {
+        const response = await fetch("/users/user-reset-password", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...(typeof getAuthHeaders === "function" ? getAuthHeaders() : {})
+            },
+            body: JSON.stringify({
+                username: username,
+                old_password: currentPassword,
+                new_password: newPassword
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.status === "success") {
+            showMessage(messageBox, "Password changed successfully!", "success");
+            setTimeout(() => {
+                document.getElementById("passwordChangeModal").style.display = "none";
+                document.getElementById("changePasswordForm").reset();
+            }, 2000);
+        } else {
+            showMessage(messageBox, data.detail || data.message || "Error changing password", "error");
+        }
+    } catch (error) {
+        console.error("Error changing password:", error);
+        showMessage(messageBox, "An error occurred while changing password", "error");
+    }
+}
+
