@@ -8,3 +8,7 @@ class AddFinishedGood(BaseModel):
 
 class DeleteFinishedGood(BaseModel):
     finished_good_name: str
+
+class UpdateFinishedGood(BaseModel):
+    old_finished_good_name: str
+    new_finished_good_name: str

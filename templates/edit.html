@@ -1,7 +1,7 @@
 <!--
-    Title: index.html
+    Title: edit.html
     Author: Connor Smith
-    Description: Home page for the inventory dashboard.
+    Description: Edit page for the inventory dashboard - admin only.
 -->
 
 <!DOCTYPE html>
@@ -9,7 +9,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HawkEye Inventory Systems</title>
+    <title>HawkEye Inventory Systems - Edit</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='index.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='navbar.css')}}">
     <!-- Font Awesome CDN -->
@@ -46,7 +46,7 @@
     </nav>
 
     <div class="header-display">
-        <h1>Dashboard</h1>
+        <h1>Edit Goods</h1>
     </div>
 
     <table class="sensor-data-display">
@@ -76,18 +76,53 @@
         </tbody>
     </table>
 
+    <div class="inventory-controls">
+        <button id="btn-add-finished-good" class="btn-add-item">+ Add Finished Good</button>
+    </div>
+
     <table class="data-display">
         <caption>Available Inventory</caption>
         <thead>
             <tr>
                 <th>ID</th>
                 <th>Name</th>
-                <th>Quantity</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody id="data-table"></tbody>
     </table>
 
+    <!-- Add Finished Good Modal -->
+    <div id="add-finished-good-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add New Finished Good</h2>
+            <form id="add-finished-good-form">
+                <div class="form-group">
+                    <label for="finished-good-name">Finished Good Name:</label>
+                    <input type="text" id="finished-good-name" name="finished-good-name" required>
+                </div>
+                <button type="submit" class="btn-submit">Add Finished Good</button>
+            </form>
+            <div id="modal-message" class="modal-message"></div>
+        </div>
+    </div>
+
+    <!-- Edit Finished Good Modal -->
+    <div id="edit-finished-good-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Finished Good</h2>
+            <form id="edit-finished-good-form">
+                <div class="form-group">
+                    <label for="edit-finished-good-name">Finished Good Name:</label>
+                    <input type="text" id="edit-finished-good-name" name="edit-finished-good-name" required>
+                </div>
+                <button type="submit" class="btn-submit">Update Finished Good</button>
+            </form>
+            <div id="edit-modal-message" class="modal-message"></div>
+        </div>
+    </div>
 
     <footer>
         <small>
@@ -97,5 +132,6 @@
     </footer>
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 <script src="{{ url_for('static', filename='navbar.js') }}"></script>
+<script src="{{ url_for('static', filename='edit.js') }}"></script>
 </body>
 </html>
