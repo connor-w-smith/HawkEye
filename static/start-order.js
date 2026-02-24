@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btnCreateOrder.addEventListener("click", async () => {
             const finishedgoodid = document.getElementById("finishedgoodid").value.trim();
             const targetQuantity = document.getElementById("target-quantity").value;
+            const sensorId = document.getElementById("sensor-id").value.trim() || null;
 
             // Clear previous messages
             messageBox.style.display = "none";
@@ -74,20 +75,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     },
                     body: JSON.stringify({
                         finishedgoodid: finishedgoodid,
-                        target_quantity: parseInt(targetQuantity)
+                        target_quantity: parseInt(targetQuantity),
+                        sensor_id: sensorId
                     })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    messageBox.textContent = `✓ Production Order Created! Order ID: ${data.orderid} | Target: ${data.target_quantity} parts`;
+                    const sensorText = data.sensor_id ? ` | Sensor: ${data.sensor_id}` : "";
+                    messageBox.textContent = `✓ Production Order Created! Order ID: ${data.orderid} | Target: ${data.target_quantity} parts${sensorText}`;
                     messageBox.className = "message-box success";
                     messageBox.style.display = "block";
 
                     // Clear form
                     document.getElementById("finishedgoodid").value = "";
                     document.getElementById("target-quantity").value = "";
+                    document.getElementById("sensor-id").value = "";
 
                     // Re-enable button after 3 seconds
                     setTimeout(() => {

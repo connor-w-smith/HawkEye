@@ -109,6 +109,7 @@ h1 {
     grid-row: 4;
 }
 
+
 .data-display th,
 .data-display td {
     padding: 12px 16px;
@@ -124,6 +125,14 @@ h1 {
     background: white;
     transition: background 0.3s;
     border-bottom: 1px solid black;
+}
+
+.data-display tbody tr:hover {
+    background: #ffa500;
+}
+
+.data-display tbody tr:last-child {
+    border-bottom: none;
 }
 
 .data-display tbody tr:hover {
@@ -334,26 +343,37 @@ footer a:hover {
     transform: translateY(0);
 }
 
-.btn-delete-item {
-    padding: 6px 12px;
-    background-color: #ff6b6b;
+.btn-delete {
+    padding: 8px 12px;
+    background-color: #f44336;
     color: white;
     border: none;
     border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background-color 0.3s;
 }
 
-.btn-delete-item:hover {
-    background-color: #ee5a52;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+.btn-delete:hover {
+    background-color: #da190b;
 }
 
-.btn-delete-item:active {
-    transform: translateY(0);
+.btn-edit {
+    padding: 8px 12px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background-color 0.3s;
+    margin-right: 5px;
+}
+
+.btn-edit:hover {
+    background-color: #0b7dda;
 }
 
 /* Modal Styling */

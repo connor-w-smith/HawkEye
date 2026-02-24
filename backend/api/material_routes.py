@@ -23,16 +23,19 @@ from ..dependencies.permissions import require_edit_permission
 from ..services.material_services import (
     add_raw_material,
     delete_raw_material,
-    update_raw_material,add_raw_recipe,
+    update_raw_material,
+    add_raw_recipe,
     delete_raw_recipe,
     get_raw_materials_for_finished_good,
+    get_all_raw_materials,
+    get_all_recipes
 )
 from ..models.material_models import (
     AddRawMaterialRequest,
     UpdateRawMaterialRequest,
     DeleteRawMaterialRequest,
     AddRawRecipeRequest,
-    DeleteRawRecipeRequest
+    DeleteRawRecipeRequest,
 )
 
 router = APIRouter(
@@ -115,7 +118,7 @@ def delete_raw_recipe_endpoint(
 
 
 # ==========================================================
-# VIEW RECIPE FOR FINISHED GOOD
+# VIEW RECIPE FOR PRODUCT PAGE
 # ==========================================================
 
 @router.get("/recipe/{finished_good_id}")
@@ -131,6 +134,47 @@ def view_recipe(finished_good_id: str):
             "status": "success",
             "count": len(data),
             "raw_materials": data
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# ==========================================================
+# VIEW RAW MATERIAL TABLE
+# ==========================================================
+
+@router.get("/raw-materials")
+def view_raw_materials():
+    """
+    Returns all raw materials in inventory.
+    """
+    try:
+        data = get_all_raw_materials()
+
+        return {
+            "status": "success",
+            "count": len(data),
+            "raw_materials": data
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+        
+# ==========================================================
+# VIEW RECIPE TABLE
+# ==========================================================
+@router.get("/recipes")
+def view_all_recipes():
+    """
+    Returns all recipes sorted by finished good.
+    """
+    try:
+        data = get_all_recipes()
+
+        return {
+            "status": "success",
+            "count": len(data),
+            "recipes": data
         }
 
     except Exception as e:

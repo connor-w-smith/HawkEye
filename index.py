@@ -320,6 +320,11 @@ def proxy_current_orders(finished_good_id):
 def users_page():
     return render_template("users.html")
 
+# Edit page route (admin only)
+@app.route("/edit")
+def edit_page():
+    return render_template("edit.html")
+
 
 #TODO: fix call on this
 # API endpoint to get all users

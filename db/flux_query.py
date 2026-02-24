@@ -65,7 +65,7 @@ signal.signal(signal.SIGINT, _handle_signal)
 def get_active_orders():
     """
     Retrieves all active production orders from tblactiveproduction.
-    Returns list of dicts with order info: orderid, target_quantity, last_processed_timestamp
+    Returns list of dicts with order info: orderid, target_quantity, last_processed_timestamp, sensor_id
     """
     try:
         conn = get_connection()
@@ -74,7 +74,8 @@ def get_active_orders():
         #this uses aliases i think what is happening
         query = """
             SELECT ap.orderid, ap.target_quantity, ap.last_processed_timestamp, 
-                   COALESCE(pd.partsproduced, 0) as current_count
+                   COALESCE(pd.partsproduced, 0) as current_count,
+                   COALESCE(pd.sensor_id, '') as sensor_id
             FROM tblactiveproduction ap
             JOIN tblproductiondata pd ON ap.orderid = pd.orderid
             WHERE ap.is_active = true
@@ -88,7 +89,8 @@ def get_active_orders():
                 'orderid': row[0],
                 'target_quantity': row[1],
                 'last_processed_timestamp': row[2],
-                'current_count': row[3]
+                'current_count': row[3],
+                'sensor_id': row[4]
             })
         
         cur.close()
@@ -99,10 +101,11 @@ def get_active_orders():
         logger.exception('Error fetching active orders')
         return []
 
-def get_influx_count_since(timestamp):
+def get_influx_count_since(timestamp, sensor_id=None):
     """
-    stupid function to get stupid count of stupid sensor hits from stupid influx since the given timestamp
-    if stupid timestamp is None, gets count from stupid past 60 seconds
+    Get count of sensor hits from InfluxDB since the given timestamp.
+    If sensor_id is provided, filters hits to only that sensor (using the 'location' tag).
+    If timestamp is None, gets count from past 60 seconds.
     """
     try:
         client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
@@ -120,7 +123,12 @@ def get_influx_count_since(timestamp):
             time_str = ts_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
             time_filter = f"start: {time_str}"
 
-        query = f'from(bucket: "{INFLUX_BUCKET}") |> range({time_filter}) |> count()'
+        # If sensor_id is provided, filter by the 'location' tag in InfluxDB
+        sensor_filter = ""
+        if sensor_id:
+            sensor_filter = f'|> filter(fn: (r) => r.location == "{sensor_id}")'
+
+        query = f'from(bucket: "{INFLUX_BUCKET}") |> range({time_filter}) {sensor_filter} |> count()'
         # Provide org explicitly to the query API
         result = query_api.query(query=query, org=INFLUX_ORG)
 
@@ -141,7 +149,7 @@ def get_influx_count_since(timestamp):
         return count
 
     except Exception:
-        logger.exception('Error querying InfluxDB')
+        logger.exception('Error querying InfluxDB for sensor_id=%s', sensor_id)
         return 0
 
 def update_production_data(orderid, new_parts_count):
@@ -227,8 +235,9 @@ def process_active_orders():
         target = order['target_quantity']
         last_timestamp = order['last_processed_timestamp']
         current_count = order['current_count']
+        sensor_id = order.get('sensor_id', '')
         
-        logger.info('Order %s: %s/%s parts', order_id, current_count, target)
+        logger.info('Order %s (Sensor %s): %s/%s parts', order_id, sensor_id or 'unassigned', current_count, target)
         
         # Check if order already at/past target and should be marked inactive
         if target is not None and current_count >= target:
@@ -237,8 +246,8 @@ def process_active_orders():
             update_active_production(order_id, current_time, mark_inactive=True)
             continue
         
-        #get new sensor hits since last check
-        new_hits = get_influx_count_since(last_timestamp)
+        #get new sensor hits since last check (filtered by sensor_id if assigned)
+        new_hits = get_influx_count_since(last_timestamp, sensor_id=sensor_id)
         
         #got any?
         if new_hits > 0:

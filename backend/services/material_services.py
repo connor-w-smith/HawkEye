@@ -266,3 +266,69 @@ def get_raw_materials_for_finished_good(finished_good_id: str):
 
     finally:
         conn.close()
+
+#for raw materials table
+def get_all_raw_materials():
+    conn = get_connection()
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT 
+                    materialid,
+                    material_name,
+                    quantity_in_stock,
+                    unit_of_measure,
+                    last_updated
+                FROM tblrawmaterials
+                ORDER BY material_name
+            """)
+
+            rows = cur.fetchall()
+
+            return [
+                {
+                    "material_id": r[0],
+                    "material_name": r[1],
+                    "quantity_in_stock": r[2],
+                    "unit_of_measure": r[3],
+                    "last_updated": r[4]
+                }
+                for r in rows
+            ]
+
+    finally:
+        conn.close()
+
+#for recipes table
+def get_all_recipes():
+    conn = get_connection()
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT 
+                    fg.finishedgoodname,
+                    rm.material_name,
+                    r.quantity_required
+                FROM tblrecipes r
+                JOIN tblfinishedgoods fg
+                    ON r.finishedgoodid = fg.finishedgoodid
+                JOIN tblrawmaterials rm
+                    ON r.materialid = rm.materialid
+                ORDER BY fg.finishedgoodname, rm.material_name
+            """)
+
+            rows = cur.fetchall()
+
+            return [
+                {
+                    "finished_good": r[0],
+                    "raw_material": r[1],
+                    "quantity_required": r[2]
+                }
+                for r in rows
+            ]
+
+    finally:
+        conn.close()
