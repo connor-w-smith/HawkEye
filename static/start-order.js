@@ -1,9 +1,27 @@
 // Start Order Page functionality
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     // Display current user
     const username = sessionStorage.getItem("username");
     if (username) {
         document.getElementById("username").textContent = username;
+    }
+
+    // Populate finished goods dropdown
+    try {
+        const response = await fetch("/products/finished-goods?search=");
+        const data = await response.json();
+        
+        if (data.status === "success" && data.results) {
+            const dropdown = document.getElementById("finishedgoodid");
+            data.results.forEach(item => {
+                const option = document.createElement("option");
+                option.value = item.FinishedGoodID;
+                option.textContent = item.FinishedGoodName;
+                dropdown.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error("Error loading finished goods:", error);
     }
 
     // Handle logout
@@ -39,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Validate inputs
             if (!finishedgoodid) {
-                messageBox.textContent = "Please enter a Finished Good ID";
+                messageBox.textContent = "Please select a Finished Good";
                 messageBox.classList.add("error");
                 messageBox.style.display = "block";
                 return;
@@ -47,15 +65,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!targetQuantity || parseInt(targetQuantity) < 1) {
                 messageBox.textContent = "Please enter a valid target quantity (must be at least 1)";
-                messageBox.classList.add("error");
-                messageBox.style.display = "block";
-                return;
-            }
-
-            // Validate UUID format (basic check)
-            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-            if (!uuidRegex.test(finishedgoodid)) {
-                messageBox.textContent = "Invalid UUID format";
                 messageBox.classList.add("error");
                 messageBox.style.display = "block";
                 return;
