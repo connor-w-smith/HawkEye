@@ -256,7 +256,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 row.innerHTML = `
                     <td>${order.orderid || 'N/A'}</td>
                     <td>${order.finishedgoodname || 'N/A'}</td>
-                    <td>${order.sensorid || 'N/A'}</td>
+                    <td>${order.sensor_id || 'N/A'}</td>
                     <td>${order.partsproduced || 0}</td>
                 `;
                 packagingTable.appendChild(row);

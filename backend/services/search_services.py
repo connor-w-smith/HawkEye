@@ -167,11 +167,10 @@ def get_currently_packaging():
         SELECT 
             pd.orderid, 
             fg.finishedgoodname, 
-            si.sensorid, 
+            pd.sensor_id, 
             pd.partsproduced
         FROM tblproductiondata pd
         JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
-        JOIN tblsensorinfeeddata si ON pd.orderid = si.orderid
         JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
         WHERE ap.is_active = TRUE;
         """
