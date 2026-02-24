@@ -76,37 +76,18 @@
         </tbody>
     </table>
 
-    <div class="inventory-controls">
-        <button id="btn-add-finished-good" class="btn-add-item">+ Add Finished Good</button>
-    </div>
-
     <table class="data-display">
         <caption>Available Inventory</caption>
         <thead>
             <tr>
                 <th>ID</th>
                 <th>Name</th>
-                <th>Actions</th>
+                <th>Quantity</th>
             </tr>
         </thead>
         <tbody id="data-table"></tbody>
     </table>
 
-    <!-- Add Finished Good Modal -->
-    <div id="add-finished-good-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Add New Finished Good</h2>
-            <form id="add-finished-good-form">
-                <div class="form-group">
-                    <label for="finished-good-name">Finished Good Name:</label>
-                    <input type="text" id="finished-good-name" name="finished-good-name" required>
-                </div>
-                <button type="submit" class="btn-submit">Add Finished Good</button>
-            </form>
-            <div id="modal-message" class="modal-message"></div>
-        </div>
-    </div>
 
     <footer>
         <small>

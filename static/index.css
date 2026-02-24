@@ -109,6 +109,7 @@ h1 {
     grid-row: 4;
 }
 
+
 .data-display th,
 .data-display td {
     padding: 12px 16px;
@@ -124,6 +125,14 @@ h1 {
     background: white;
     transition: background 0.3s;
     border-bottom: 1px solid black;
+}
+
+.data-display tbody tr:hover {
+    background: #ffa500;
+}
+
+.data-display tbody tr:last-child {
+    border-bottom: none;
 }
 
 .data-display tbody tr:hover {
