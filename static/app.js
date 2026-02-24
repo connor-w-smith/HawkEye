@@ -220,9 +220,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             data.forEach(sensor => {
                 const row = document.createElement("tr");
                 row.innerHTML = `
-                    <td>${sensor.sensorid || 'N/A'}</td>
-                    <td>${sensor.last_hour || 0}</td>
-                    <td>${sensor.total_today || 0}</td>
+                    <td>${sensor.sensor_id || 'N/A'}</td>
+                    <td>${sensor.production_last_1h || 0}</td>
+                    <td>${sensor.production_last_24h || 0}</td>
                 `;
                 sensorTable.appendChild(row);
             });

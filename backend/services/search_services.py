@@ -220,11 +220,21 @@ def get_sensor_production_amounts():
     conn = get_connection()
     query = """
             SELECT 
-                sensorid,
-                COALESCE(SUM(inventorycount) FILTER (WHERE "TimeStamp" >= NOW() - INTERVAL '1 hour'), 0) AS last_hour,
-                COALESCE(SUM(inventorycount) FILTER (WHERE "TimeStamp"::date = CURRENT_DATE), 0) AS total_today
-            FROM tblsensorinfeeddata
-            GROUP BY sensorid;
+                pd.sensor_id,
+            -- Sum parts where the timestamp is within the last hour
+            SUM(CASE 
+                WHEN ap.last_processed_timestamp >= NOW() - INTERVAL '1 hour' THEN pd.partsproduced 
+                ELSE 0 
+            END):: INTEGER AS production_last_1h,
+    
+            -- Sum parts where the timestamp is within the last 24 hours
+            SUM(CASE 
+                WHEN ap.last_processed_timestamp >= NOW() - INTERVAL '24 hours' THEN pd.partsproduced 
+                ELSE 0 
+            END)::INTEGER AS production_last_24h
+            FROM tblproductiondata pd
+            JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
+            GROUP BY pd.sensor_id;
         """
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
