@@ -23,11 +23,13 @@ from..dependencies.permissions import require_admin, require_edit_permission
 from ..models.product_models import (
     AddFinishedGood,
     DeleteFinishedGood,
+    UpdateFinishedGood,
 )
 
 from ..services.product_services import (
     add_finished_good,
     delete_finished_good,
+    update_finished_good,
     add_inventory,
     delete_inventory,
 )
@@ -75,6 +77,14 @@ def add_finished_good_endpoint(data: AddFinishedGood,user=Depends(require_edit_p
 def delete_finished_good_endpoint(data: DeleteFinishedGood,user=Depends(require_edit_permission)):
     try:
         return delete_finished_good(data.finished_good_name)
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.put("/update-finished-good")
+def update_finished_good_endpoint(data: UpdateFinishedGood, user=Depends(require_edit_permission)):
+    try:
+        return update_finished_good(data.old_finished_good_name, data.new_finished_good_name)
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

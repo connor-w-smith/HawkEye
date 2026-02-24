@@ -95,6 +95,63 @@ def delete_finished_good(finished_good_name): #Can add an id argument if needed
     return {"status": "success"}
 
 
+#Updates the name of an existing finished good
+#args: old_finished_good_name, new_finished_good_name, returns: success status
+def update_finished_good(old_finished_good_name, new_finished_good_name):
+
+    #Open a Database connection
+    conn = get_connection()
+    #Disable autocommit
+    conn.autocommit = False
+
+    try:
+        #Create a cursor for executing SQL statements
+        with conn.cursor() as cur:
+
+            # Check that the old FinishedGoodName exists
+            cur.execute("""
+                    SELECT 1
+                    FROM tblfinishedgoods
+                    WHERE finishedgoodname = %s
+                """, (str(old_finished_good_name),))
+
+            # If no row is returned, the old name doesn't exist
+            if cur.fetchone() is None:
+                raise ValueError("Finished good not found")
+
+            # Check that the new FinishedGoodName doesn't already exist
+            cur.execute("""
+                    SELECT 1
+                    FROM tblfinishedgoods
+                    WHERE finishedgoodname = %s
+                """, (str(new_finished_good_name),))
+
+            # If a row is returned, the new name already exists
+            if cur.fetchone() is not None:
+                raise ValueError(f"Finished Good '{new_finished_good_name}' Already Exists")
+
+            #Update finished good name
+            cur.execute("""
+                UPDATE tblfinishedgoods 
+                SET finishedgoodname = %s
+                WHERE finishedgoodname = %s
+                """, (str(new_finished_good_name), str(old_finished_good_name),))
+
+        #Commit the transaction
+        conn.commit()
+
+    except Exception as e:
+        # Rollback in case of error
+        conn.rollback()
+        raise e
+
+    finally:
+        #close the connection
+        conn.close()
+
+    return {"status": "success"}
+
+
 #Adds inventory quantity to finished good, if no finishedgood record exists, adds part and quantity to table
 #args: finishedgoodid, quantity, returns success statement
 def add_inventory(finished_good_id, quantity):
