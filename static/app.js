@@ -86,44 +86,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                     <td>${item.FinishedGoodID}</td>
                     <td>${item.FinishedGoodName}</td>
                     <td>
-                        <button class="btn-delete-item" data-name="${item.FinishedGoodName}">Delete</button>
+                        <button class="btn-delete" onclick="deleteFinishedGood('${item.FinishedGoodName}')">
+                            <i class="fa fa-trash"></i> Delete
+                        </button>
                     </td>
                     `;
 
                     table.appendChild(row);
-
-                    // Add delete button event listener
-                    const deleteBtn = row.querySelector(".btn-delete-item");
-                    deleteBtn.addEventListener("click", async (e) => {
-                        e.preventDefault();
-                        const finishedGoodName = deleteBtn.getAttribute("data-name");
-                        
-                        if (confirm(`Are you sure you want to delete "${finishedGoodName}"?`)) {
-                            try {
-                                const response = await fetch("/products/delete-finished-good", {
-                                    method: "DELETE",
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                        ...getAuthHeaders()
-                                    },
-                                    body: JSON.stringify({
-                                        finished_good_name: finishedGoodName
-                                    })
-                                });
-                                
-                                if (response.ok) {
-                                    alert("Finished good deleted successfully");
-                                    loadFinishedGoods();
-                                } else {
-                                    const error = await response.json();
-                                    alert(`Error deleting finished good: ${error.detail || "Unknown error"}`);
-                                }
-                            } catch (err) {
-                                console.error("Error deleting finished good: ", err);
-                                alert("Error deleting finished good: " + err.message);
-                            }
-                        }
-                    });
                 });
             })
             .catch(err => console.error("Error loading goods: ", err));
@@ -559,3 +528,62 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+
+// Delete finished good
+async function deleteFinishedGood(finishedGoodName) {
+    if (!confirm(`Are you sure you want to delete "${finishedGoodName}"?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch("/products/delete-finished-good", {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({
+                finished_good_name: finishedGoodName
+            })
+        });
+        
+        if (response.ok) {
+            alert("Finished good deleted successfully");
+            // Reload finished goods
+            const table = document.getElementById("data-table");
+            if (table) {
+                const loadFinishedGoods = () => {
+                    fetch("/search/finished-goods")
+                    .then(response => response.json())
+                    .then(data => {
+                        const results = data.results || [];
+                        table.innerHTML = '';
+                        results.forEach(item => {
+                            const row = document.createElement("tr");
+
+                            row.innerHTML = `
+                            <td>${item.FinishedGoodID}</td>
+                            <td>${item.FinishedGoodName}</td>
+                            <td>
+                                <button class="btn-delete" onclick="deleteFinishedGood('${item.FinishedGoodName}')">
+                                    <i class="fa fa-trash"></i> Delete
+                                </button>
+                            </td>
+                            `;
+
+                            table.appendChild(row);
+                        });
+                    })
+                    .catch(err => console.error("Error loading goods: ", err));
+                };
+                loadFinishedGoods();
+            }
+        } else {
+            const error = await response.json();
+            alert(`Error deleting finished good: ${error.detail || "Unknown error"}`);
+        }
+    } catch (err) {
+        console.error("Error deleting finished good: ", err);
+        alert("Error deleting finished good: " + err.message);
+    }
+}
