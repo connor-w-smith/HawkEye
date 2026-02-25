@@ -187,7 +187,7 @@ def get_currently_packaging():
     finally:
         conn.close()
 
-
+#TODO: correct this function to sort by isactive
 def get_current_finishedgood_orders(finishedgoodid):
     #open connection
     conn = get_connection()
@@ -197,13 +197,12 @@ def get_current_finishedgood_orders(finishedgoodid):
             query = """SELECT 
                         pd.orderid, 
                         fg.finishedgoodname, 
-                        si.sensorid, 
+                        pd.sensor_id, 
                         pd.partsproduced
                     FROM tblproductiondata pd
                     JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
-                    JOIN tblsensorinfeeddata si ON pd.orderid = si.orderid
                     JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
-                    WHERE fg.finishedgoodid = %s;"""
+                    WHERE fg.finishedgoodid = %s ;"""
 
             cursor.execute(query, (finishedgoodid,))
             results = cursor.fetchall()
@@ -234,6 +233,9 @@ def get_sensor_production_amounts():
             END)::INTEGER AS production_last_24h
             FROM tblproductiondata pd
             JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
+            WHERE pd.sensor_id IS NOT NULL
+                AND TRIM(LOWER(pd.sensor_id)) != 'n/a'  -- Removes spaces and handles 'N/A', 'n/a', ' n/a '
+                AND pd.sensor_id != ''  
             GROUP BY pd.sensor_id;
         """
     try:
