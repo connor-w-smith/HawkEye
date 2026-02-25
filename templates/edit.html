@@ -49,48 +49,66 @@
         <h1>Edit Goods</h1>
     </div>
 
-    <table class="sensor-data-display">
-         <caption>Sensor Production Amounts</caption>
-        <thead>
-            <tr>
-                <th>Sensor ID</th>
-                <th>Last Hour Production</th>
-                <th>Total Production Today</th>
-            </tr>
-        </thead>
-        <tbody id="sensor-data-table">
-        </tbody>
-    </table>
+    <div class="tables-container">
+        <!-- Column 1: Raw Materials -->
+        <div class="table-column">
+            <table class="sensor-data-display">
+                 <caption>Raw Materials</caption>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Quantity</th>
+                        <th>Unit</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="sensor-data-table">
+                </tbody>
+            </table>
+            <button class="btn-edit" onclick="document.getElementById('add-raw-material-modal').style.display='block'" style="width: 100%; margin-top: 10px;">
+                <i class="fa fa-plus"></i> Add Raw Material
+            </button>
+        </div>
 
-    <table class="packaging-data-display">
-         <caption>Currently Packaging</caption>
-        <thead>
-            <tr>
-                <th>Order Number</th>
-                <th>Finished Good</th>
-                <th>Sensor ID</th>
-                <th>Parts Produced</th>
-            </tr>
-        </thead>
-        <tbody id="packaging-data-table">
-        </tbody>
-    </table>
+        <!-- Column 2: Recipes -->
+        <div class="table-column">
+            <table class="packaging-data-display">
+                 <caption>Recipes</caption>
+                <thead>
+                    <tr>
+                        <th>Finished Good</th>
+                        <th>Material</th>
+                        <th>Quantity Required</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="packaging-data-table">
+                </tbody>
+            </table>
+            <button class="btn-edit" onclick="document.getElementById('add-recipe-modal').style.display='block'" style="width: 100%; margin-top: 10px;">
+                <i class="fa fa-plus"></i> Add Recipe
+            </button>
+        </div>
 
-    <div class="inventory-controls">
-        <button id="btn-add-finished-good" class="btn-add-item">+ Add Finished Good</button>
+        <!-- Column 3: Finished Goods -->
+        <div class="table-column">
+            <table class="data-display">
+                <caption>Finished Goods</caption>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="data-table"></tbody>
+            </table>
+            <button class="btn-edit" onclick="document.getElementById('add-finished-good-modal').style.display='block'" style="width: 100%; margin-top: 10px;">
+                <i class="fa fa-plus"></i> Add Finished Good
+            </button>
+        </div>
     </div>
-
-    <table class="data-display">
-        <caption>Available Inventory</caption>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="data-table"></tbody>
-    </table>
 
     <!-- Add Finished Good Modal -->
     <div id="add-finished-good-modal" class="modal" style="display: none;">
@@ -121,6 +139,110 @@
                 <button type="submit" class="btn-submit">Update Finished Good</button>
             </form>
             <div id="edit-modal-message" class="modal-message"></div>
+        </div>
+    </div>
+
+    <!-- Add Recipe Modal -->
+    <div id="add-recipe-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add New Recipe</h2>
+            <form id="add-recipe-form">
+                <div class="form-group">
+                    <label for="recipe-finished-good-id">Finished Good:</label>
+                    <select id="recipe-finished-good-id" name="recipe-finished-good-id" required>
+                        <option value="">Select a finished good</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="recipe-material-name">Raw Material:</label>
+                    <select id="recipe-material-name" name="recipe-material-name" required>
+                        <option value="">Select a raw material</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="recipe-quantity-required">Quantity Required:</label>
+                    <input type="number" id="recipe-quantity-required" name="recipe-quantity-required" step="0.01" required>
+                </div>
+                <button type="submit" class="btn-submit">Add Recipe</button>
+            </form>
+            <div id="recipe-modal-message" class="modal-message"></div>
+        </div>
+    </div>
+
+    <!-- Edit Recipe Modal -->
+    <div id="edit-recipe-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Recipe</h2>
+            <form id="edit-recipe-form">
+                <div class="form-group">
+                    <label for="edit-recipe-finished-good-id">Finished Good:</label>
+                    <select id="edit-recipe-finished-good-id" name="edit-recipe-finished-good-id" required>
+                        <option value="">Select a finished good</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-recipe-material-name">Raw Material:</label>
+                    <select id="edit-recipe-material-name" name="edit-recipe-material-name" required>
+                        <option value="">Select a raw material</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-recipe-quantity-required">Quantity Required:</label>
+                    <input type="number" id="edit-recipe-quantity-required" name="edit-recipe-quantity-required" step="0.01" required>
+                </div>
+                <button type="submit" class="btn-submit">Update Recipe</button>
+            </form>
+            <div id="edit-recipe-modal-message" class="modal-message"></div>
+        </div>
+    </div>
+
+    <!-- Add Raw Material Modal -->
+    <div id="add-raw-material-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add New Raw Material</h2>
+            <form id="add-raw-material-form">
+                <div class="form-group">
+                    <label for="raw-material-name">Material Name:</label>
+                    <input type="text" id="raw-material-name" name="raw-material-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="raw-material-quantity">Quantity:</label>
+                    <input type="number" id="raw-material-quantity" name="raw-material-quantity" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="raw-material-unit">Unit of Measure:</label>
+                    <input type="text" id="raw-material-unit" name="raw-material-unit" required>
+                </div>
+                <button type="submit" class="btn-submit">Add Raw Material</button>
+            </form>
+            <div id="raw-material-modal-message" class="modal-message"></div>
+        </div>
+    </div>
+
+    <!-- Edit Raw Material Modal -->
+    <div id="edit-raw-material-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Raw Material</h2>
+            <form id="edit-raw-material-form">
+                <div class="form-group">
+                    <label for="edit-raw-material-name">Material Name:</label>
+                    <input type="text" id="edit-raw-material-name" name="edit-raw-material-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-raw-material-quantity">Quantity:</label>
+                    <input type="number" id="edit-raw-material-quantity" name="edit-raw-material-quantity" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-raw-material-unit">Unit of Measure:</label>
+                    <input type="text" id="edit-raw-material-unit" name="edit-raw-material-unit" required>
+                </div>
+                <button type="submit" class="btn-submit">Update Raw Material</button>
+            </form>
+            <div id="edit-raw-material-modal-message" class="modal-message"></div>
         </div>
     </div>
 

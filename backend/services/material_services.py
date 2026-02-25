@@ -15,6 +15,7 @@ api/material_routes.py
 """
 
 from db import get_connection
+import uuid6
 """
 # TODO: Implement DB connection logic if needed
 def get_raw_material_recipe(finished_good_id: str):
@@ -38,7 +39,7 @@ def add_raw_material(material_name: str, quantity: float, unit_of_measure: str):
             #check if material already exists
             cur.execute("""
                 SELECT 1
-                FROM tblrawmaterialss
+                FROM tblrawmaterials
                 WHERE material_name = %s
             """, (str(material_name),))
             if cur.fetchone() is not None:
@@ -49,7 +50,7 @@ def add_raw_material(material_name: str, quantity: float, unit_of_measure: str):
 
             #insert new raw material
             cur.execute("""
-                INSERT INTO tblrawmaterialss (materialid, material_name, quantity_in_stock, unit_of_measure, last_updated)
+                INSERT INTO tblrawmaterials (materialid, material_name, quantity_in_stock, unit_of_measure, last_updated)
                 VALUES (%s, %s, %s, %s, NOW())
             """, (str(new_id), str(material_name), quantity, str(unit_of_measure)))
 
@@ -145,6 +146,19 @@ def add_raw_recipe(finished_good_id: str, material_name: str, quantity_required:
     try:
         with conn.cursor() as cur:
 
+            #get finished good id from name
+            cur.execute("""
+                SELECT finishedgoodid
+                FROM tblfinishedgoods
+                WHERE finishedgoodname = %s
+            """, (finished_good_id,))
+            fg_row = cur.fetchone()
+
+            if fg_row is None:
+                raise ValueError(f"Finished good '{finished_good_id}' not found")
+
+            finished_good_db_id = fg_row[0]
+
             #get material id
             cur.execute("""
                 SELECT materialid
@@ -163,7 +177,7 @@ def add_raw_recipe(finished_good_id: str, material_name: str, quantity_required:
                 SELECT 1
                 FROM tblrecipes
                 WHERE finishedgoodid = %s AND materialid = %s
-            """, (finished_good_id, material_id))
+            """, (finished_good_db_id, material_id))
 
             if cur.fetchone() is not None:
                 raise ValueError("Recipe entry already exists")
@@ -172,7 +186,7 @@ def add_raw_recipe(finished_good_id: str, material_name: str, quantity_required:
             cur.execute("""
                 INSERT INTO tblrecipes (recipeid, finishedgoodid, materialid, quantity_required)
                 VALUES (gen_random_uuid(), %s, %s, %s)
-            """, (finished_good_id, material_id, quantity_required))
+            """, (finished_good_db_id, material_id, quantity_required))
 
         conn.commit()
 
@@ -191,7 +205,20 @@ def delete_raw_recipe(finished_good_id: str, material_name: str):
     try:
         with conn.cursor() as cur:
 
-            #get material id
+            #get finished good id from name
+            cur.execute("""
+                SELECT finishedgoodid
+                FROM tblfinishedgoods
+                WHERE finishedgoodname = %s
+            """, (finished_good_id,))
+            fg_row = cur.fetchone()
+
+            if fg_row is None:
+                raise ValueError(f"Finished good '{finished_good_id}' not found")
+
+            finished_good_db_id = fg_row[0]
+
+            #get material id from name
             cur.execute("""
                 SELECT materialid
                 FROM tblrawmaterials
@@ -209,7 +236,7 @@ def delete_raw_recipe(finished_good_id: str, material_name: str):
                 SELECT 1
                 FROM tblrecipes
                 WHERE finishedgoodid = %s AND materialid = %s
-            """, (finished_good_id, material_id))
+            """, (finished_good_db_id, material_id))
 
             if cur.fetchone() is None:
                 raise ValueError("Recipe entry not found")
@@ -218,7 +245,7 @@ def delete_raw_recipe(finished_good_id: str, material_name: str):
             cur.execute("""
                 DELETE FROM tblrecipes
                 WHERE finishedgoodid = %s AND materialid = %s
-            """, (finished_good_id, material_id))
+            """, (finished_good_db_id, material_id))
 
         conn.commit()
 
