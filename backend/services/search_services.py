@@ -280,3 +280,35 @@ def get_finished_goods_with_quantities():
     
     finally:
         conn.close()
+        
+#for product page yarrrrr
+def get_active_order_for_finishedgood(finishedgoodid):
+    conn = get_connection()
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            query = """
+                SELECT 
+                    pd.orderid,
+                    fg.finishedgoodname,
+                    ap.sensor_id,
+                    pd.partsproduced
+                FROM tblproductiondata pd
+                JOIN tblfinishedgoods fg 
+                    ON pd.finishedgoodid = fg.finishedgoodid
+                JOIN tblactiveproduction ap 
+                    ON pd.orderid = ap.orderid
+                WHERE fg.finishedgoodid = %s
+                AND ap.is_active = TRUE;
+            """
+
+            cursor.execute(query, (finishedgoodid,))
+            results = cursor.fetchall()
+
+            return results
+
+    except Exception as e:
+        raise e
+
+    finally:
+        conn.close()

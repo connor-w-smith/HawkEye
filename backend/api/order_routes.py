@@ -67,3 +67,28 @@ async def create_production_order(order: CreateProductionOrderRequest):
     except Exception as e:
         print(f"Error creating production order: {e}")
         raise Exception(f"Failed to create production order: {str(e)}")
+'''
+
+TODO: THIS CODE IS NOT READY TO BE DEPLOYED YET. 
+        # When we have functionality to delete past orders, we can deploy it. NOT RIGHT NOW!!!!!!
+        # SQL code for Chase to create index when we CAN deploy this code below.
+        # CREATE UNIQUE INDEX idx_unique_active_sensor_id ON public.tblactiveproduction USING btree (sensor_id) WHERE (is_active = true);
+
+# Create a new production order
+@router.post("/create-production-order")
+async def create_production_order(order: CreateProductionOrderRequest):
+
+    try:
+        result = create_new_order(order.finishedgoodid, order.target_quantity, sensor_id=order.sensor_id)
+
+        if result.get("status") == "error":                                                                             
+            raise HTTPException(status_code=400, detail=result.get("detail", "Failed to create production order"))
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error creating production order: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create production order: {str(e)}")
+'''

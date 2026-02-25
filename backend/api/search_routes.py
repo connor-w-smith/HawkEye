@@ -29,6 +29,7 @@ from ..services.search_services import (
     get_current_finishedgood_orders,
     get_currently_packaging,
     get_finished_goods_with_quantities
+    get_active_order_for_finishedgood
 )
 
 router = APIRouter(
@@ -121,8 +122,8 @@ def read_raw_material_recipe_table(finished_good_id: str):
 @router.get("/production-data/current-orders/{finished_good_id}")
 def read_current_order_table(finished_good_id: str):
     try:
-        df = get_current_finishedgood_orders(finished_good_id)
-        return {"current_orders": df.to_dict(orient="records")}
+        data = get_active_order_for_finishedgood(finished_good_id)
+        return {"current_orders": data}
     except Exception:
         return {"current_orders": []}
 
