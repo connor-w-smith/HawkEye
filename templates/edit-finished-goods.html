@@ -1,7 +1,7 @@
 <!--
-    Title: edit.html
+    Title: edit-finished-goods.html
     Author: Connor Smith
-    Description: Edit page for the inventory dashboard - admin only.
+    Description: Edit page for finished goods.
 -->
 
 <!DOCTYPE html>
@@ -9,7 +9,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HawkEye Inventory Systems - Edit</title>
+    <title>HawkEye Inventory Systems - Edit Finished Goods</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='index.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='navbar.css')}}">
     <!-- Font Awesome CDN -->
@@ -53,16 +53,58 @@
     </nav>
 
     <div class="header-display">
-        <h1>Edit Goods</h1>
+        <h1>Edit Finished Goods</h1>
     </div>
 
-    <div class="edit-navigation">
-        <p>Please select an item to edit:</p>
-        <ul class="edit-nav-links">
-            <li><a href="/edit-raw-materials" class="nav-card">Raw Materials</a></li>
-            <li><a href="/edit-recipes" class="nav-card">Recipes</a></li>
-            <li><a href="/edit-finished-goods" class="nav-card">Finished Goods</a></li>
-        </ul>
+    <div class="tables-container" style="display: flex; justify-content: center; padding: 20px;">
+        <div class="table-column" style="width: 60%; max-width: 800px;">
+            <table class="data-display">
+                <caption>Finished Goods</caption>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="data-table"></tbody>
+            </table>
+            <button class="btn-edit" onclick="document.getElementById('add-finished-good-modal').style.display='block'" style="width: 100%; margin-top: 10px;">
+                <i class="fa fa-plus"></i> Add Finished Good
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Finished Good Modal -->
+    <div id="add-finished-good-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add New Finished Good</h2>
+            <form id="add-finished-good-form">
+                <div class="form-group">
+                    <label for="finished-good-name">Finished Good Name:</label>
+                    <input type="text" id="finished-good-name" name="finished-good-name" required>
+                </div>
+                <button type="submit" class="btn-submit">Add Finished Good</button>
+            </form>
+            <div id="modal-message" class="modal-message"></div>
+        </div>
+    </div>
+
+    <!-- Edit Finished Good Modal -->
+    <div id="edit-finished-good-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Finished Good</h2>
+            <form id="edit-finished-good-form">
+                <div class="form-group">
+                    <label for="edit-finished-good-name">Finished Good Name:</label>
+                    <input type="text" id="edit-finished-good-name" name="edit-finished-good-name" required>
+                </div>
+                <button type="submit" class="btn-submit">Update Finished Good</button>
+            </form>
+            <div id="edit-modal-message" class="modal-message"></div>
+        </div>
     </div>
 
     <footer>

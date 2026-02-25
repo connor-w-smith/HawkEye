@@ -1,0 +1,139 @@
+<!--
+    Title: edit-raw-materials.html
+    Author: Connor Smith
+    Description: Edit page for raw materials.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HawkEye Inventory Systems - Edit Raw Materials</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='navbar.css')}}">
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+    <div class="top-toolbar">
+        <a href="/index" aria-label="Go to home page">
+            <img src="{{ url_for('static', filename='CapstoneLogoWhiteText.png') }}" alt="HawkEye Inventory Systems Logo">
+        </a>
+        <div class="toolbar-content">
+            <p id="user-greeting">Hi, <span id="username"></span></p>
+            <span class="separator">|</span>
+            <a href="/" id="logout-link">Log out</a>
+        </div>
+    </div>
+
+    <!-- Responsive Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <ul class="nav-links">
+                <li><a href="/index" class="nav-link">Home</a></li>
+                <li><a href="/search" class="nav-link">Search</a></li>
+                <li><a href="/start-order" class="nav-link">Start Order</a></li>
+                <li class="admin-only dropdown">
+                    <a href="/edit" class="nav-link">Edit ▼</a>
+                    <div class="dropdown-content">
+                        <a href="/edit-raw-materials">Raw Materials</a>
+                        <a href="/edit-recipes">Recipes</a>
+                        <a href="/edit-finished-goods">Finished Goods</a>
+                    </div>
+                </li>
+                <li class="admin-only"><a href="/users" class="nav-link">Users</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="header-display">
+        <h1>Edit Raw Materials</h1>
+    </div>
+
+    <div class="tables-container" style="display: flex; justify-content: center; padding: 20px;">
+        <div class="table-column" style="width: 60%; max-width: 800px;">
+            <table class="sensor-data-display">
+                <caption>Raw Materials</caption>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Quantity</th>
+                        <th>Unit</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="sensor-data-table">
+                </tbody>
+            </table>
+            <button class="btn-edit" onclick="document.getElementById('add-raw-material-modal').style.display='block'" style="width: 100%; margin-top: 10px;">
+                <i class="fa fa-plus"></i> Add Raw Material
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Raw Material Modal -->
+    <div id="add-raw-material-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add New Raw Material</h2>
+            <form id="add-raw-material-form">
+                <div class="form-group">
+                    <label for="raw-material-name">Material Name:</label>
+                    <input type="text" id="raw-material-name" name="raw-material-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="raw-material-quantity">Quantity:</label>
+                    <input type="number" id="raw-material-quantity" name="raw-material-quantity" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="raw-material-unit">Unit of Measure:</label>
+                    <input type="text" id="raw-material-unit" name="raw-material-unit" required>
+                </div>
+                <button type="submit" class="btn-submit">Add Raw Material</button>
+            </form>
+            <div id="raw-material-modal-message" class="modal-message"></div>
+        </div>
+    </div>
+
+    <!-- Edit Raw Material Modal -->
+    <div id="edit-raw-material-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Raw Material</h2>
+            <form id="edit-raw-material-form">
+                <div class="form-group">
+                    <label for="edit-raw-material-name">Material Name:</label>
+                    <input type="text" id="edit-raw-material-name" name="edit-raw-material-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-raw-material-quantity">Quantity:</label>
+                    <input type="number" id="edit-raw-material-quantity" name="edit-raw-material-quantity" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-raw-material-unit">Unit of Measure:</label>
+                    <input type="text" id="edit-raw-material-unit" name="edit-raw-material-unit" required>
+                </div>
+                <button type="submit" class="btn-submit">Update Raw Material</button>
+            </form>
+            <div id="edit-raw-material-modal-message" class="modal-message"></div>
+        </div>
+    </div>
+
+    <footer>
+        <small>
+            &copy; 2026 HawkEye Inventory Systems. All rights reserved.<br>
+            Contact Us: <p>h.einventorysystems@gmail.com</p>
+        </small>
+    </footer>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+<script src="{{ url_for('static', filename='navbar.js') }}"></script>
+<script src="{{ url_for('static', filename='edit.js') }}"></script>
+</body>
+</html>

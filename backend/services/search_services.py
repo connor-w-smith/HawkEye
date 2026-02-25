@@ -249,6 +249,40 @@ def get_sensor_production_amounts():
     finally:
         conn.close()
 
+
+def get_finished_goods_with_quantities():
+    """
+    Returns all finished goods with their total parts produced from tblproductiondata.
+    """
+    conn = get_connection()
+    
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT 
+                    fg.finishedgoodid,
+                    fg.finishedgoodname,
+                    COALESCE(SUM(pd.partsproduced), 0) AS total_quantity
+                FROM tblfinishedgoods fg
+                LEFT JOIN tblproductiondata pd ON fg.finishedgoodid = pd.finishedgoodid
+                GROUP BY fg.finishedgoodid, fg.finishedgoodname
+                ORDER BY fg.finishedgoodname
+            """)
+            
+            rows = cur.fetchall()
+            
+            return [
+                {
+                    "FinishedGoodID": r[0],
+                    "FinishedGoodName": r[1],
+                    "Quantity": int(r[2])
+                }
+                for r in rows
+            ]
+    
+    finally:
+        conn.close()
+        
 #for product page yarrrrr
 def get_active_order_for_finishedgood(finishedgoodid):
     conn = get_connection()
