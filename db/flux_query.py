@@ -129,7 +129,7 @@ def get_influx_count_since(timestamp, sensor_id=None):
             sensor_filter = f'|> filter(fn: (r) => r.location == "{sensor_id}")'
 
         # Only count the 'value' field to avoid double-counting if multiple fields exist
-        query = f'from(bucket: "{INFLUX_BUCKET}") |> range({time_filter}) {sensor_filter} |> filter(fn: (r) => r._field == "value") |> count()'
+        query = f'from(bucket: "{INFLUX_BUCKET}") |> range({time_filter}) {sensor_filter} |> count()'
         # Provide org explicitly to the query API
         result = query_api.query(query=query, org=INFLUX_ORG)
 
