@@ -49,41 +49,44 @@
         <h1>Dashboard</h1>
     </div>
 
-    <div class="tables-container">
-        <!-- Column 1: Sensor Production -->
-        <div class="table-column">
-            <table class="sensor-data-display">
-                 <caption>Sensor Production Amounts</caption>
-                <thead>
-                    <tr>
-                        <th>Sensor ID</th>
-                        <th>Last Hour Production</th>
-                        <th>Total Production Today</th>
-                    </tr>
-                </thead>
-                <tbody id="sensor-data-table">
-                </tbody>
-            </table>
+    <div class="tables-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; flex: 1; align-items: start;">
+        <!-- Left Side: Two Tables Stacked -->
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <!-- Sensor Production -->
+            <div class="table-column">
+                <table class="sensor-data-display">
+                     <caption>Sensor Production Amounts</caption>
+                    <thead>
+                        <tr>
+                            <th>Sensor ID</th>
+                            <th>Last Hour Production</th>
+                            <th>Total Production Today</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sensor-data-table">
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Currently Packaging -->
+            <div class="table-column">
+                <table class="packaging-data-display">
+                     <caption>Currently Packaging</caption>
+                    <thead>
+                        <tr>
+                            <th>Order Number</th>
+                            <th>Finished Good</th>
+                            <th>Sensor ID</th>
+                            <th>Parts Produced</th>
+                        </tr>
+                    </thead>
+                    <tbody id="packaging-data-table">
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Column 2: Currently Packaging -->
-        <div class="table-column">
-            <table class="packaging-data-display">
-                 <caption>Currently Packaging</caption>
-                <thead>
-                    <tr>
-                        <th>Order Number</th>
-                        <th>Finished Good</th>
-                        <th>Sensor ID</th>
-                        <th>Parts Produced</th>
-                    </tr>
-                </thead>
-                <tbody id="packaging-data-table">
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Column 3: Available Inventory -->
+        <!-- Right Side: Available Inventory -->
         <div class="table-column">
             <table class="data-display">
                 <caption>Available Inventory</caption>

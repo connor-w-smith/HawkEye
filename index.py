@@ -325,6 +325,21 @@ def users_page():
 def edit_page():
     return render_template("edit.html")
 
+# Edit Raw Materials page route (admin only)
+@app.route("/edit-raw-materials")
+def edit_raw_materials_page():
+    return render_template("edit-raw-materials.html")
+
+# Edit Recipes page route (admin only)
+@app.route("/edit-recipes")
+def edit_recipes_page():
+    return render_template("edit-recipes.html")
+
+# Edit Finished Goods page route (admin only)
+@app.route("/edit-finished-goods")
+def edit_finished_goods_page():
+    return render_template("edit-finished-goods.html")
+
 
 #TODO: fix call on this
 # API endpoint to get all users

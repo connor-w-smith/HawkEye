@@ -527,3 +527,54 @@ footer a:hover {
     min-height: 20px;
 }
 
+/* Edit Navigation Styling */
+.edit-navigation {
+    max-width: 800px;
+    margin: 60px auto;
+    padding: 40px;
+    text-align: center;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.edit-navigation p {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 40px;
+}
+
+.edit-nav-links {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.nav-card {
+    display: inline-block;
+    padding: 40px 30px;
+    background: linear-gradient(135deg, #3a9ad9, #1c6ba0);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    min-width: 200px;
+    cursor: pointer;
+}
+
+.nav-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    border-color: #ffa500;
+}
+
+.nav-card:active {
+    transform: translateY(-2px);
+}
+

@@ -1,4 +1,141 @@
-// Edit Page JavaScript
+// Edit Page JavaScript - Refactored for separate edit pages
+
+// ================================
+// GLOBAL FUNCTION DEFINITIONS
+// ================================
+
+// Load raw materials with edit and delete buttons
+function loadRawMaterialsForEdit() {
+    const table = document.getElementById("sensor-data-table");
+    if (!table) return; // Exit if table not on this page
+    
+    fetch("/materials/raw-materials")
+    .then(response => response.json())
+    .then(data => {
+        const materials = data.raw_materials || [];
+        table.innerHTML = '';
+
+        if (materials.length === 0) {
+            const row = document.createElement("tr");
+            row.innerHTML = `<td colspan="5" style="text-align: center;">No raw materials available</td>`;
+            table.appendChild(row);
+            return;
+        }
+
+        materials.forEach(material => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${material.material_id}</td>
+                <td>${material.material_name}</td>
+                <td>${material.quantity_in_stock}</td>
+                <td>${material.unit_of_measure}</td>
+                <td>
+                    <div class="actions-container">
+                        <button class="btn-edit" onclick="openEditRawMaterialModal('${material.material_name}', ${material.quantity_in_stock}, '${material.unit_of_measure}')">
+                            <i class="fa fa-edit"></i> Edit
+                        </button>
+                        <button class="btn-delete" onclick="deleteRawMaterial('${material.material_name}')">
+                            <i class="fa fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </td>
+            `;
+            table.appendChild(row);
+        });
+    })
+    .catch(err => {
+        console.error("Error loading raw materials: ", err);
+        table.innerHTML = '<tr><td colspan="5" style="text-align: center;">Error loading raw materials</td></tr>';
+    });
+}
+
+// Load finished goods with edit and delete buttons
+function loadFinishedGoodsForEdit() {
+    const table = document.getElementById("data-table");
+    if (!table) return; // Exit if table not on this page
+    
+    fetch("/search/finished-goods")
+    .then(response => response.json())
+    .then(data => {
+        const results = data.results || [];
+        table.innerHTML = '';
+        
+        results.forEach(item => {
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+            <td>${item.FinishedGoodID}</td>
+            <td>${item.FinishedGoodName}</td>
+            <td>
+                <div class="actions-container">
+                    <button class="btn-edit" onclick="openEditModal('${item.FinishedGoodName}')">
+                        <i class="fa fa-edit"></i> Edit
+                    </button>
+                    <button class="btn-delete" onclick="deleteFinishedGood('${item.FinishedGoodName}')">
+                        <i class="fa fa-trash"></i> Delete
+                    </button>
+                </div>
+            </td>
+            `;
+
+            table.appendChild(row);
+        });
+    })
+    .catch(err => console.error("Error loading goods: ", err));
+}
+
+// Load recipes with edit and delete buttons
+function loadRecipesForEdit() {
+    const table = document.getElementById("packaging-data-table");
+    if (!table) return; // Exit if table not on this page
+    
+    fetch("/materials/recipes")
+    .then(response => response.json())
+    .then(data => {
+        const recipes = data.recipes || [];
+        table.innerHTML = '';
+
+        if (recipes.length === 0) {
+            const row = document.createElement("tr");
+            row.innerHTML = `<td colspan="4" style="text-align: center;">No recipes available</td>`;
+            table.appendChild(row);
+            return;
+        }
+
+        recipes.forEach(recipe => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${recipe.finished_good || 'N/A'}</td>
+                <td>${recipe.raw_material || 'N/A'}</td>
+                <td>${recipe.quantity_required || 0}</td>
+                <td>
+                    <div class="actions-container">
+                        <button class="btn-edit" onclick="openEditRecipeModal('${recipe.finished_good}', '${recipe.raw_material}', ${recipe.quantity_required})">
+                            <i class="fa fa-edit"></i> Edit
+                        </button>
+                        <button class="btn-delete" onclick="deleteRecipe('${recipe.finished_good}', '${recipe.raw_material}')">
+                            <i class="fa fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </td>
+            `;
+            table.appendChild(row);
+        });
+    })
+    .catch(err => {
+        console.error("Error loading recipes: ", err);
+        table.innerHTML = '<tr><td colspan="4" style="text-align: center;">Error loading recipes</td></tr>';
+    });
+}
+
+// Make these globally accessible for app.js and other files
+window.loadRawMaterialsForEdit = loadRawMaterialsForEdit;
+window.loadFinishedGoodsForEdit = loadFinishedGoodsForEdit;
+window.loadRecipesForEdit = loadRecipesForEdit;
+
+// ================================
+// INITIALIZATION
+// ================================
 
 document.addEventListener("DOMContentLoaded", async () => {
     // Check if user is admin
@@ -12,14 +149,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    // Load finished goods with edit and delete buttons
-    loadFinishedGoodsForEdit();
-
-    // Load raw materials with edit and delete buttons
-    loadRawMaterialsForEdit();
-
-    // Load recipes with edit and delete buttons
-    loadRecipesForEdit();
+    // Conditionally load tables only if they exist on this page
+    if (document.getElementById("sensor-data-table")) {
+        loadRawMaterialsForEdit();
+    }
+    
+    if (document.getElementById("data-table")) {
+        loadFinishedGoodsForEdit();
+    }
+    
+    if (document.getElementById("packaging-data-table")) {
+        loadRecipesForEdit();
+    }
 
     // Handle Add Raw Material modal
     const addRawModal = document.getElementById("add-raw-material-modal");
@@ -221,49 +362,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     };
 
-    // Load raw materials with edit and delete buttons
-    function loadRawMaterialsForEdit() {
-        const table = document.getElementById("sensor-data-table");
-        fetch("/materials/raw-materials")
-        .then(response => response.json())
-        .then(data => {
-            const materials = data.raw_materials || [];
-            table.innerHTML = '';
-
-            if (materials.length === 0) {
-                const row = document.createElement("tr");
-                row.innerHTML = `<td colspan="5" style="text-align: center;">No raw materials available</td>`;
-                table.appendChild(row);
-                return;
-            }
-
-            materials.forEach(material => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${material.material_id}</td>
-                    <td>${material.material_name}</td>
-                    <td>${material.quantity_in_stock}</td>
-                    <td>${material.unit_of_measure}</td>
-                    <td>
-                        <div class="actions-container">
-                            <button class="btn-edit" onclick="openEditRawMaterialModal('${material.material_name}', ${material.quantity_in_stock}, '${material.unit_of_measure}')">
-                                <i class="fa fa-edit"></i> Edit
-                            </button>
-                            <button class="btn-delete" onclick="deleteRawMaterial('${material.material_name}')">
-                                <i class="fa fa-trash"></i> Delete
-                            </button>
-                        </div>
-                    </td>
-                `;
-                table.appendChild(row);
-            });
-        })
-        .catch(err => {
-            console.error("Error loading raw materials: ", err);
-            table.innerHTML = '<tr><td colspan="5" style="text-align: center;">Error loading raw materials</td></tr>';
-        });
-    }
-
     // Handle Add Finished Good modal
     const addModal = document.getElementById("add-finished-good-modal");
     const addCloseBtn = addModal ? addModal.querySelector(".close") : null;
@@ -424,42 +522,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         editModal.style.display = "block";
     };
-
-    // Load finished goods with edit and delete buttons
-    function loadFinishedGoodsForEdit() {
-        const table = document.getElementById("data-table");
-        fetch("/search/finished-goods")
-        .then(response => response.json())
-        .then(data => {
-            const results = data.results || [];
-            table.innerHTML = '';
-            
-            results.forEach(item => {
-                const row = document.createElement("tr");
-
-                row.innerHTML = `
-                <td>${item.FinishedGoodID}</td>
-                <td>${item.FinishedGoodName}</td>
-                <td>
-                    <div class="actions-container">
-                        <button class="btn-edit" onclick="openEditModal('${item.FinishedGoodName}')">
-                            <i class="fa fa-edit"></i> Edit
-                        </button>
-                        <button class="btn-delete" onclick="deleteFinishedGood('${item.FinishedGoodName}')">
-                            <i class="fa fa-trash"></i> Delete
-                        </button>
-                    </div>
-                </td>
-                `;
-
-                table.appendChild(row);
-            });
-        })
-        .catch(err => console.error("Error loading goods: ", err));
-    }
-    
-    // Make it globally accessible for app.js
-    window.loadFinishedGoodsForEdit = loadFinishedGoodsForEdit;
 
     // Fetch sensor data
     const sensorTable = document.getElementById("sensor-data-table");
@@ -782,48 +844,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             alert("Error deleting recipe: " + err.message);
         }
     };
-
-    // Load recipes with edit and delete buttons
-    function loadRecipesForEdit() {
-        const table = document.getElementById("packaging-data-table");
-        fetch("/materials/recipes")
-        .then(response => response.json())
-        .then(data => {
-            const recipes = data.recipes || [];
-            table.innerHTML = '';
-
-            if (recipes.length === 0) {
-                const row = document.createElement("tr");
-                row.innerHTML = `<td colspan="4" style="text-align: center;">No recipes available</td>`;
-                table.appendChild(row);
-                return;
-            }
-
-            recipes.forEach(recipe => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${recipe.finished_good || 'N/A'}</td>
-                    <td>${recipe.raw_material || 'N/A'}</td>
-                    <td>${recipe.quantity_required || 0}</td>
-                    <td>
-                        <div class="actions-container">
-                            <button class="btn-edit" onclick="openEditRecipeModal('${recipe.finished_good}', '${recipe.raw_material}', ${recipe.quantity_required})">
-                                <i class="fa fa-edit"></i> Edit
-                            </button>
-                            <button class="btn-delete" onclick="deleteRecipe('${recipe.finished_good}', '${recipe.raw_material}')">
-                                <i class="fa fa-trash"></i> Delete
-                            </button>
-                        </div>
-                    </td>
-                `;
-                table.appendChild(row);
-            });
-        })
-        .catch(err => {
-            console.error("Error loading recipes: ", err);
-            table.innerHTML = '<tr><td colspan="4" style="text-align: center;">Error loading recipes</td></tr>';
-        });
-    }
 
     // Handle logout
     const logoutLink = document.getElementById("logout-link");
