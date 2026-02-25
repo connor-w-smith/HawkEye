@@ -28,7 +28,7 @@ from ..services.search_services import (
     get_raw_material_recipe,
     get_current_finishedgood_orders,
     get_currently_packaging,
-    get_finished_goods_with_quantities
+    get_finished_goods_with_quantities,
     get_active_order_for_finishedgood
 )
 
