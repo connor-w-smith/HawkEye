@@ -17,7 +17,6 @@ No Pydantic models are used for search routes.
 """
 
 from fastapi import APIRouter, HTTPException
-from backend.services import search_finished_by_id, get_sensor_production_amounts
 from typing import List, Dict
 
 from ..services.search_services import (
@@ -26,10 +25,10 @@ from ..services.search_services import (
     search_inventory_by_id,
     get_orders_by_finishedgoodid,
     get_raw_material_recipe,
-    get_current_finishedgood_orders,
     get_currently_packaging,
     get_finished_goods_with_quantities,
-    get_active_order_for_finishedgood
+    get_active_order_for_finishedgood,
+    get_sensor_production_amounts
 )
 
 router = APIRouter(
