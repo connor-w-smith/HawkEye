@@ -133,19 +133,25 @@ def get_influx_count_since(timestamp, sensor_id=None):
         # Provide org explicitly to the query API
         result = query_api.query(query=query, org=INFLUX_ORG)
 
+
+        # Debug: print number of tables and records
+        logger.info(f"Flux query returned {len(result)} tables")
+        total_records = 0
         count = 0
-        for table in result:
+        for idx, table in enumerate(result):
+            logger.info(f"Table {idx}: {len(table.records)} records")
             for record in table.records:
+                logger.info(f"Record: _field={record.get_field()}, _value={record.get_value()}, tags={record.values}")
                 val = record.get_value()
+                total_records += 1
                 try:
                     count += int(val)
                 except Exception:
-                    # If value cannot be converted to int, attempt float then int
                     try:
                         count += int(float(val))
                     except Exception:
                         pass
-
+        logger.info(f"Total records processed: {total_records}, summed count: {count}")
         client.close()
         return count
 
