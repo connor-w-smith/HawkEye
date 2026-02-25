@@ -74,129 +74,54 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (table && !searchInput) {
         // Function to load and refresh the inventory
         const loadFinishedGoods = () => {
-            fetch("/search/finished-goods")
-            .then(response => response.json())
-            .then(data => {
-                const results = data.results || [];
-                table.innerHTML = '';
-                results.forEach(item => {
-                    const row = document.createElement("tr");
-                    
-                    // Check if edit modal exists (means we're on edit.html)
-                    const isEditPage = document.getElementById("edit-finished-good-modal") !== null;
-                    
-                    let actionButtons = '';
-                    if (isEditPage) {
-                        // Show both edit and delete buttons on edit page
-                        actionButtons = `
-                            <button class="btn-edit" onclick="openEditModal('${item.FinishedGoodName}')">
-                                <i class="fa fa-edit"></i> Edit
-                            </button>
-                            <button class="btn-delete" onclick="deleteFinishedGood('${item.FinishedGoodName}')">
-                                <i class="fa fa-trash"></i> Delete
-                            </button>
+            // Check if edit modal exists (means we're on edit.html)
+            const isEditPage = document.getElementById("edit-finished-good-modal") !== null;
+            
+            if (isEditPage) {
+                // On edit page, use regular finished goods endpoint for editing
+                fetch("/search/finished-goods")
+                .then(response => response.json())
+                .then(data => {
+                    const results = data.results || [];
+                    table.innerHTML = '';
+                    results.forEach(item => {
+                        const row = document.createElement("tr");
+
+                        row.innerHTML = `
+                        <td>${item.FinishedGoodID}</td>
+                        <td>${item.FinishedGoodName}</td>
+                        <td>
+                        </td>
                         `;
-                    } else {
-                        // Show nothing on index page
-                        actionButtons = '';
-                    }
 
-                    row.innerHTML = `
-                    <td>${item.FinishedGoodID}</td>
-                    <td>${item.FinishedGoodName}</td>
-                    <td>
-                        ${actionButtons}
-                    </td>
-                    `;
+                        table.appendChild(row);
+                    });
+                })
+                .catch(err => console.error("Error loading goods: ", err));
+            } else {
+                // On index page, use finished goods with quantities
+                fetch("/search/finished-goods-with-quantities")
+                .then(response => response.json())
+                .then(data => {
+                    const results = data.results || [];
+                    table.innerHTML = '';
+                    results.forEach(item => {
+                        const row = document.createElement("tr");
 
-                    table.appendChild(row);
-                });
-            })
-            .catch(err => console.error("Error loading goods: ", err));
+                        row.innerHTML = `
+                        <td>${item.FinishedGoodID}</td>
+                        <td>${item.FinishedGoodName}</td>
+                        <td>${item.Quantity}</td>
+                        `;
+
+                        table.appendChild(row);
+                    });
+                })
+                .catch(err => console.error("Error loading goods: ", err));
+            }
         };
         
         loadFinishedGoods();
-
-        // Handle Add Finished Good modal
-        const addBtn = document.getElementById("btn-add-finished-good");
-        const modal = document.getElementById("add-finished-good-modal");
-        const closeBtn = modal ? modal.querySelector(".close") : null;
-        const form = document.getElementById("add-finished-good-form");
-        const modalMessage = document.getElementById("modal-message");
-        
-        if (addBtn && modal) {
-            addBtn.addEventListener("click", () => {
-                modal.style.display = "block";
-            });
-            
-            if (closeBtn) {
-                closeBtn.addEventListener("click", () => {
-                    modal.style.display = "none";
-                });
-            }
-            
-            window.addEventListener("click", (event) => {
-                if (event.target === modal) {
-                    modal.style.display = "none";
-                }
-            });
-        }
-        
-        if (form) {
-            form.addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const finishedGoodName = document.getElementById("finished-good-name").value;
-                
-                if (!finishedGoodName.trim()) {
-                    if (modalMessage) {
-                        modalMessage.style.color = "red";
-                        modalMessage.textContent = "Please enter a finished good name";
-                    }
-                    return;
-                }
-                
-                try {
-                    const response = await fetch("/products/add-finished-good", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            ...getAuthHeaders()
-                        },
-                        body: JSON.stringify({
-                            finished_good_name: finishedGoodName
-                        })
-                    });
-                    
-                    if (response.ok) {
-                        if (modalMessage) {
-                            modalMessage.style.color = "green";
-                            modalMessage.textContent = "Finished good added successfully!";
-                        }
-                        setTimeout(() => {
-                            modal.style.display = "none";
-                            form.reset();
-                            if (modalMessage) {
-                                modalMessage.textContent = "";
-                                modalMessage.style.color = "";
-                            }
-                            loadFinishedGoods();
-                        }, 1500);
-                    } else {
-                        const error = await response.json();
-                        if (modalMessage) {
-                            modalMessage.style.color = "red";
-                            modalMessage.textContent = `Error: ${error.detail || "Unable to add finished good"}`;
-                        }
-                    }
-                } catch (err) {
-                    console.error("Error adding finished good: ", err);
-                    if (modalMessage) {
-                        modalMessage.style.color = "red";
-                        modalMessage.textContent = "Error adding finished good: " + err.message;
-                    }
-                }
-            });
-        }
     }
 
     // Fetch sensor production amounts
@@ -566,34 +491,38 @@ async function deleteFinishedGood(finishedGoodName) {
         
         if (response.ok) {
             alert("Finished good deleted successfully");
-            // Reload finished goods
-            const table = document.getElementById("data-table");
-            if (table) {
-                const loadFinishedGoods = () => {
-                    fetch("/search/finished-goods")
-                    .then(response => response.json())
-                    .then(data => {
-                        const results = data.results || [];
-                        table.innerHTML = '';
-                        results.forEach(item => {
-                            const row = document.createElement("tr");
+            // Reload finished goods - use edit page function if available
+            if (typeof loadFinishedGoodsForEdit === "function") {
+                loadFinishedGoodsForEdit();
+            } else {
+                const table = document.getElementById("data-table");
+                if (table) {
+                    const loadFinishedGoods = () => {
+                        fetch("/search/finished-goods")
+                        .then(response => response.json())
+                        .then(data => {
+                            const results = data.results || [];
+                            table.innerHTML = '';
+                            results.forEach(item => {
+                                const row = document.createElement("tr");
 
-                            row.innerHTML = `
-                            <td>${item.FinishedGoodID}</td>
-                            <td>${item.FinishedGoodName}</td>
-                            <td>
-                                <button class="btn-delete" onclick="deleteFinishedGood('${item.FinishedGoodName}')">
-                                    <i class="fa fa-trash"></i> Delete
-                                </button>
-                            </td>
-                            `;
+                                row.innerHTML = `
+                                <td>${item.FinishedGoodID}</td>
+                                <td>${item.FinishedGoodName}</td>
+                                <td>
+                                    <button class="btn-delete" onclick="deleteFinishedGood('${item.FinishedGoodName}')">
+                                        <i class="fa fa-trash"></i> Delete
+                                    </button>
+                                </td>
+                                `;
 
-                            table.appendChild(row);
-                        });
-                    })
-                    .catch(err => console.error("Error loading goods: ", err));
-                };
-                loadFinishedGoods();
+                                table.appendChild(row);
+                            });
+                        })
+                        .catch(err => console.error("Error loading goods: ", err));
+                    };
+                    loadFinishedGoods();
+                }
             }
         } else {
             const error = await response.json();

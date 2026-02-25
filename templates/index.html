@@ -34,7 +34,14 @@
                 <li><a href="/index" class="nav-link">Home</a></li>
                 <li><a href="/search" class="nav-link">Search</a></li>
                 <li><a href="/start-order" class="nav-link">Start Order</a></li>
-                <li class="admin-only"><a href="/edit" class="nav-link">Edit</a></li>
+                <li class="admin-only dropdown">
+                    <a href="/edit" class="nav-link">Edit ▼</a>
+                    <div class="dropdown-content">
+                        <a href="/edit-raw-materials">Raw Materials</a>
+                        <a href="/edit-recipes">Recipes</a>
+                        <a href="/edit-finished-goods">Finished Goods</a>
+                    </div>
+                </li>
                 <li class="admin-only"><a href="/users" class="nav-link">Users</a></li>
             </ul>
             <div class="hamburger">
@@ -49,44 +56,58 @@
         <h1>Dashboard</h1>
     </div>
 
-    <table class="sensor-data-display">
-         <caption>Sensor Production Amounts</caption>
-        <thead>
-            <tr>
-                <th>Sensor ID</th>
-                <th>Last Hour Production</th>
-                <th>Total Production Today</th>
-            </tr>
-        </thead>
-        <tbody id="sensor-data-table">
-        </tbody>
-    </table>
+    <div class="tables-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; flex: 1; align-items: start;">
+        <!-- Left Side: Two Tables Stacked -->
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <!-- Sensor Production -->
+            <div class="table-column">
+                <table class="sensor-data-display">
+                     <caption>Sensor Production Amounts</caption>
+                    <thead>
+                        <tr>
+                            <th>Sensor ID</th>
+                            <th>Last Hour Production</th>
+                            <th>Total Production Today</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sensor-data-table">
+                    </tbody>
+                </table>
+            </div>
 
-    <table class="packaging-data-display">
-         <caption>Currently Packaging</caption>
-        <thead>
-            <tr>
-                <th>Order Number</th>
-                <th>Finished Good</th>
-                <th>Sensor ID</th>
-                <th>Parts Produced</th>
-            </tr>
-        </thead>
-        <tbody id="packaging-data-table">
-        </tbody>
-    </table>
+            <!-- Currently Packaging -->
+            <div class="table-column">
+                <table class="packaging-data-display">
+                     <caption>Currently Packaging</caption>
+                    <thead>
+                        <tr>
+                            <th>Order Number</th>
+                            <th>Finished Good</th>
+                            <th>Sensor ID</th>
+                            <th>Parts Produced</th>
+                        </tr>
+                    </thead>
+                    <tbody id="packaging-data-table">
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-    <table class="data-display">
-        <caption>Available Inventory</caption>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Quantity</th>
-            </tr>
-        </thead>
-        <tbody id="data-table"></tbody>
-    </table>
+        <!-- Right Side: Available Inventory -->
+        <div class="table-column">
+            <table class="data-display">
+                <caption>Available Inventory</caption>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Quantity</th>
+                    </tr>
+                </thead>
+                <tbody id="data-table"></tbody>
+            </table>
+        </div>
+    </div>
 
 
     <footer>

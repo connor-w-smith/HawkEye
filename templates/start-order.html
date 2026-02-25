@@ -32,7 +32,14 @@
                 <li><a href="/index" class="nav-link">Home</a></li>
                 <li><a href="/search" class="nav-link">Search</a></li>
                 <li><a href="/start-order" class="nav-link">Start Order</a></li>
-                <li class="admin-only"><a href="/edit" class="nav-link">Edit</a></li>
+                <li class="admin-only dropdown">
+                    <a href="/edit" class="nav-link">Edit ▼</a>
+                    <div class="dropdown-content">
+                        <a href="/edit-raw-materials">Raw Materials</a>
+                        <a href="/edit-recipes">Recipes</a>
+                        <a href="/edit-finished-goods">Finished Goods</a>
+                    </div>
+                </li>
                 <li class="admin-only"><a href="/users" class="nav-link">Users</a></li>
             </ul>
             <div class="hamburger">
@@ -52,13 +59,13 @@
             
             
             <div class="form-group">
-                <label for="finishedgoodid">Finished Good ID (UUID)</label>
-                <input 
+                <label for="finishedgoodid">Finished Good</label>
+                <select 
                     id="finishedgoodid" 
-                    type="text" 
-                    placeholder="e.g., 603911ce-6757-4b82-92fb-f85eccb0a5a4"
                     required
                 >
+                    <option value="">-- Select a finished good --</option>
+                </select>
             </div>
 
             <div class="form-group">

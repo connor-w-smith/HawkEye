@@ -57,24 +57,17 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f5f7fa;
     color: #333;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: 20px;
-    row-gap: 8px;
-    align-items: start;
+    display: flex;
+    flex-direction: column;
     margin: 0;
     padding: 0;
     min-height: 100vh;
 }
 
-body > * {
-    grid-column: 1 / -1;
-}
-
 .top-toolbar,
 .navbar,
 .header-display {
-    grid-column: 1 / -1;
+    width: 100%;
 }
 
 /*Start of the header styling*/
@@ -92,28 +85,41 @@ h1 {
 }
 
 
+/* Tables Container */
+.tables-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+    padding: 20px;
+    flex: 1;
+    align-items: start;
+}
+
+.table-column {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
 /*Start of the table styling*/
 .data-display {
-    margin-top: 20px;
-    width: auto;
+    margin-top: 0;
+    width: 100%;
     border-collapse: collapse;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0, .05);
-    margin-left: 10px;
-    margin-right: 20px;
     float: none;
     display: table;
     vertical-align: top;
-    grid-column: 2;
-    grid-row: 4;
 }
 
 
 .data-display th,
 .data-display td {
-    padding: 12px 16px;
+    padding: 6px 10px;
     text-align: left;
+    font-size: 13px;
 }
 
 .data-display thead {
@@ -156,8 +162,9 @@ h1 {
 
 .search-data-display th,
 .search-data-display td {
-    padding: 12px 16px;
+    padding: 8px 12px;
     text-align: left;
+    font-size: 14px;
 }
 
 .search-data-display thead {
@@ -181,24 +188,21 @@ h1 {
 
 /*Start of the sensor data display styling*/
 .sensor-data-display {
-    margin-top: 20px;
-    width: auto;
+    margin-top: 0;
+    width: 100%;
     border-collapse: collapse;
     background: orange;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0, .05);
     float: none;
-    margin-left: 20px;
-    margin-right: 10px;
-    grid-column: 1;
-    grid-row: 4;
 }
 
 .sensor-data-display th,
 .sensor-data-display td {
-    padding: 12px 16px;
+    padding: 6px 10px;
     text-align: left;
+    font-size: 13px;
 }
 
 .sensor-data-display thead {
@@ -223,11 +227,9 @@ h1 {
 
 /*Start of the packaging data display styling*/
 .packaging-data-display {
-    margin-top: 260px;
-    margin-left: 20px;
-    margin-right: 10px;
-    margin-bottom: 20px;
-    width: auto;
+    margin-top: 0;
+    margin-bottom: 0;
+    width: 100%;
     border-collapse: collapse;
     background: orange;
     border-radius: 8px;
@@ -235,14 +237,13 @@ h1 {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0, .05);
     float: none;
     clear: none;
-    grid-column: 1;
-    grid-row: 4;
 }
 
 .packaging-data-display th,
 .packaging-data-display td {
-    padding: 12px 16px;
+    padding: 6px 10px;
     text-align: left;
+    font-size: 13px;
 }
 
 .packaging-data-display thead {
@@ -287,9 +288,10 @@ h1 {
 
 /*Styling the Caption*/
 caption {
-    font-size: 1.5em;
-    margin-bottom: 10px;
+    font-size: 1.3em;
+    margin-bottom: 8px;
     color: #333;
+    font-weight: 600;
 }
 
 
@@ -300,7 +302,7 @@ footer {
     background-color:#1c6ba0;
     color: white;
     margin: 10px 0 0 0;
-    grid-column: 1 / -1;
+    width: 100%;
 }
 
 footer p {
@@ -316,21 +318,43 @@ footer a:hover {
 
 /* Inventory Controls Styling */
 .inventory-controls {
-    grid-column: 2;
-    margin-left: 10px;
     margin-bottom: 10px;
 }
 
 .btn-add-item {
-    padding: 10px 16px;
+    padding: 8px 14px;
     background-color: #3a9ad9;
     color: white;
     border: none;
     border-radius: 4px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.add-row {
+    background: #f9f9f9;
+    border-top: 2px solid #ddd;
+    padding: 10px 0;
+}
+
+.add-row td {
+    padding: 10px 8px;
+}
+
+.add-row-inline {
+    background: #f9f9f9;
+    border-bottom: 2px solid #ddd;
+}
+
+.add-row-inline td {
+    padding: 10px 8px;
+}
+
+.add-row-inline:hover {
+    background: #f0f0f0;
 }
 
 .btn-add-item:hover {
@@ -343,14 +367,28 @@ footer a:hover {
     transform: translateY(0);
 }
 
+/* Action Buttons Container */
+.actions-container {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Add Button Container */
+.actions-container-add {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
 .btn-delete {
-    padding: 8px 12px;
+    padding: 6px 10px;
     background-color: #f44336;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     transition: background-color 0.3s;
 }
@@ -360,13 +398,13 @@ footer a:hover {
 }
 
 .btn-edit {
-    padding: 8px 12px;
+    padding: 6px 10px;
     background-color: #2196F3;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     transition: background-color 0.3s;
     margin-right: 5px;
@@ -439,7 +477,20 @@ footer a:hover {
     transition: border-color 0.3s;
 }
 
-.form-group input:focus {
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+    background-color: white;
+    cursor: pointer;
+}
+
+.form-group input:focus,
+.form-group select:focus {
     outline: none;
     border-color: #3a9ad9;
     box-shadow: 0 0 6px rgba(58, 154, 217, 0.4);
@@ -474,5 +525,56 @@ footer a:hover {
     border-radius: 4px;
     font-weight: 600;
     min-height: 20px;
+}
+
+/* Edit Navigation Styling */
+.edit-navigation {
+    max-width: 800px;
+    margin: 60px auto;
+    padding: 40px;
+    text-align: center;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.edit-navigation p {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 40px;
+}
+
+.edit-nav-links {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.nav-card {
+    display: inline-block;
+    padding: 40px 30px;
+    background: linear-gradient(135deg, #3a9ad9, #1c6ba0);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    min-width: 200px;
+    cursor: pointer;
+}
+
+.nav-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    border-color: #ffa500;
+}
+
+.nav-card:active {
+    transform: translateY(-2px);
 }
 

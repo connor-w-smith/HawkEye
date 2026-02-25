@@ -17,7 +17,6 @@ No Pydantic models are used for search routes.
 """
 
 from fastapi import APIRouter, HTTPException
-from backend.services import search_finished_by_id, get_sensor_production_amounts
 from typing import List, Dict
 
 from ..services.search_services import (
@@ -26,8 +25,10 @@ from ..services.search_services import (
     search_inventory_by_id,
     get_orders_by_finishedgoodid,
     get_raw_material_recipe,
-    get_current_finishedgood_orders,
-    get_currently_packaging
+    get_currently_packaging,
+    get_finished_goods_with_quantities,
+    get_active_order_for_finishedgood,
+    get_sensor_production_amounts
 )
 
 router = APIRouter(
@@ -44,6 +45,22 @@ def finished_goods_search(search: str | None = None):
 
         # Always call ONE function that searches both fields
         results = search_finished_goods_fuzzy(search)
+
+        return {
+            "status": "success",
+            "count": len(results),
+            "results": results
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+#finished goods with production quantities endpoint
+@router.get("/finished-goods-with-quantities")
+def finished_goods_with_quantities():
+    try:
+        results = get_finished_goods_with_quantities()
 
         return {
             "status": "success",
@@ -104,8 +121,8 @@ def read_raw_material_recipe_table(finished_good_id: str):
 @router.get("/production-data/current-orders/{finished_good_id}")
 def read_current_order_table(finished_good_id: str):
     try:
-        df = get_current_finishedgood_orders(finished_good_id)
-        return {"current_orders": df.to_dict(orient="records")}
+        data = get_active_order_for_finishedgood(finished_good_id)
+        return {"current_orders": data}
     except Exception:
         return {"current_orders": []}
 

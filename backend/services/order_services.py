@@ -52,3 +52,23 @@ def create_new_order(finishedgoodid: str, target_quantity: int, sensor_id: str |
 
     finally:
         conn.close()
+
+'''
+
+    # Lines below were added by Chase to be more verbose on output for failed order creation
+    NOT READY TO BE DEPLOYED YET. (check line 72 in order_routes.py for detail)
+    
+    except psycopg2.IntegrityError as e:
+        conn.rollback()
+        error_msg = str(e)
+        if 'unique_active_sensor_id' in error_msg:
+            return {"status": "error", "detail": f"Sensor '{sensor_id}' already has an active production order. Complete or cancel the existing order before creating a new one."}
+        return {"status": "error", "detail": f"Database constraint violation: {error_msg}"}
+    
+    except Exception as e:
+        conn.rollback()
+        return {"status": "error", "detail": str(e)}
+
+    finally:
+        conn.close()
+'''

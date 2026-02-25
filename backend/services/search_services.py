@@ -187,7 +187,7 @@ def get_currently_packaging():
     finally:
         conn.close()
 
-
+#TODO: correct this function to sort by isactive
 def get_current_finishedgood_orders(finishedgoodid):
     #open connection
     conn = get_connection()
@@ -197,13 +197,12 @@ def get_current_finishedgood_orders(finishedgoodid):
             query = """SELECT 
                         pd.orderid, 
                         fg.finishedgoodname, 
-                        si.sensorid, 
+                        pd.sensor_id, 
                         pd.partsproduced
                     FROM tblproductiondata pd
                     JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
-                    JOIN tblsensorinfeeddata si ON pd.orderid = si.orderid
                     JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
-                    WHERE fg.finishedgoodid = %s;"""
+                    WHERE fg.finishedgoodid = %s ;"""
 
             cursor.execute(query, (finishedgoodid,))
             results = cursor.fetchall()
@@ -234,12 +233,81 @@ def get_sensor_production_amounts():
             END)::INTEGER AS production_last_24h
             FROM tblproductiondata pd
             JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
+            WHERE pd.sensor_id IS NOT NULL
+                AND TRIM(LOWER(pd.sensor_id)) != 'n/a'  -- Removes spaces and handles 'N/A', 'n/a', ' n/a '
+                AND pd.sensor_id != ''  
             GROUP BY pd.sensor_id;
         """
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(query)
             return cursor.fetchall()
+
+    except Exception as e:
+        raise e
+
+    finally:
+        conn.close()
+
+
+def get_finished_goods_with_quantities():
+    """
+    Returns all finished goods with their total parts produced from tblproductiondata.
+    """
+    conn = get_connection()
+    
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT 
+                    fg.finishedgoodid,
+                    fg.finishedgoodname,
+                    COALESCE(SUM(pd.partsproduced), 0) AS total_quantity
+                FROM tblfinishedgoods fg
+                LEFT JOIN tblproductiondata pd ON fg.finishedgoodid = pd.finishedgoodid
+                GROUP BY fg.finishedgoodid, fg.finishedgoodname
+                ORDER BY fg.finishedgoodname
+            """)
+            
+            rows = cur.fetchall()
+            
+            return [
+                {
+                    "FinishedGoodID": r[0],
+                    "FinishedGoodName": r[1],
+                    "Quantity": int(r[2])
+                }
+                for r in rows
+            ]
+    
+    finally:
+        conn.close()
+        
+#for product page yarrrrr
+def get_active_order_for_finishedgood(finishedgoodid):
+    conn = get_connection()
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            query = """
+                SELECT 
+                    pd.orderid,
+                    fg.finishedgoodname,
+                    ap.sensor_id,
+                    pd.partsproduced
+                FROM tblproductiondata pd
+                JOIN tblfinishedgoods fg 
+                    ON pd.finishedgoodid = fg.finishedgoodid
+                JOIN tblactiveproduction ap 
+                    ON pd.orderid = ap.orderid
+                WHERE fg.finishedgoodid = %s
+                AND ap.is_active = TRUE;
+            """
+
+            cursor.execute(query, (finishedgoodid,))
+            results = cursor.fetchall()
+
+            return results
 
     except Exception as e:
         raise e

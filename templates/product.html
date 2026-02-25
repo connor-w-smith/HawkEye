@@ -27,7 +27,14 @@
             <li><a href="/index" class="nav-link">Home</a></li>
             <li><a href="/search" class="nav-link">Search</a></li>
             <li><a href="/start-order" class="nav-link">Start Order</a></li>
-            <li class="admin-only"><a href="/edit" class="nav-link">Edit</a></li>
+            <li class="admin-only dropdown">
+                <a href="/edit" class="nav-link">Edit ▼</a>
+                <div class="dropdown-content">
+                    <a href="/edit-raw-materials">Raw Materials</a>
+                    <a href="/edit-recipes">Recipes</a>
+                    <a href="/edit-finished-goods">Finished Goods</a>
+                </div>
+            </li>
             <li class="admin-only"><a href="/users" class="nav-link">Users</a></li>
         </ul>
         <div class="hamburger">
@@ -240,12 +247,12 @@
             // Just take the first active order for display
             const order = orders[0];
             setText("status-text", "Active production order running");
-            setText("live-counter", order["Parts Made"] ?? "--");
-            setText("sensor-id", `SENSOR-${order["Sensor ID"] ?? "--"}`);
+            setText("live-counter", order.partsproduced ?? "--");
+            setText("sensor-id", ` ${order.sensor_id ?? "--"}`);
     
             // Progress bar (placeholder target, replace when DB has target)
             const target = 1000;
-            const percent = Math.min(Math.round((order["Parts Made"] / target) * 100), 100);
+            const percent = Math.min(Math.round((order.partsproduced / target) * 100), 100);
             document.getElementById("progress-fill").style.width = percent + "%";
             setText("progress-text", percent + "% - Parts Made so far");
     
@@ -262,6 +269,8 @@
         loadProductionHistory();
         loadRawMaterials();
         loadCurrentOrders();
+
+        setInterval(loadCurrentOrders, 2000);
     }
     
     window.addEventListener("DOMContentLoaded", init);
