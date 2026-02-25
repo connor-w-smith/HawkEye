@@ -240,12 +240,12 @@
             // Just take the first active order for display
             const order = orders[0];
             setText("status-text", "Active production order running");
-            setText("live-counter", order["Parts Made"] ?? "--");
-            setText("sensor-id", `SENSOR-${order["Sensor ID"] ?? "--"}`);
+            setText("live-counter", order.partsproduced ?? "--");
+            setText("sensor-id", ` ${order.sensor_id ?? "--"}`);
     
             // Progress bar (placeholder target, replace when DB has target)
             const target = 1000;
-            const percent = Math.min(Math.round((order["Parts Made"] / target) * 100), 100);
+            const percent = Math.min(Math.round((order.partsproduced / target) * 100), 100);
             document.getElementById("progress-fill").style.width = percent + "%";
             setText("progress-text", percent + "% - Parts Made so far");
     
@@ -262,6 +262,8 @@
         loadProductionHistory();
         loadRawMaterials();
         loadCurrentOrders();
+
+        setInterval(loadCurrentOrders, 2000);
     }
     
     window.addEventListener("DOMContentLoaded", init);
