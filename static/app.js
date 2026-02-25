@@ -74,45 +74,51 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (table && !searchInput) {
         // Function to load and refresh the inventory
         const loadFinishedGoods = () => {
-            fetch("/search/finished-goods")
-            .then(response => response.json())
-            .then(data => {
-                const results = data.results || [];
-                table.innerHTML = '';
-                results.forEach(item => {
-                    const row = document.createElement("tr");
-                    
-                    // Check if edit modal exists (means we're on edit.html)
-                    const isEditPage = document.getElementById("edit-finished-good-modal") !== null;
-                    
-                    let actionButtons = '';
-                    if (isEditPage) {
-                        // Show both edit and delete buttons on edit page
-                        actionButtons = `
-                            <button class="btn-edit" onclick="openEditModal('${item.FinishedGoodName}')">
-                                <i class="fa fa-edit"></i> Edit
-                            </button>
-                            <button class="btn-delete" onclick="deleteFinishedGood('${item.FinishedGoodName}')">
-                                <i class="fa fa-trash"></i> Delete
-                            </button>
+            // Check if edit modal exists (means we're on edit.html)
+            const isEditPage = document.getElementById("edit-finished-good-modal") !== null;
+            
+            if (isEditPage) {
+                // On edit page, use regular finished goods endpoint for editing
+                fetch("/search/finished-goods")
+                .then(response => response.json())
+                .then(data => {
+                    const results = data.results || [];
+                    table.innerHTML = '';
+                    results.forEach(item => {
+                        const row = document.createElement("tr");
+
+                        row.innerHTML = `
+                        <td>${item.FinishedGoodID}</td>
+                        <td>${item.FinishedGoodName}</td>
+                        <td>
+                        </td>
                         `;
-                    } else {
-                        // Show nothing on index page
-                        actionButtons = '';
-                    }
 
-                    row.innerHTML = `
-                    <td>${item.FinishedGoodID}</td>
-                    <td>${item.FinishedGoodName}</td>
-                    <td>
-                        ${actionButtons}
-                    </td>
-                    `;
+                        table.appendChild(row);
+                    });
+                })
+                .catch(err => console.error("Error loading goods: ", err));
+            } else {
+                // On index page, use finished goods with quantities
+                fetch("/search/finished-goods-with-quantities")
+                .then(response => response.json())
+                .then(data => {
+                    const results = data.results || [];
+                    table.innerHTML = '';
+                    results.forEach(item => {
+                        const row = document.createElement("tr");
 
-                    table.appendChild(row);
-                });
-            })
-            .catch(err => console.error("Error loading goods: ", err));
+                        row.innerHTML = `
+                        <td>${item.FinishedGoodID}</td>
+                        <td>${item.FinishedGoodName}</td>
+                        <td>${item.Quantity}</td>
+                        `;
+
+                        table.appendChild(row);
+                    });
+                })
+                .catch(err => console.error("Error loading goods: ", err));
+            }
         };
         
         loadFinishedGoods();
