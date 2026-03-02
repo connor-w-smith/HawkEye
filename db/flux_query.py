@@ -137,13 +137,13 @@ from(bucket: "{INFLUX_BUCKET}")
   {sensor_filter} 
   |> group(columns: [])
   |> reduce(
-    identity: {{count: 0, first_time_ns: 0, last_time_ns: 0}},
+    identity: (count: 0, first_time_ns: 0, last_time_ns: 0),
     fn: (r, accumulator) =>
-      {{
+      (
         count: accumulator.count + 1,
-        first_time_ns: (if accumulator.first_time_ns == 0 then r._time else accumulator.first_time_ns),
+        first_time_ns: if accumulator.first_time_ns == 0 then int(v: r._time) else accumulator.first_time_ns,
         last_time_ns: int(v: r._time)
-      }}
+      )
   )
 '''
         # Provide org explicitly to the query API
