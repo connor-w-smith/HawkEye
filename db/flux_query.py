@@ -65,7 +65,7 @@ signal.signal(signal.SIGINT, _handle_signal)
 def get_active_orders():
     """
     Retrieves all active production orders from tblactiveproduction.
-    Returns list of dicts with order info: orderid, target_quantity, last_processed_timestamp, sensor_id
+    Returns list of dicts with order info: orderid, target_quantity, start_time, end_time, sensor_id
     """
     try:
         conn = get_connection()
@@ -73,7 +73,7 @@ def get_active_orders():
         
         #this uses aliases i think what is happening
         query = """
-            SELECT ap.orderid, ap.target_quantity, ap.last_processed_timestamp, 
+            SELECT ap.orderid, ap.target_quantity, ap.start_time, ap.end_time,
                    COALESCE(pd.partsproduced, 0) as current_count,
                    COALESCE(pd.sensor_id, '') as sensor_id
             FROM tblactiveproduction ap
@@ -88,9 +88,10 @@ def get_active_orders():
             orders.append({
                 'orderid': row[0],
                 'target_quantity': row[1],
-                'last_processed_timestamp': row[2],
-                'current_count': row[3],
-                'sensor_id': row[4]
+                'start_time': row[2],
+                'end_time': row[3],
+                'current_count': row[4],
+                'sensor_id': row[5]
             })
         
         cur.close()
@@ -103,9 +104,10 @@ def get_active_orders():
 
 def get_influx_count_since(timestamp, sensor_id=None):
     """
-    Get count of sensor hits from InfluxDB since the given timestamp.
+    Get count of sensor hits from InfluxDB since the given timestamp, along with first and last hit timestamps.
     If sensor_id is provided, filters hits to only that sensor (using the 'location' tag).
     If timestamp is None, gets count from past 60 seconds.
+    Returns a dict with keys: 'count', 'first_timestamp', 'last_timestamp'
     """
     try:
         client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
@@ -128,36 +130,74 @@ def get_influx_count_since(timestamp, sensor_id=None):
         if sensor_id:
             sensor_filter = f'|> filter(fn: (r) => r.location == "{sensor_id}")'
 
-        # Only count the 'value' field to avoid double-counting if multiple fields exist
-        query = f'from(bucket: "{INFLUX_BUCKET}") |> range({time_filter}) {sensor_filter} |> count()'
+        # Query to get count, min time (first hit), and max time (last hit)
+        query = f'''
+from(bucket: "{INFLUX_BUCKET}") 
+  |> range({time_filter}) 
+  {sensor_filter} 
+  |> group(columns: [])
+  |> reduce(
+    identity: {{count: 0, first_time_ns: 0, last_time_ns: 0}},
+    fn: (r, accumulator) =>
+      {{
+        count: accumulator.count + 1,
+        first_time_ns: (if accumulator.first_time_ns == 0 then r._time else accumulator.first_time_ns),
+        last_time_ns: int(v: r._time)
+      }}
+  )
+'''
         # Provide org explicitly to the query API
         result = query_api.query(query=query, org=INFLUX_ORG)
 
-
-        # Debug: print number of tables and records
         logger.info(f"Flux query returned {len(result)} tables")
-        total_records = 0
+        
         count = 0
+        first_timestamp = None
+        last_timestamp = None
+        
         for idx, table in enumerate(result):
             logger.info(f"Table {idx}: {len(table.records)} records")
             for record in table.records:
-                logger.info(f"Record: _field={record.get_field()}, _value={record.get_value()}, tags={record.values}")
-                val = record.get_value()
-                total_records += 1
+                logger.info(f"Record values: {record.values}")
+                values = record.values
+                
                 try:
-                    count += int(val)
-                except Exception:
-                    try:
-                        count += int(float(val))
-                    except Exception:
-                        pass
-        logger.info(f"Total records processed: {total_records}, summed count: {count}")
+                    count = int(values.get('count', 0))
+                    logger.info(f"Count: {count}")
+                except Exception as e:
+                    logger.warning(f"Could not parse count: {e}")
+                
+                try:
+                    # Convert nanoseconds to datetime
+                    first_ns = int(values.get('first_time_ns', 0))
+                    if first_ns > 0:
+                        first_timestamp = datetime.fromtimestamp(first_ns / 1e9, tz=timezone.utc)
+                        logger.info(f"First timestamp: {first_timestamp}")
+                except Exception as e:
+                    logger.warning(f"Could not parse first_time: {e}")
+                
+                try:
+                    last_ns = int(values.get('last_time_ns', 0))
+                    if last_ns > 0:
+                        last_timestamp = datetime.fromtimestamp(last_ns / 1e9, tz=timezone.utc)
+                        logger.info(f"Last timestamp: {last_timestamp}")
+                except Exception as e:
+                    logger.warning(f"Could not parse last_time: {e}")
+        
         client.close()
-        return count
+        return {
+            'count': count,
+            'first_timestamp': first_timestamp,
+            'last_timestamp': last_timestamp
+        }
 
     except Exception:
         logger.exception('Error querying InfluxDB for sensor_id=%s', sensor_id)
-        return 0
+        return {
+            'count': 0,
+            'first_timestamp': None,
+            'last_timestamp': None
+        }
 
 def update_production_data(orderid, new_parts_count):
     """
@@ -187,9 +227,13 @@ def update_production_data(orderid, new_parts_count):
         logger.exception('Error updating production data for order %s', orderid)
         return None
 
-def update_active_production(order_id, new_timestamp, mark_inactive=False):
+def update_active_production(order_id, start_time=None, end_time=None, mark_inactive=False):
     """
-    Stupid function to ensure that stupid orders don't keep running forever after completion
+    Update timestamps for a production order.
+    - start_time: timestamp of first sensor hit (set once, preserved)
+    - end_time: timestamp of last sensor hit (only set when order completes)
+    - last_processed_timestamp: updated with each check (used for hour/24-hour queries)
+    - mark_inactive: if True, sets is_active to false and end_time
     """
     try:
         conn = get_connection()
@@ -198,16 +242,20 @@ def update_active_production(order_id, new_timestamp, mark_inactive=False):
         if mark_inactive:
             cur.execute("""
                 UPDATE tblactiveproduction 
-                SET last_processed_timestamp = %s, is_active = false 
+                SET start_time = COALESCE(%s, start_time), 
+                    end_time = %s,
+                    last_processed_timestamp = %s,
+                    is_active = false 
                 WHERE orderid = %s
-            """, (new_timestamp, order_id))
+            """, (start_time, end_time, end_time, order_id))
             print(f"✓ Order {order_id} marked as COMPLETE")
         else:
             cur.execute("""
                 UPDATE tblactiveproduction 
-                SET last_processed_timestamp = %s 
+                SET start_time = COALESCE(%s, start_time), 
+                    last_processed_timestamp = %s
                 WHERE orderid = %s
-            """, (new_timestamp, order_id))
+            """, (start_time, end_time, order_id))
         
         conn.commit()
         cur.close()
@@ -220,7 +268,8 @@ def update_active_production(order_id, new_timestamp, mark_inactive=False):
 
 def process_active_orders():
     """
-    stupid function to call all the other stupid functions
+    Process all active production orders by fetching sensor data from InfluxDB
+    and updating timestamps and counts in the database.
     """
 
     #are there active orders?
@@ -240,7 +289,7 @@ def process_active_orders():
     for order in active_orders:
         order_id = order['orderid']
         target = order['target_quantity']
-        last_timestamp = order['last_processed_timestamp']
+        end_time = order['end_time']  # Use end_time as the query reference point
         current_count = order['current_count']
         sensor_id = order.get('sensor_id', '')
         
@@ -249,12 +298,14 @@ def process_active_orders():
         # Check if order already at/past target and should be marked inactive
         if target is not None and current_count >= target:
             logger.info('Order %s already at target, marking inactive', order_id)
-            current_time = datetime.now(timezone.utc)
-            update_active_production(order_id, current_time, mark_inactive=True)
+            update_active_production(order_id, mark_inactive=True)
             continue
         
         #get new sensor hits since last check (filtered by sensor_id if assigned)
-        new_hits = get_influx_count_since(last_timestamp, sensor_id=sensor_id)
+        hit_data = get_influx_count_since(end_time, sensor_id=sensor_id)
+        new_hits = hit_data['count']
+        first_timestamp = hit_data['first_timestamp']
+        last_timestamp = hit_data['last_timestamp']
         
         #got any?
         if new_hits > 0:
@@ -266,18 +317,17 @@ def process_active_orders():
             if new_total is not None:
                 logger.info('Updated total: %s/%s parts', new_total, target)
                 
-                # Update timestamp
-                current_time = datetime.now(timezone.utc)
-                
-                # Check if target reached
-                if target is not None and new_total >= target:
-                    update_active_production(order_id, current_time, mark_inactive=True)
-                else:
-                    update_active_production(order_id, current_time, mark_inactive=False)
-                    if target:
-                        logger.info('Progress: %.1f%% complete', (new_total / target * 100))
+                # Update timestamps if we got valid ones
+                if first_timestamp and last_timestamp:
+                    # Check if target reached
+                    if target is not None and new_total >= target:
+                        update_active_production(order_id, start_time=first_timestamp, end_time=last_timestamp, mark_inactive=True)
                     else:
-                        logger.info('Updated')
+                        update_active_production(order_id, start_time=first_timestamp, end_time=last_timestamp, mark_inactive=False)
+                        if target:
+                            logger.info('Progress: %.1f%% complete', (new_total / target * 100))
+                        else:
+                            logger.info('Updated')
         #no hits
         else:
             logger.debug('No new parts detected')
