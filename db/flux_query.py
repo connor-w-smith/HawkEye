@@ -130,57 +130,55 @@ def get_influx_count_since(timestamp, sensor_id=None):
         if sensor_id:
             sensor_filter = f'|> filter(fn: (r) => r.location == "{sensor_id}")'
 
-        # Query to get count, min time (first hit), and max time (last hit)
-        query = f'''
+        # Query to get count
+        count_query = f'''
 from(bucket: "{INFLUX_BUCKET}") 
   |> range({time_filter}) 
   {sensor_filter} 
-  |> group(columns: [])
-  |> reduce(
-    identity: (count: 0, first_time_ns: 0, last_time_ns: 0),
-    fn: (r, accumulator) =>
-      (
-        count: accumulator.count + 1,
-        first_time_ns: if accumulator.first_time_ns == 0 then int(v: r._time) else accumulator.first_time_ns,
-        last_time_ns: int(v: r._time)
-      )
-  )
+  |> count()
 '''
-        # Provide org explicitly to the query API
-        result = query_api.query(query=query, org=INFLUX_ORG)
-
-        logger.info(f"Flux query returned {len(result)} tables")
-        
+        result = query_api.query(query=count_query, org=INFLUX_ORG)
         count = 0
-        first_timestamp = None
-        last_timestamp = None
-        
-        for idx, table in enumerate(result):
-            logger.info(f"Table {idx}: {len(table.records)} records")
+        for table in result:
             for record in table.records:
-                logger.info(f"Record values: {record.values}")
-                values = record.values
-                
                 try:
-                    count = int(values.get('count', 0))
-                    logger.info(f"Count: {count}")
-                except Exception as e:
-                    logger.warning(f"Could not parse count: {e}")
-                
+                    count += int(record.get_value())
+                except Exception:
+                    pass
+        
+        logger.info(f"Count query result: {count}")
+        
+        # Query to get min time (first hit)
+        first_time_query = f'''
+from(bucket: "{INFLUX_BUCKET}") 
+  |> range({time_filter}) 
+  {sensor_filter} 
+  |> min(column: "_time")
+'''
+        result = query_api.query(query=first_time_query, org=INFLUX_ORG)
+        first_timestamp = None
+        for table in result:
+            for record in table.records:
                 try:
-                    # Convert nanoseconds to datetime
-                    first_ns = int(values.get('first_time_ns', 0))
-                    if first_ns > 0:
-                        first_timestamp = datetime.fromtimestamp(first_ns / 1e9, tz=timezone.utc)
-                        logger.info(f"First timestamp: {first_timestamp}")
+                    first_timestamp = record.get_time()
+                    logger.info(f"First timestamp: {first_timestamp}")
                 except Exception as e:
                     logger.warning(f"Could not parse first_time: {e}")
-                
+        
+        # Query to get max time (last hit)
+        last_time_query = f'''
+from(bucket: "{INFLUX_BUCKET}") 
+  |> range({time_filter}) 
+  {sensor_filter} 
+  |> max(column: "_time")
+'''
+        result = query_api.query(query=last_time_query, org=INFLUX_ORG)
+        last_timestamp = None
+        for table in result:
+            for record in table.records:
                 try:
-                    last_ns = int(values.get('last_time_ns', 0))
-                    if last_ns > 0:
-                        last_timestamp = datetime.fromtimestamp(last_ns / 1e9, tz=timezone.utc)
-                        logger.info(f"Last timestamp: {last_timestamp}")
+                    last_timestamp = record.get_time()
+                    logger.info(f"Last timestamp: {last_timestamp}")
                 except Exception as e:
                     logger.warning(f"Could not parse last_time: {e}")
         
