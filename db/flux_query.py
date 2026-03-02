@@ -65,7 +65,7 @@ signal.signal(signal.SIGINT, _handle_signal)
 def get_active_orders():
     """
     Retrieves all active production orders from tblactiveproduction.
-    Returns list of dicts with order info: orderid, target_quantity, start_time, end_time, sensor_id
+    Returns list of dicts with order info: orderid, target_quantity, start_time, end_time, last_processed_timestamp, sensor_id
     """
     try:
         conn = get_connection()
@@ -73,7 +73,7 @@ def get_active_orders():
         
         #this uses aliases i think what is happening
         query = """
-            SELECT ap.orderid, ap.target_quantity, ap.start_time, ap.end_time,
+            SELECT ap.orderid, ap.target_quantity, ap.start_time, ap.end_time, ap.last_processed_timestamp,
                    COALESCE(pd.partsproduced, 0) as current_count,
                    COALESCE(pd.sensor_id, '') as sensor_id
             FROM tblactiveproduction ap
@@ -90,8 +90,9 @@ def get_active_orders():
                 'target_quantity': row[1],
                 'start_time': row[2],
                 'end_time': row[3],
-                'current_count': row[4],
-                'sensor_id': row[5]
+                'last_processed_timestamp': row[4],
+                'current_count': row[5],
+                'sensor_id': row[6]
             })
         
         cur.close()
@@ -230,8 +231,8 @@ def update_active_production(order_id, start_time=None, end_time=None, mark_inac
     Update timestamps for a production order.
     - start_time: timestamp of first sensor hit (set once, preserved)
     - end_time: timestamp of last sensor hit (only set when order completes)
-    - last_processed_timestamp: updated with each check (used for hour/24-hour queries)
-    - mark_inactive: if True, sets is_active to false and end_time
+    - last_processed_timestamp: updated with each check to end_time (used for incremental queries and hour/24-hour analytics)
+    - mark_inactive: if True, sets is_active to false
     """
     try:
         conn = get_connection()
@@ -248,6 +249,7 @@ def update_active_production(order_id, start_time=None, end_time=None, mark_inac
             """, (start_time, end_time, end_time, order_id))
             print(f"✓ Order {order_id} marked as COMPLETE")
         else:
+            # During normal operation, only update start_time (if not set) and last_processed_timestamp
             cur.execute("""
                 UPDATE tblactiveproduction 
                 SET start_time = COALESCE(%s, start_time), 
@@ -287,7 +289,8 @@ def process_active_orders():
     for order in active_orders:
         order_id = order['orderid']
         target = order['target_quantity']
-        end_time = order['end_time']  # Use end_time as the query reference point
+        start_time = order['start_time']
+        last_processed_timestamp = order['last_processed_timestamp']  # Use this as query reference point
         current_count = order['current_count']
         sensor_id = order.get('sensor_id', '')
         
@@ -300,7 +303,7 @@ def process_active_orders():
             continue
         
         #get new sensor hits since last check (filtered by sensor_id if assigned)
-        hit_data = get_influx_count_since(end_time, sensor_id=sensor_id)
+        hit_data = get_influx_count_since(last_processed_timestamp, sensor_id=sensor_id)
         new_hits = hit_data['count']
         first_timestamp = hit_data['first_timestamp']
         last_timestamp = hit_data['last_timestamp']
@@ -317,11 +320,16 @@ def process_active_orders():
                 
                 # Update timestamps if we got valid ones
                 if first_timestamp and last_timestamp:
+                    # Set start_time if it's not already set
+                    if not start_time:
+                        start_time = first_timestamp
+                    
                     # Check if target reached
                     if target is not None and new_total >= target:
-                        update_active_production(order_id, start_time=first_timestamp, end_time=last_timestamp, mark_inactive=True)
+                        update_active_production(order_id, start_time=start_time, end_time=last_timestamp, mark_inactive=True)
                     else:
-                        update_active_production(order_id, start_time=first_timestamp, end_time=last_timestamp, mark_inactive=False)
+                        # Just update last_processed_timestamp (don't set end_time yet)
+                        update_active_production(order_id, start_time=start_time, end_time=last_timestamp, mark_inactive=False)
                         if target:
                             logger.info('Progress: %.1f%% complete', (new_total / target * 100))
                         else:
