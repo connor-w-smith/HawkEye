@@ -2,7 +2,7 @@
 # Importing the Flask class to create the Web app.
 # Importing jsonify to return JSON to the browser
 # Importing render_template to serve HTML files
-from flask import Flask, jsonify, render_template, request, make_response
+from flask import Flask, jsonify, render_template, request, make_response, redirect, url_for
 import requests
 #serve production server on flask
 from waitress import serve
@@ -323,7 +323,7 @@ def users_page():
 # Edit page route (admin only)
 @app.route("/edit")
 def edit_page():
-    return render_template("edit.html")
+    return redirect(url_for("edit_raw_materials_page"))
 
 # Edit Raw Materials page route (admin only)
 @app.route("/edit-raw-materials")
