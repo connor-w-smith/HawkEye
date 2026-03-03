@@ -473,7 +473,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Delete finished good
 async function deleteFinishedGood(finishedGoodName) {
-    if (!confirm(`Are you sure you want to delete "${finishedGoodName}"?`)) {
+    let shouldDelete = false;
+    if (typeof showCustomDeleteConfirm === "function") {
+        shouldDelete = await showCustomDeleteConfirm(finishedGoodName);
+    } else {
+        shouldDelete = confirm(`Are you sure you want to delete "${finishedGoodName}"?`);
+    }
+
+    if (!shouldDelete) {
         return;
     }
 
@@ -490,7 +497,11 @@ async function deleteFinishedGood(finishedGoodName) {
         });
         
         if (response.ok) {
-            alert("Finished good deleted successfully");
+            if (typeof showCustomDeleteMessage === "function") {
+                await showCustomDeleteMessage("Delete Successful", `"${finishedGoodName}" was deleted.`);
+            } else {
+                alert("Finished good deleted successfully");
+            }
             // Reload finished goods - use edit page function if available
             if (typeof loadFinishedGoodsForEdit === "function") {
                 loadFinishedGoodsForEdit();
@@ -526,10 +537,18 @@ async function deleteFinishedGood(finishedGoodName) {
             }
         } else {
             const error = await response.json();
-            alert(`Error deleting finished good: ${error.detail || "Unknown error"}`);
+            if (typeof showCustomDeleteMessage === "function") {
+                await showCustomDeleteMessage("Delete Failed", `Error deleting finished good: ${error.detail || "Unknown error"}`, true);
+            } else {
+                alert(`Error deleting finished good: ${error.detail || "Unknown error"}`);
+            }
         }
     } catch (err) {
         console.error("Error deleting finished good: ", err);
-        alert("Error deleting finished good: " + err.message);
+        if (typeof showCustomDeleteMessage === "function") {
+            await showCustomDeleteMessage("Delete Failed", "Error deleting finished good: " + err.message, true);
+        } else {
+            alert("Error deleting finished good: " + err.message);
+        }
     }
 }
