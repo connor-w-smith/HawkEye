@@ -9,6 +9,7 @@ import threading
 from influxdb_client.client.influxdb_client import InfluxDBClient
 from influxdb_client.client.query_api import QueryApi
 from db import get_connection
+from services.material_services import consume_raw_materials_for_production
 
 
 def _load_influx_details():
@@ -102,6 +103,27 @@ def get_active_orders():
     except Exception:
         logger.exception('Error fetching active orders')
         return []
+
+def get_finished_good_for_order(order_id):
+    conn = get_connection()
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT finishedgoodid
+                FROM tblproductiondata
+                WHERE orderid = %s
+            """, (order_id,))
+
+            row = cur.fetchone()
+
+            if row:
+                return row[0]
+
+            return None
+
+    finally:
+        conn.close()
 
 def get_influx_count_since(timestamp, sensor_id=None):
     """
@@ -314,6 +336,12 @@ def process_active_orders():
             
             #update production data with new count
             new_total = update_production_data(order_id, new_hits)
+            if new_total is not None:
+
+                finished_good_id = get_finished_good_for_order(order_id)
+
+                if finished_good_id:
+                    consume_raw_materials_for_production(finished_good_id, new_hits)
             
             if new_total is not None:
                 logger.info('Updated total: %s/%s parts', new_total, target)
