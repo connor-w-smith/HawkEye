@@ -104,7 +104,8 @@ def get_active_orders():
 def get_influx_count_since(timestamp, sensor_id=None):
     """
     Get count of sensor hits from InfluxDB since the given timestamp.
-    If sensor_id is provided, filters hits to only that sensor (using the 'location' tag).
+    If sensor_id is provided, filters hits to only that sensor tag.
+    If sensor_id is not provided, only counts untagged hits (no sensor tag present).
     If timestamp is None, gets count from past 60 seconds.
     """
     try:
@@ -123,10 +124,27 @@ def get_influx_count_since(timestamp, sensor_id=None):
             time_str = ts_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
             time_filter = f"start: {time_str}"
 
-        # If sensor_id is provided, filter by the 'location' tag in InfluxDB
+        # If sensor_id is provided, filter to records matching that sensor tag.
+        # If sensor_id is empty/unassigned, count only untagged records so tagged
+        # sensor events are not attributed to unassigned orders.
         sensor_filter = ""
         if sensor_id:
-            sensor_filter = f'|> filter(fn: (r) => r.location == "{sensor_id}")'
+            normalized_sensor = sensor_id.strip().lower()
+            upper_sensor = sensor_id.strip().upper()
+            sensor_id_escaped = sensor_id.replace('"', '\\"')
+            normalized_sensor_escaped = normalized_sensor.replace('"', '\\"')
+            upper_sensor_escaped = upper_sensor.replace('"', '\\"')
+            sensor_filter = (
+                '|> filter(fn: (r) => '
+                f'((exists r.location and string(v: r.location) == "{sensor_id_escaped}") '
+                f'or (exists r.sensor_id and string(v: r.sensor_id) == "{sensor_id_escaped}") '
+                f'or (exists r.location and string(v: r.location) == "{normalized_sensor_escaped}") '
+                f'or (exists r.sensor_id and string(v: r.sensor_id) == "{normalized_sensor_escaped}") '
+                f'or (exists r.location and string(v: r.location) == "{upper_sensor_escaped}") '
+                f'or (exists r.sensor_id and string(v: r.sensor_id) == "{upper_sensor_escaped}")))'
+            )
+        else:
+            sensor_filter = '|> filter(fn: (r) => (not exists r.location and not exists r.sensor_id))'
 
         # Only count the 'value' field to avoid double-counting if multiple fields exist
         query = f'from(bucket: "{INFLUX_BUCKET}") |> range({time_filter}) {sensor_filter} |> count()'

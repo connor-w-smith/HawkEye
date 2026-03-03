@@ -24,6 +24,35 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error("Error loading finished goods:", error);
     }
 
+    // Default sensor dropdown to whichever sensor is not currently assigned to an active order
+    try {
+        const sensorDropdown = document.getElementById("sensor-id");
+        if (sensorDropdown) {
+            const response = await fetch("/api/production/active-orders");
+            const activeOrders = await response.json();
+
+            const occupiedSensors = new Set(
+                (Array.isArray(activeOrders) ? activeOrders : [])
+                    .map(order => (order.sensor_id || "").trim())
+                    .filter(Boolean)
+            );
+
+            if (!occupiedSensors.has("Sensor_A")) {
+                sensorDropdown.value = "Sensor_A";
+            } else if (!occupiedSensors.has("Sensor_B")) {
+                sensorDropdown.value = "Sensor_B";
+            } else {
+                sensorDropdown.value = "Sensor_A";
+            }
+        }
+    } catch (error) {
+        console.error("Error determining default sensor:", error);
+        const sensorDropdown = document.getElementById("sensor-id");
+        if (sensorDropdown) {
+            sensorDropdown.value = "Sensor_A";
+        }
+    }
+
     // Handle logout
     document.getElementById("logout-link").addEventListener("click", async (e) => {
         e.preventDefault();
