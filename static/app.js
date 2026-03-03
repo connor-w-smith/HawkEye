@@ -107,7 +107,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     table.innerHTML = '';
                     results.forEach(item => {
                         const row = document.createElement("tr");
+                        // clickable
+                        row.style.cursor = "pointer";
 
+                        row.addEventListener("click", () => {
+                            window.location.href = `/product/${item.FinishedGoodID}`;
+                        });
                         row.innerHTML = `
                         <td>${item.FinishedGoodID}</td>
                         <td>${item.FinishedGoodName}</td>
