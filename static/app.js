@@ -217,6 +217,117 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
+function ensureDeleteActionModal() {
+    let modal = document.getElementById("delete-action-modal");
+
+    if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "delete-action-modal";
+        modal.className = "modal";
+        modal.style.display = "none";
+        modal.innerHTML = `
+            <div class="modal-content">
+                <span class="close" id="delete-action-close">&times;</span>
+                <h2 id="delete-action-title"></h2>
+                <p id="delete-action-text" style="margin-bottom: 20px;"></p>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" id="delete-action-cancel" class="btn-edit" style="margin-right: 0;">Cancel</button>
+                    <button type="button" id="delete-action-confirm" class="btn-delete">Delete</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    return {
+        modal,
+        closeButton: document.getElementById("delete-action-close"),
+        title: document.getElementById("delete-action-title"),
+        text: document.getElementById("delete-action-text"),
+        cancelButton: document.getElementById("delete-action-cancel"),
+        confirmButton: document.getElementById("delete-action-confirm")
+    };
+}
+
+async function showCustomDeleteConfirm(itemName) {
+    const refs = ensureDeleteActionModal();
+    refs.title.textContent = "Confirm Delete";
+    refs.text.textContent = `Are you sure you want to delete ${itemName}?`;
+    refs.cancelButton.style.display = "inline-block";
+    refs.confirmButton.textContent = "Delete";
+    refs.confirmButton.classList.add("btn-delete");
+    refs.confirmButton.classList.remove("btn-submit");
+    refs.modal.style.display = "block";
+
+    return new Promise((resolve) => {
+        const closeModal = (result) => {
+            refs.modal.style.display = "none";
+            window.removeEventListener("click", handleOutsideClick);
+            document.removeEventListener("keydown", handleKeyDown);
+            resolve(result);
+        };
+
+        const handleOutsideClick = (event) => {
+            if (event.target === refs.modal) {
+                closeModal(false);
+            }
+        };
+
+        const handleKeyDown = (event) => {
+            if (event.key === "Escape") {
+                closeModal(false);
+            }
+        };
+
+        refs.closeButton.onclick = () => closeModal(false);
+        refs.cancelButton.onclick = () => closeModal(false);
+        refs.confirmButton.onclick = () => closeModal(true);
+        window.addEventListener("click", handleOutsideClick);
+        document.addEventListener("keydown", handleKeyDown);
+    });
+}
+
+async function showCustomDeleteMessage(title, message, isError = false) {
+    const refs = ensureDeleteActionModal();
+    refs.title.textContent = title;
+    refs.text.textContent = message;
+    refs.cancelButton.style.display = "none";
+    refs.confirmButton.textContent = "OK";
+    refs.confirmButton.classList.add("btn-submit");
+    refs.confirmButton.classList.remove("btn-delete");
+    refs.text.style.color = isError ? "red" : "";
+    refs.modal.style.display = "block";
+
+    return new Promise((resolve) => {
+        const closeModal = () => {
+            refs.modal.style.display = "none";
+            window.removeEventListener("click", handleOutsideClick);
+            document.removeEventListener("keydown", handleKeyDown);
+            resolve();
+        };
+
+        const handleOutsideClick = (event) => {
+            if (event.target === refs.modal) {
+                closeModal();
+            }
+        };
+
+        const handleKeyDown = (event) => {
+            if (event.key === "Escape" || event.key === "Enter") {
+                closeModal();
+            }
+        };
+
+        refs.closeButton.onclick = closeModal;
+        refs.confirmButton.onclick = closeModal;
+        window.addEventListener("click", handleOutsideClick);
+        document.addEventListener("keydown", handleKeyDown);
+    });
+}
+
+window.showCustomDeleteConfirm = showCustomDeleteConfirm;
+window.showCustomDeleteMessage = showCustomDeleteMessage;
+
 
 document.addEventListener("DOMContentLoaded", () => {
     const btnLogin = document.getElementById("btnLogin");
