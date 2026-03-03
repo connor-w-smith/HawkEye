@@ -113,6 +113,7 @@
 <!-- Raw Materials -->
 <div class="card raw-materials">
     <h2>Raw Materials</h2>
+
     <table>
         <thead>
             <tr>
@@ -123,6 +124,12 @@
         </thead>
         <tbody id="raw-materials-body"></tbody>
     </table>
+
+    <div class="max-production">
+        <p><strong>Max Buildable Units:</strong> 
+        <span id="max-production">--</span></p>
+    </div>
+
 </div>
 </div>
 
@@ -222,7 +229,24 @@
             console.info("Raw materials unavailable");
         }
     }
-    
+    // =====================
+// Load Max Production Capacity
+// =====================
+async function loadMaxProduction() {
+    try {
+        const resp = await fetch(`/materials/max-production/${FINISHED_GOOD_ID}`);
+        if (!resp.ok) throw new Error("Failed to fetch max production");
+
+        const data = await resp.json();
+        console.log("Max production:", data);
+
+        // Example display (you will need a placeholder in HTML)
+        setText("max-production", data.data.max_producible_units ?? "--");
+
+    } catch (err) {
+        console.info("Max production unavailable");
+    }
+}
     // =====================
     // Load Current Orders / Live Counter
     // =====================
@@ -269,8 +293,11 @@
         loadProductionHistory();
         loadRawMaterials();
         loadCurrentOrders();
+        loadMaxProduction();
 
         setInterval(loadCurrentOrders, 2000);
+        setInterval(loadRawMaterials, 5000);
+        setInterval(loadMaxProduction, 5000);
     }
     
     window.addEventListener("DOMContentLoaded", init);
