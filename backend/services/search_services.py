@@ -1,5 +1,6 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from datetime import datetime, timedelta
 
 from db import get_connection
 
@@ -148,17 +149,9 @@ def get_orders_by_finishedgoodid(finishedgoodid):
         if conn:
             conn.close()
 
-"""Raw Material Table Searches"""
-#TODO: correct these when the logic is figured out (Static output in the interim)
-def get_raw_material_recipe(finishedgoodid):
-    output_data = [
-        {'Raw Material ID': 1, 'Raw Material Name': 'Sheet Metal', 'Consumption Per Part Produced': 4},
-        {'Raw Material ID': 2, 'Raw Material Name': 'Bolt', 'Consumption Per Part Produced': 8},
-    ]
-    return output_data
 
 """Active Production Table Searches"""
-#TODO: correct when logic is figured out
+#Pulls orders that are active and have a start time
 def get_currently_packaging():
     #open connection
     conn = get_connection()
@@ -172,7 +165,7 @@ def get_currently_packaging():
         FROM tblproductiondata pd
         JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
         JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
-        WHERE ap.is_active = TRUE;
+        WHERE ap.is_active = TRUE AND ap.start_time != null;
         """
 
     try:
@@ -214,6 +207,63 @@ def get_current_finishedgood_orders(finishedgoodid):
 
     finally:
         conn.close()
+
+"""Returns all completed orders with date filter (Defaults to 7 days)"""
+def get_completed_orders(timeframe_days=7):
+    #calculate start date for time frame
+    start_date = datetime.now() - timedelta(days=timeframe_days)
+
+    #Open connection
+    conn = get_connection()
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            query = """SELECT 
+                        pd.orderid, 
+                        pd.sensor_id,
+                        fg.finishedgoodname, 
+                        pd.partsproduced,
+                        FROM tblproductiondata pd
+                        JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
+                        JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
+                        WHERE ap.is_active = false AND pd.productionenddate >= %s;
+                    """
+            cursor.execute(query, (start_date,))
+
+            return cursor.fetchall()
+
+    except Exception as e:
+        raise e
+
+    finally:
+        conn.close()
+
+def get_upcoming_orders():
+    #open connection
+    conn = get_connection()
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            query = """SELECT 
+                        ap.orderid,
+                        fg.finishedgoodname,
+                        ap.sensor_id,
+                        ap.target_quantity,
+                        FROM tblactiveproduction ap
+                        JOIN tblproductiondata pd ON ap.orderid = pd.orderid
+                        JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
+                        WHERE ap.is_active = TRUE AND ap.start_time = null;
+                    """
+
+            cursor.execute(query)
+            return cursor.fetchall()
+
+    except Exception as e:
+        raise e
+
+    finally:
+        conn.close()
+
 
 def get_sensor_production_amounts():
     conn = get_connection()

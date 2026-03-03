@@ -439,6 +439,36 @@ def api_active_orders():
         return jsonify({"status": "error", "message": str(e)}), 400
     except Exception as e:
         return jsonify({"status": "error", "message": "An error occurred"}), 500
+
+
+@app.route("/completed-orders", methods=["GET"])
+def read_completed_orders():
+    try:
+        response = requests.get(f"{BACKEND_URL}/completed-orders")
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        return jsonify(data), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/upcoming-orders", methods=["GET"])
+def read_upcoming_orders():
+    try:
+        response = requests.get(f"{BACKEND_URL}/upcoming-orders")
+
+        response.raise_for_status()
+
+        data = response.json()
+        return jsonify(data), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
     
 if __name__ == "__main__":
     #app.run(host='0.0.0.0', port=5000, debug=True)
