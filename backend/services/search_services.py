@@ -124,29 +124,38 @@ def search_inventory_by_id(finished_id: str):
 """ProductionData Table Searches"""
 def get_orders_by_finishedgoodid(finishedgoodid):
     conn = get_connection()
+
     try:
         with conn.cursor() as cursor:
             cursor.execute("""
-                SELECT orderid, partsproduced, productionstartdate, productionenddate
-                FROM tblproductiondata
-                WHERE finishedgoodid = %s
+                SELECT 
+                    pd.orderid,
+                    pd.partsproduced,
+                    TO_CHAR(ap.start_time, 'YYYY-MM-DD HH24:MI') AS productionstartdate,
+                    TO_CHAR(ap.end_time, 'YYYY-MM-DD HH24:MI') AS productionenddate
+                FROM tblproductiondata pd
+                JOIN tblactiveproduction ap
+                    ON pd.orderid = ap.orderid
+                WHERE pd.finishedgoodid = %s
+                ORDER BY ap.start_time DESC
             """, (finishedgoodid,))
+
             rows = cursor.fetchall()
-            if not rows:
-                # Return fake data for testing
-                return [
-                    {"orderid": 101, "partsproduced": 50, "productionstartdate": "2026-01-01", "productionenddate": "2026-01-02"},
-                    {"orderid": 102, "partsproduced": 75, "productionstartdate": "2026-01-03", "productionenddate": "2026-01-04"},
-                ]
-            # Format DB results as list of dicts for JSON serialization
+
             orders = [
-                {"orderid": r[0], "partsproduced": r[1], "productionstartdate": r[2], "productionenddate": r[3]}
+                {
+                    "orderid": r[0],
+                    "partsproduced": r[1],
+                    "productionstartdate": r[2],
+                    "productionenddate": r[3]
+                }
                 for r in rows
             ]
+
             return orders
+
     finally:
-        if conn:
-            conn.close()
+        conn.close()
 
 """Raw Material Table Searches"""
 #TODO: correct these when the logic is figured out (Static output in the interim)
