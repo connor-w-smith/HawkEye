@@ -28,7 +28,7 @@
             <li><a href="/search" class="nav-link">Search</a></li>
             <li><a href="/start-order" class="nav-link">Start Order</a></li>
             <li class="admin-only dropdown">
-                <a href="/edit" class="nav-link">Edit ▼</a>
+                <a href="#" class="nav-link">Edit ▼</a>
                 <div class="dropdown-content">
                     <a href="/edit-raw-materials">Raw Materials</a>
                     <a href="/edit-recipes">Recipes</a>
@@ -50,9 +50,11 @@
     <h1 id="finished-good-name">Loading...</h1>
 
     <div class="time-filters">
-        <button>Last 7 Days</button>
-        <button>Last 14 Days</button>
-        <button class="active">Last 30 Days</button>
+        <!--
+    <button class="tab active">Last 7 Days</button>
+    <button class="tab">Last 14 Days</button>
+    <button class="tab">Last 30 Days</button>
+    -->
     </div>
 </div>
 
@@ -251,7 +253,7 @@
             setText("sensor-id", ` ${order.sensor_id ?? "--"}`);
     
             // Progress bar (placeholder target, replace when DB has target)
-            const target = 1000;
+            const target = order.target_quantity ?? 1;
             const percent = Math.min(Math.round((order.partsproduced / target) * 100), 100);
             document.getElementById("progress-fill").style.width = percent + "%";
             setText("progress-text", percent + "% - Parts Made so far");

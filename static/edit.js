@@ -334,7 +334,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Function to delete raw material
     window.deleteRawMaterial = async function(materialName) {
-        if (!confirm(`Are you sure you want to delete "${materialName}"?`)) {
+        const shouldDelete = await showCustomDeleteConfirm(materialName);
+        if (!shouldDelete) {
             return;
         }
 
@@ -352,13 +353,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (response.ok) {
                 loadRawMaterialsForEdit();
+                await showCustomDeleteMessage("Delete Successful", `"${materialName}" was deleted.`);
             } else {
                 const error = await response.json();
-                alert(`Error deleting raw material: ${error.detail || "Unknown error"}`);
+                await showCustomDeleteMessage("Delete Failed", `Error deleting raw material: ${error.detail || "Unknown error"}`, true);
             }
         } catch (err) {
             console.error("Error deleting raw material: ", err);
-            alert("Error deleting raw material: " + err.message);
+            await showCustomDeleteMessage("Delete Failed", "Error deleting raw material: " + err.message, true);
         }
     };
 
@@ -816,7 +818,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Function to delete recipe
     window.deleteRecipe = async function(finishedGoodId, materialName) {
-        if (!confirm(`Are you sure you want to delete this recipe?`)) {
+        const shouldDelete = await showCustomDeleteConfirm(`${finishedGoodId} recipe with ${materialName}`);
+        if (!shouldDelete) {
             return;
         }
 
@@ -835,13 +838,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (response.ok) {
                 loadRecipesForEdit();
+                await showCustomDeleteMessage("Delete Successful", "Recipe was deleted.");
             } else {
                 const error = await response.json();
-                alert(`Error deleting recipe: ${error.detail || "Unknown error"}`);
+                await showCustomDeleteMessage("Delete Failed", `Error deleting recipe: ${error.detail || "Unknown error"}`, true);
             }
         } catch (err) {
             console.error("Error deleting recipe: ", err);
-            alert("Error deleting recipe: " + err.message);
+            await showCustomDeleteMessage("Delete Failed", "Error deleting recipe: " + err.message, true);
         }
     };
 

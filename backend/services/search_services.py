@@ -344,7 +344,8 @@ def get_active_order_for_finishedgood(finishedgoodid):
                     pd.orderid,
                     fg.finishedgoodname,
                     ap.sensor_id,
-                    pd.partsproduced
+                    pd.partsproduced,
+                    ap.target_quantity
                 FROM tblproductiondata pd
                 JOIN tblfinishedgoods fg 
                     ON pd.finishedgoodid = fg.finishedgoodid

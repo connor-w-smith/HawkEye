@@ -112,30 +112,49 @@ function handleAddUser(event) {
 }
 
 // Delete a user
-function deleteUser(username) {
-    if (!confirm(`Are you sure you want to delete user "${username}"?`)) {
+async function deleteUser(username) {
+    let shouldDelete = false;
+    if (typeof showCustomDeleteConfirm === "function") {
+        shouldDelete = await showCustomDeleteConfirm(`user "${username}"`);
+    } else {
+        shouldDelete = confirm(`Are you sure you want to delete user "${username}"?`);
+    }
+
+    if (!shouldDelete) {
         return;
     }
 
-    fetch(`/users/delete-user/${username}`, {
-        method: "DELETE",
-        headers: {
-            ...(typeof getAuthHeaders === "function" ? getAuthHeaders() : {})
-        }
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === "success") {
+    try {
+        const response = await fetch(`/users/delete-user/${username}`, {
+            method: "DELETE",
+            headers: {
+                ...(typeof getAuthHeaders === "function" ? getAuthHeaders() : {})
+            }
+        });
+
+        const data = await response.json();
+        if (data.status === "success") {
+            if (typeof showCustomDeleteMessage === "function") {
+                await showCustomDeleteMessage("Delete Successful", `User "${username}" was deleted.`);
+            } else {
                 alert("User deleted successfully!");
-                loadUsers(); // Reload the users list
+            }
+            loadUsers();
+        } else {
+            if (typeof showCustomDeleteMessage === "function") {
+                await showCustomDeleteMessage("Delete Failed", data.message || "Error deleting user", true);
             } else {
                 alert(data.message || "Error deleting user");
             }
-        })
-        .catch(error => {
-            console.error("Error deleting user:", error);
+        }
+    } catch (error) {
+        console.error("Error deleting user:", error);
+        if (typeof showCustomDeleteMessage === "function") {
+            await showCustomDeleteMessage("Delete Failed", "An error occurred while deleting the user", true);
+        } else {
             alert("An error occurred while deleting the user");
-        });
+        }
+    }
 }
 
 // Helper function to show messages

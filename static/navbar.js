@@ -46,6 +46,21 @@ document.addEventListener("DOMContentLoaded", async function() {
         });
     });
 
+    const editDropdown = document.querySelector(".nav-links li.dropdown");
+    const editDropdownLink = editDropdown ? editDropdown.querySelector(".nav-link") : null;
+    if (editDropdown && editDropdownLink) {
+        editDropdownLink.addEventListener("click", function(event) {
+            event.preventDefault();
+            editDropdown.classList.toggle("open");
+        });
+
+        document.addEventListener("click", function(event) {
+            if (!editDropdown.contains(event.target)) {
+                editDropdown.classList.remove("open");
+            }
+        });
+    }
+
     // Set active link based on current page
     links.forEach(link => {
         const href = link.getAttribute("href");
