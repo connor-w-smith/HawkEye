@@ -75,6 +75,7 @@ def get_active_orders():
         #this uses aliases i think what is happening
         query = """
             SELECT ap.orderid, ap.target_quantity, ap.start_time, ap.end_time, ap.last_processed_timestamp, pd.finishedgoodid,
+            SELECT ap.orderid, ap.target_quantity, ap.start_time, ap.end_time, ap.last_processed_timestamp, pd.finishedgoodid,
                    COALESCE(pd.partsproduced, 0) as current_count,
                    COALESCE(pd.sensor_id, '') as sensor_id
             FROM tblactiveproduction ap
@@ -92,6 +93,10 @@ def get_active_orders():
                 'start_time': row[2],
                 'end_time': row[3],
                 'last_processed_timestamp': row[4],
+                'finished_good_id': row[5],
+                'current_count': row[6],
+                'sensor_id': row[7]
+
                 'finished_good_id': row[5],
                 'current_count': row[6],
                 'sensor_id': row[7]
