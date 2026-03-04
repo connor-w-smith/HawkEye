@@ -359,3 +359,104 @@ def get_all_recipes():
 
     finally:
         conn.close()
+    
+def consume_raw_materials_for_production(finished_good_id: str, produced_quantity: int):
+    """
+    Subtracts raw materials based on recipe when finished goods are produced.
+    """
+
+    conn = get_connection()
+    conn.autocommit = False
+
+    try:
+        with conn.cursor() as cur:
+
+            # Get recipe rows
+            cur.execute("""
+                SELECT materialid, quantity_required
+                FROM tblrecipes
+                WHERE finishedgoodid = %s
+            """, (finished_good_id,))
+
+            recipe_rows = cur.fetchall()
+
+            if not recipe_rows:
+                raise ValueError("No recipe found for finished good")
+
+            for material_id, qty_required in recipe_rows:
+
+                total_material_used = qty_required * produced_quantity
+
+                # subtract inventory
+                cur.execute("""
+                    UPDATE tblrawmaterials
+                    SET quantity_in_stock = quantity_in_stock - %s,
+                        last_updated = NOW()
+                    WHERE materialid = %s
+                """, (total_material_used, material_id))
+
+        conn.commit()
+
+    except Exception as e:
+        conn.rollback()
+        raise e
+
+    finally:
+        conn.close()
+
+    return {"status": "success"}
+
+def calculate_max_production(finished_good_id: str):
+    """
+    Returns the maximum number of finished goods that can be produced
+    based on current raw material inventory and recipe requirements.
+    """
+
+    conn = get_connection()
+
+    try:
+        with conn.cursor() as cur:
+
+            cur.execute("""
+                SELECT 
+                    rm.material_name,
+                    rm.quantity_in_stock,
+                    r.quantity_required
+                FROM tblrecipes r
+                JOIN tblrawmaterials rm
+                    ON r.materialid = rm.materialid
+                WHERE r.finishedgoodid = %s
+            """, (finished_good_id,))
+
+            rows = cur.fetchall()
+
+            if not rows:
+                raise ValueError("No recipe found for finished good")
+
+            material_limits = []
+            limiting_material = None
+            max_units = None
+
+            for material_name, quantity_in_stock, quantity_required in rows:
+
+                possible_units = quantity_in_stock // quantity_required
+
+                material_limits.append({
+                    "material_name": material_name,
+                    "quantity_in_stock": quantity_in_stock,
+                    "quantity_required_per_unit": quantity_required,
+                    "max_possible_units": int(possible_units)
+                })
+
+                if max_units is None or possible_units < max_units:
+                    max_units = possible_units
+                    limiting_material = material_name
+
+            return {
+                "max_producible_units": int(max_units),
+                "limiting_material": limiting_material,
+                "materials": material_limits
+            }
+
+    finally:
+        conn.close()

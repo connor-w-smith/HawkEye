@@ -9,6 +9,7 @@ import threading
 from influxdb_client.client.influxdb_client import InfluxDBClient
 from influxdb_client.client.query_api import QueryApi
 from db import get_connection
+from services.material_services import consume_raw_materials_for_production
 
 
 def _load_influx_details():
@@ -72,14 +73,20 @@ def get_active_orders():
         cur = conn.cursor()
         
         #this uses aliases i think what is happening
-        query = """
-            SELECT ap.orderid, ap.target_quantity, ap.start_time, ap.end_time, ap.last_processed_timestamp,
-                   COALESCE(pd.partsproduced, 0) as current_count,
-                   COALESCE(pd.sensor_id, '') as sensor_id
-            FROM tblactiveproduction ap
-            JOIN tblproductiondata pd ON ap.orderid = pd.orderid
-            WHERE ap.is_active = true
-        """
+
+            query = """
+                    SELECT ap.orderid,
+                        ap.target_quantity,
+                        ap.start_time,
+                        ap.end_time,
+                        ap.last_processed_timestamp,
+                        pd.finishedgoodid,
+                        COALESCE(pd.partsproduced, 0) as current_count,
+                        COALESCE(pd.sensor_id, '') as sensor_id
+                    FROM tblactiveproduction ap
+                    JOIN tblproductiondata pd ON ap.orderid = pd.orderid
+                    WHERE ap.is_active = true
+"""
         cur.execute(query)
         results = cur.fetchall()
         
@@ -91,8 +98,10 @@ def get_active_orders():
                 'start_time': row[2],
                 'end_time': row[3],
                 'last_processed_timestamp': row[4],
-                'current_count': row[5],
-                'sensor_id': row[6]
+                'finished_good_id': row[5],
+                'current_count': row[6],
+                'sensor_id': row[7]
+
             })
         
         cur.close()
@@ -102,6 +111,27 @@ def get_active_orders():
     except Exception:
         logger.exception('Error fetching active orders')
         return []
+
+def get_finished_good_for_order(order_id):
+    conn = get_connection()
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT finishedgoodid
+                FROM tblproductiondata
+                WHERE orderid = %s
+            """, (order_id,))
+
+            row = cur.fetchone()
+
+            if row:
+                return row[0]
+
+            return None
+
+    finally:
+        conn.close()
 
 def get_influx_count_since(timestamp, sensor_id=None):
     """
@@ -314,7 +344,14 @@ def process_active_orders():
             
             #update production data with new count
             new_total = update_production_data(order_id, new_hits)
+            if new_total is not None:
             
+            finished_good_id = order['finished_good_id']
+
+            consume_raw_materials_for_production(
+                finished_good_id,
+                new_hits
+            )
             if new_total is not None:
                 logger.info('Updated total: %s/%s parts', new_total, target)
                 

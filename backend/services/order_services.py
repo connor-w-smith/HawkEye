@@ -47,13 +47,13 @@ def create_new_order(finishedgoodid: str, target_quantity: int, sensor_id: str |
 
     except Exception as e:
         conn.rollback()
-        return {"status":"error", "message": str(e)}
+        return {"status": "error", "message": str(e)}
 
 
     finally:
         conn.close()
 
-'''
+"""
 
     # Lines below were added by Chase to be more verbose on output for failed order creation
     NOT READY TO BE DEPLOYED YET. (check line 72 in order_routes.py for detail)
@@ -71,4 +71,4 @@ def create_new_order(finishedgoodid: str, target_quantity: int, sensor_id: str |
 
     finally:
         conn.close()
-'''
+"""

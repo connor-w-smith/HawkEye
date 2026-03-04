@@ -16,7 +16,7 @@ services/search_services.py
 No Pydantic models are used for search routes.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict
 
 from ..services.search_services import (
@@ -24,11 +24,12 @@ from ..services.search_services import (
     search_finished_by_id,
     search_inventory_by_id,
     get_orders_by_finishedgoodid,
-    get_raw_material_recipe,
     get_currently_packaging,
     get_finished_goods_with_quantities,
     get_active_order_for_finishedgood,
-    get_sensor_production_amounts
+    get_sensor_production_amounts,
+    get_upcoming_orders,
+    get_completed_orders
 )
 
 router = APIRouter(
@@ -100,9 +101,9 @@ def read_finished_good(finished_good_id: str):
 """Production Data table searches"""
 
 @router.get("/production-data/{finished_good_id}")
-def read_order_history(finished_good_id: str):
+def read_order_history(finished_good_id: str, days: int = 7):
     try:
-        return get_orders_by_finishedgoodid(finished_good_id)
+        return get_orders_by_finishedgoodid(finished_good_id, days)
     except Exception:
         return []
 
@@ -151,6 +152,32 @@ async def read_sensor_stats():
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/upcoming-orders", response_model=List[Dict])
+async def read_upcoming_orders():
+    try:
+        data = get_upcoming_orders()
+
+        if not data:
+            return []
+
+        return data
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/completed-orders", response_model=List[Dict])
+async def read_completed_orders(timeframe: int = Query(default=7, ge=1)):
+    try:
+        data = get_completed_orders(timeframe)
+        if not data:
+            return []
+
+        return data
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 
 
 

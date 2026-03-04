@@ -28,7 +28,7 @@
             <li><a href="/search" class="nav-link">Search</a></li>
             <li><a href="/start-order" class="nav-link">Start Order</a></li>
             <li class="admin-only dropdown">
-                <a href="/edit" class="nav-link">Edit ▼</a>
+                <a href="#" class="nav-link">Edit ▼</a>
                 <div class="dropdown-content">
                     <a href="/edit-raw-materials">Raw Materials</a>
                     <a href="/edit-recipes">Recipes</a>
@@ -50,11 +50,9 @@
     <h1 id="finished-good-name">Loading...</h1>
 
     <div class="time-filters">
-        <!--
-    <button class="tab active">Last 7 Days</button>
-    <button class="tab">Last 14 Days</button>
-    <button class="tab">Last 30 Days</button>
-    -->
+        <button class="tab active" onclick="changeTimeFilter(event,7)">Last 7 Days</button>
+        <button class="tab" onclick="changeTimeFilter(event,14)">Last 14 Days</button>
+        <button class="tab" onclick="changeTimeFilter(event,30)">Last 30 Days</button>
     </div>
 </div>
 
@@ -115,6 +113,7 @@
 <!-- Raw Materials -->
 <div class="card raw-materials">
     <h2>Raw Materials</h2>
+
     <table>
         <thead>
             <tr>
@@ -125,11 +124,18 @@
         </thead>
         <tbody id="raw-materials-body"></tbody>
     </table>
+
+    <div class="max-production">
+        <p><strong>Max Buildable Units:</strong> 
+        <span id="max-production">--</span></p>
+    </div>
+
 </div>
 </div>
 
 <script>
     const FINISHED_GOOD_ID = "{{ finished_good_id }}";
+    let CURRENT_DAYS_FILTER = 7;
     
     // Helper to safely update text
     function setText(id, text) {
@@ -171,7 +177,7 @@
     // =====================
     async function loadProductionHistory() {
         try {
-            const resp = await fetch(`/search/production-data/${FINISHED_GOOD_ID}`);
+            const resp = await fetch(`/search/production-data/${FINISHED_GOOD_ID}?days=${CURRENT_DAYS_FILTER}`);
             if (!resp.ok) throw new Error("Failed to fetch production history");
     
             const orders = await resp.json();
@@ -224,7 +230,24 @@
             console.info("Raw materials unavailable");
         }
     }
-    
+    // =====================
+// Load Max Production Capacity
+// =====================
+async function loadMaxProduction() {
+    try {
+        const resp = await fetch(`/materials/max-production/${FINISHED_GOOD_ID}`);
+        if (!resp.ok) throw new Error("Failed to fetch max production");
+
+        const data = await resp.json();
+        console.log("Max production:", data);
+
+        // Example display (you will need a placeholder in HTML)
+        setText("max-production", data.data.max_producible_units ?? "--");
+
+    } catch (err) {
+        console.info("Max production unavailable");
+    }
+}
     // =====================
     // Load Current Orders / Live Counter
     // =====================
@@ -262,6 +285,15 @@
             console.info("Current orders unavailable");
         }
     }
+    function changeTimeFilter(event,days) {
+        CURRENT_DAYS_FILTER = days;
+
+        // update button active state
+        document.querySelectorAll(".tab").forEach(btn => btn.classList.remove("active"));
+        event.target.classList.add("active");
+
+        loadProductionHistory();
+    }
     
     // =====================
     // Load everything
@@ -271,8 +303,11 @@
         loadProductionHistory();
         loadRawMaterials();
         loadCurrentOrders();
+        loadMaxProduction();
 
         setInterval(loadCurrentOrders, 2000);
+        setInterval(loadRawMaterials, 5000);
+        setInterval(loadMaxProduction, 5000);
     }
     
     window.addEventListener("DOMContentLoaded", init);

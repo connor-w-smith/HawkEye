@@ -28,7 +28,8 @@ from ..services.material_services import (
     delete_raw_recipe,
     get_raw_materials_for_finished_good,
     get_all_raw_materials,
-    get_all_recipes
+    get_all_recipes,
+    calculate_max_production
 )
 from ..models.material_models import (
     AddRawMaterialRequest,
@@ -175,6 +176,19 @@ def view_all_recipes():
             "status": "success",
             "count": len(data),
             "recipes": data
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/max-production/{finished_good_id}")
+def get_max_production(finished_good_id: str):
+    try:
+        data = calculate_max_production(finished_good_id)
+
+        return {
+            "status": "success",
+            "data": data
         }
 
     except Exception as e:

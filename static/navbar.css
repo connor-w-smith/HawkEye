@@ -97,6 +97,10 @@
     display: block;
 }
 
+.dropdown.open .dropdown-content {
+    display: block;
+}
+
 /* Hamburger Menu for Mobile */
 .hamburger {
     display: none;
