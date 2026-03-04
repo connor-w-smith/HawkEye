@@ -121,8 +121,7 @@ def search_inventory_by_id(finished_id: str):
         #ensure connection is closed
         conn.close()
 
-"""ProductionData Table Searches"""
-def get_orders_by_finishedgoodid(finishedgoodid):
+def get_orders_by_finishedgoodid(finishedgoodid, days):
     conn = get_connection()
 
     try:
@@ -137,8 +136,9 @@ def get_orders_by_finishedgoodid(finishedgoodid):
                 JOIN tblactiveproduction ap
                     ON pd.orderid = ap.orderid
                 WHERE pd.finishedgoodid = %s
+                AND ap.start_time >= NOW() - (%s * INTERVAL '1 day')
                 ORDER BY ap.start_time DESC
-            """, (finishedgoodid,))
+            """, (finishedgoodid, days))
 
             rows = cursor.fetchall()
 
