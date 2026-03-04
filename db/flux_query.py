@@ -1,3 +1,4 @@
+import sys
 import time
 import os
 import importlib.util
@@ -6,10 +7,14 @@ from datetime import datetime, timezone
 import logging
 import signal
 import threading
+
+# Add parent directory to path so imports work from any working directory
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from influxdb_client.client.influxdb_client import InfluxDBClient
 from influxdb_client.client.query_api import QueryApi
 from db import get_connection
-from services.material_services import consume_raw_materials_for_production
+from backend.services.material_services import consume_raw_materials_for_production
 
 
 def _load_influx_details():
@@ -73,19 +78,18 @@ def get_active_orders():
         cur = conn.cursor()
         
         #this uses aliases i think what is happening
-
-            query = """
-                    SELECT ap.orderid,
-                        ap.target_quantity,
-                        ap.start_time,
-                        ap.end_time,
-                        ap.last_processed_timestamp,
-                        pd.finishedgoodid,
-                        COALESCE(pd.partsproduced, 0) as current_count,
-                        COALESCE(pd.sensor_id, '') as sensor_id
-                    FROM tblactiveproduction ap
-                    JOIN tblproductiondata pd ON ap.orderid = pd.orderid
-                    WHERE ap.is_active = true
+        query = """
+            SELECT ap.orderid,
+                ap.target_quantity,
+                ap.start_time,
+                ap.end_time,
+                ap.last_processed_timestamp,
+                pd.finishedgoodid,
+                COALESCE(pd.partsproduced, 0) as current_count,
+                COALESCE(pd.sensor_id, '') as sensor_id
+            FROM tblactiveproduction ap
+            JOIN tblproductiondata pd ON ap.orderid = pd.orderid
+            WHERE ap.is_active = true
 """
         cur.execute(query)
         results = cur.fetchall()
@@ -345,14 +349,12 @@ def process_active_orders():
             #update production data with new count
             new_total = update_production_data(order_id, new_hits)
             if new_total is not None:
-            
-            finished_good_id = order['finished_good_id']
+                finished_good_id = order['finished_good_id']
 
-            consume_raw_materials_for_production(
-                finished_good_id,
-                new_hits
-            )
-            if new_total is not None:
+                consume_raw_materials_for_production(
+                    finished_good_id,
+                    new_hits
+                )
                 logger.info('Updated total: %s/%s parts', new_total, target)
                 
                 # Update timestamps if we got valid ones
