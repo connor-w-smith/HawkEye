@@ -52,7 +52,7 @@ _level = getattr(logging, LOG_LEVEL, logging.INFO)
 logging.basicConfig(level=_level, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 logger = logging.getLogger('flux_query')
 
-POLL_INTERVAL = int(os.getenv('HAWKEYE_POLL_INTERVAL', os.getenv('POLL_INTERVAL', '10')))
+POLL_INTERVAL = int(os.getenv('HAWKEYE_POLL_INTERVAL', os.getenv('POLL_INTERVAL', '4')))
 RUN_ONCE = os.getenv('HAWKEYE_RUN_ONCE', os.getenv('RUN_ONCE', 'false')).lower() in ('1', 'true', 'yes')
 
 # Event used to detect shutdown signals
