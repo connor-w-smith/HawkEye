@@ -271,8 +271,14 @@ def update_active_production(order_id, start_time=None, end_time=None, mark_inac
     try:
         conn = get_connection()
         cur = conn.cursor()
-        
+        sensor_id = None
         if mark_inactive:
+            # Get the sensor_id for this order before marking inactive
+            cur.execute("SELECT sensor_id FROM tblproductiondata WHERE orderid = %s", (order_id,))
+            row = cur.fetchone()
+            if row:
+                sensor_id = row[0]
+            # Mark this order as inactive
             cur.execute("""
                 UPDATE tblactiveproduction 
                 SET start_time = COALESCE(%s, start_time), 
@@ -282,6 +288,26 @@ def update_active_production(order_id, start_time=None, end_time=None, mark_inac
                 WHERE orderid = %s
             """, (start_time, end_time, end_time, order_id))
             print(f"✓ Order {order_id} marked as COMPLETE")
+
+            # Activate the next order (by orderid) with the same sensor_id and is_active = false
+            if sensor_id is not None and sensor_id != '':
+                logger.info(f"Looking for next order for sensor_id={sensor_id} after orderid={order_id}")
+                cur.execute("""
+                    SELECT ap.orderid FROM tblactiveproduction ap
+                    JOIN tblproductiondata pd ON ap.orderid = pd.orderid
+                    WHERE ap.is_active = false AND pd.sensor_id = %s AND ap.orderid > %s
+                    ORDER BY ap.orderid ASC LIMIT 1
+                """, (sensor_id, order_id))
+                next_row = cur.fetchone()
+                if next_row:
+                    next_orderid = next_row[0]
+                    logger.info(f"Activating next order {next_orderid} for sensor {sensor_id}")
+                    cur.execute("UPDATE tblactiveproduction SET is_active = true WHERE orderid = %s", (next_orderid,))
+                    print(f"✓ Activated next order {next_orderid} for sensor {sensor_id}")
+                else:
+                    logger.info(f"No next order found for sensor_id={sensor_id} after orderid={order_id}")
+            else:
+                logger.info(f"No valid sensor_id found for order {order_id}, cannot activate next order.")
         else:
             # During normal operation, only update start_time (if not set) and last_processed_timestamp
             cur.execute("""
@@ -290,12 +316,10 @@ def update_active_production(order_id, start_time=None, end_time=None, mark_inac
                     last_processed_timestamp = %s
                 WHERE orderid = %s
             """, (start_time, end_time, order_id))
-        
         conn.commit()
         cur.close()
         conn.close()
         return True
-        
     except Exception:
         logger.exception('Error updating active production for order %s', order_id)
         return False
