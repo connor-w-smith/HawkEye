@@ -185,13 +185,13 @@ async function loadUpcomingOrders() {
         const tbody = document.getElementById("upcoming-orders-table");
         tbody.innerHTML = "";
 
-        data.orders.forEach(order => {
+        data.forEach(order => {
             tbody.innerHTML += `
             <tr>
                 <td>${order.orderid ?? "--"}</td>
                 <td>${order.finishedgoodname ?? "--"}</td>
                 <td>${order.sensor_id ?? "--"}</td>
-                <td>${order.orderamount ?? "--"}</td>
+                <td>${order.target_quantity ?? "--"}</td>
             </tr>
             `;
         });

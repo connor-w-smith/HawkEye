@@ -244,16 +244,20 @@ def get_upcoming_orders():
 
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            query = """SELECT 
-                        ap.orderid,
-                        fg.finishedgoodname,
-                        ap.sensor_id,
-                        ap.target_quantity,
-                        FROM tblactiveproduction ap
-                        JOIN tblproductiondata pd ON ap.orderid = pd.orderid
-                        JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
-                        WHERE ap.is_active = TRUE AND ap.start_time = null;
-                    """
+            query = """
+                SELECT 
+                    ap.orderid,
+                    fg.finishedgoodname,
+                    ap.sensor_id,
+                    ap.target_quantity
+                FROM tblactiveproduction ap
+                JOIN tblproductiondata pd 
+                    ON ap.orderid = pd.orderid
+                JOIN tblfinishedgoods fg 
+                    ON pd.finishedgoodid = fg.finishedgoodid
+                WHERE ap.is_active = TRUE 
+                AND ap.start_time IS NULL;
+            """
 
             cursor.execute(query)
             return cursor.fetchall()
