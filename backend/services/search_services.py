@@ -365,3 +365,88 @@ def get_active_order_for_finishedgood(finishedgoodid):
 
     finally:
         conn.close()
+
+"""Sensor Page Search Functions"""
+def get_active_order_for_sensor(sensorid):
+    conn = get_connection()
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            query = """
+                SELECT 
+                    ap.orderid,
+                    fg.finishedgoodname,
+                    ap.sensor_id,
+                    pd.partsproduced,
+                    ap.target_quantity
+                FROM tblactiveproduction ap
+                JOIN tblproductiondata pd 
+                    ON ap.orderid = pd.orderid
+                JOIN tblfinishedgoods fg 
+                    ON pd.finishedgoodid = fg.finishedgoodid
+                WHERE ap.sensorid = %s
+                AND ap.is_active = TRUE;
+            """
+
+            cursor.execute(query, (sensorid,))
+            results = cursor.fetchall()
+
+            return results
+
+    except Exception as e:
+        raise e
+
+    finally:
+        conn.close()
+
+def get_completed_orders_sensor(sensorid):
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            query = """ SELECT
+                            ap.orderid,
+                            pd.partsproduced,
+                            pd.productionstartdate,
+                            pd.productionenddate,
+                            FROM tblactiveproduction ap
+                            JOIN tblproductiondata pd 
+                                ON ap.orderid = pd.orderid
+                            WHERE ap.sensorid = %s 
+                            AND ap.is_active = FALSE 
+                            AND pd.productionstartdate IS NOT NULL; """
+
+            cur.execute(query, (sensorid,))
+            results = cur.fetchall()
+
+            return results
+
+    except Exception as e:
+        raise e
+
+    finally:
+        conn.close()
+
+def get_upcoming_orders_sensor(sensorid):
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            query = """ SELECT
+                               ap.orderid,
+                               fg.finishedgoodname,
+                               pd.target_quantity,
+                               FROM tblactiveproduction ap
+                               JOIN tblproductiondata pd 
+                                   ON ap.orderid = pd.orderid
+                               JOIN tblfinishedgoods fg 
+                                   ON pd.finishedgoodid = fg.finishedgoodid
+                               WHERE ap.sensorid = %s 
+                               AND ap.is_active = FALSE 
+                               AND pd.productionstartdate IS NULL; """
+
+            cur.execute(query, (sensorid,))
+            results = cur.fetchall()
+
+            return results
+
+    except Exception as e:
+        raise e
