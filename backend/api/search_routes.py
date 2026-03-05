@@ -168,14 +168,9 @@ async def read_upcoming_orders():
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/completed-orders", response_model=List[Dict])
-async def read_completed_orders(timeframe: int = Query(default=7, ge=1)):
+def read_completed_orders(timeframe: int = Query(default=7, ge=1)):
     try:
-        data = get_completed_orders(timeframe)
-        if not data:
-            return []
-
-        return data
-
+        return get_completed_orders(timeframe) or []
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
