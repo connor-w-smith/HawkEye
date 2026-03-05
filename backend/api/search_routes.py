@@ -29,6 +29,7 @@ from ..services.search_services import (
     get_active_order_for_finishedgood,
     get_sensor_production_amounts,
     get_upcoming_orders,
+    get_completed_orders,
     get_completed_orders
 )
 
@@ -179,7 +180,16 @@ async def read_completed_orders(timeframe: int = Query(default=7, ge=1)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/order-history")
+def order_history(days: int = 7):
+    try:
+        results = get_completed_orders(days)
 
+        return {
+            "status": "success",
+            "count": len(results),
+            "orders": results
+        }
 
-
-
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
