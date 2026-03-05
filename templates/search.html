@@ -47,33 +47,33 @@
     </div>
 </nav>
 
-<div class="header-display">
-    <h1>Inventory Search</h1>
-</div>
+<div class="page-content">
+    <div class="header-display">
+        <h1>Inventory Search</h1>
+    </div>
 
-<!--new udpated search-->
-<div class="search-container">
-    <input
-        id="searchInput"
-        type="text"
-        placeholder="Search by name or ID..."
-        autocomplete="off"
-    >
-</div>
+    <!--new udpated search-->
+    <div class="search-container">
+        <input
+            id="searchInput"
+            type="text"
+            placeholder="Search by name or ID..."
+            autocomplete="off"
+        >
+    </div>
 
+    <table class="search-data-display" id="searchResults">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody id="data-table">
+            <!-- Results appear here -->
+        </tbody>
+    </table>
 </div>
-
-<table class="search-data-display" id="searchResults">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-        </tr>
-    </thead>
-    <tbody id="data-table">
-        <!-- Results appear here -->
-    </tbody>
-</table>
     <footer>
         <small>
             &copy; 2026 HawkEye Inventory Systems. All rights reserved.<br>
