@@ -162,30 +162,21 @@ def get_orders_by_finishedgoodid(finishedgoodid, days):
 """Active Production Table Searches"""
 #Pulls orders that are active and have a start time
 def get_currently_packaging():
-    #open connection
     conn = get_connection()
-
-    query = """
-        SELECT 
-            pd.orderid, 
-            fg.finishedgoodname, 
-            pd.sensor_id, 
-            pd.partsproduced
-        FROM tblproductiondata pd
-        JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
-        JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
-        WHERE ap.is_active = TRUE AND ap.start_time != null;
-        """
-
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(query)
-            results = cursor.fetchall()
-            return results
-
-    except Exception as e:
-        raise e
-
+            cursor.execute("""
+                SELECT 
+                    pd.orderid, 
+                    fg.finishedgoodname, 
+                    pd.sensor_id, 
+                    pd.partsproduced
+                FROM tblproductiondata pd
+                JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
+                JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
+                WHERE ap.is_active = TRUE
+            """)
+            return cursor.fetchall()
     finally:
         conn.close()
 
@@ -345,10 +336,9 @@ def get_finished_goods_with_quantities():
 #for product page yarrrrr
 def get_active_order_for_finishedgood(finishedgoodid):
     conn = get_connection()
-
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            query = """
+            cursor.execute("""
                 SELECT 
                     pd.orderid,
                     fg.finishedgoodname,
@@ -356,21 +346,32 @@ def get_active_order_for_finishedgood(finishedgoodid):
                     pd.partsproduced,
                     ap.target_quantity
                 FROM tblproductiondata pd
-                JOIN tblfinishedgoods fg 
-                    ON pd.finishedgoodid = fg.finishedgoodid
-                JOIN tblactiveproduction ap 
-                    ON pd.orderid = ap.orderid
+                JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
+                JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
                 WHERE fg.finishedgoodid = %s
-                AND ap.is_active = TRUE;
-            """
+                  AND ap.is_active = TRUE
+            """, (finishedgoodid,))
+            return cursor.fetchall()
+    finally:
+        conn.close()
 
-            cursor.execute(query, (finishedgoodid,))
-            results = cursor.fetchall()
-
-            return results
-
-    except Exception as e:
-        raise e
-
+def get_completed_orders(days: int):
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute("""
+                SELECT
+                    ap.orderid,
+                    ap.sensor_id,
+                    fg.finishedgoodname,
+                    ap.target_quantity AS planproduction
+                FROM tblactiveproduction ap
+                JOIN tblproductiondata pd ON ap.orderid = pd.orderid
+                JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
+                WHERE ap.is_active = FALSE
+                  AND ap.end_time >= NOW() - (%s * INTERVAL '1 day')
+                ORDER BY ap.end_time DESC;
+            """, (days,))
+            return cursor.fetchall()
     finally:
         conn.close()
