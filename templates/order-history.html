@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HawkEye | Order History</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='navbar.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='order-history.css') }}">
+</head>
+<body>
+
+<!-- Top Toolbar -->
+<div class="top-toolbar">
+    <a href="/index" aria-label="Go to home page">
+        <img src="{{ url_for('static', filename='CapstoneLogoWhiteText.png') }}" alt="HawkEye Logo">
+    </a>
+    <div class="toolbar-content">
+        <p>Hi, <span id="username">User</span></p>
+        <span class="separator">|</span>
+        <a href="/">Log out</a>
+    </div>
+</div>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <div class="nav-container">
+        <ul class="nav-links">
+            <li><a href="/index">Home</a></li>
+            <li><a href="/search">Search</a></li>
+            <li><a href="/start-order">Start Order</a></li>
+            <li><a href="/order-history">Order History</a></li>
+            <li class="admin-only dropdown">
+                <a href="#">Edit ▼</a>
+                <div class="dropdown-content">
+                    <a href="/edit-raw-materials">Raw Materials</a>
+                    <a href="/edit-recipes">Recipes</a>
+                    <a href="/edit-finished-goods">Finished Goods</a>
+                </div>
+            </li>
+            <li class="admin-only"><a href="/users">Users</a></li>
+        </ul>
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+</nav>
+
+<div class="page-header">
+    <h1>Order History</h1>
+
+    <div class="time-filters">
+        <button class="tab active" onclick="changeTimeFilter(event,7)">Last 7 Days</button>
+        <button class="tab" onclick="changeTimeFilter(event,14)">Last 14 Days</button>
+        <button class="tab" onclick="changeTimeFilter(event,30)">Last 30 Days</button>
+    </div>
+</div>
+
+<!-- Tables Layout -->
+<div class="tables-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; flex: 1; align-items: start;">
+
+    <!-- Left Column: Currently Packaging / Upcoming Orders -->
+    <div style="display: flex; flex-direction: column; gap: 15px;">
+        <!-- Currently Packaging -->
+        <div class="table-column">
+            <table class="data-display">
+                <caption>Currently Packaging</caption>
+                <thead>
+                    <tr>
+                        <th>Order Number</th>
+                        <th>Finished Good</th>
+                        <th>Sensor ID</th>
+                        <th>Parts Produced</th>
+                    </tr>
+                </thead>
+                <tbody id="currently-packaging-table">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Upcoming Orders -->
+        <div class="table-column">
+            <table class="data-display">
+                <caption>Upcoming Orders</caption>
+                <thead>
+                    <tr>
+                        <th>Order Number</th>
+                        <th>Finished Good</th>
+                        <th>Sensor ID</th>
+                        <th>Planned Production</th>
+                    </tr>
+                </thead>
+                <tbody id="upcoming-orders-table">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    
+
+        <table class="data-display">
+            <caption>Completed Orders</caption>
+            <thead>
+                <tr>
+                    <th>Order Number</th>
+                    <th>Sensor ID</th>
+                    <th>Finished Good</th>
+                    <th>Order Amount</th>
+                </tr>
+            </thead>
+            <tbody id="completed-orders-table">
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- Footer -->
+<footer>
+    <small>&copy; 2026 HawkEye Inventory Systems. All rights reserved.</small>
+</footer>
+
+<!-- Scripts -->
+<script>
+let CURRENT_DAYS = 7;
+
+// Function to load Completed Orders (filter by days)
+async function loadCompletedOrders() {
+    try {
+        const resp = await fetch(`/search/order-history?days=${CURRENT_DAYS}`)
+        if (!resp.ok) throw new Error("Failed request");
+        const data = await resp.json();
+
+        const tbody = document.getElementById("completed-orders-table");
+        tbody.innerHTML = "";
+
+        data.orders.forEach(order => {
+            tbody.innerHTML += `
+            <tr>
+                <td>${order.orderid ?? "--"}</td>
+                <td>${order.sensor_id ?? "--"}</td>
+                <td>${order.finishedgoodname ?? "--"}</td>
+                <td>${order.planproduction ?? "--"}</td>
+            </tr>
+            `;
+        });
+    } catch(err) {
+        console.error("Completed orders error", err);
+    }
+}
+
+// Function to load Currently Packaging Table
+async function loadCurrentlyPackaging() {
+    try {
+        const resp = await fetch("/search/active-orders")
+        if (!resp.ok) throw new Error("Failed request");
+        const data = await resp.json();
+
+        const tbody = document.getElementById("currently-packaging-table");
+        tbody.innerHTML = "";
+
+        data.forEach(order => {
+            tbody.innerHTML += `
+            <tr>
+                <td>${order.orderid ?? "--"}</td>
+                <td>${order.finishedgoodname ?? "--"}</td>
+                <td>${order.sensor_id ?? "--"}</td>
+                <td>${order.partsproduced ?? "--"}</td>
+            </tr>
+            `;
+        });
+    } catch(err) {
+        console.error("Currently Packaging error", err);
+    }
+}
+
+// Function to load Upcoming Orders Table
+async function loadUpcomingOrders() {
+    try {
+        const resp = await fetch(`/search/upcoming-orders`);
+        if (!resp.ok) throw new Error("Failed request");
+        const data = await resp.json();
+
+        const tbody = document.getElementById("upcoming-orders-table");
+        tbody.innerHTML = "";
+
+        data.orders.forEach(order => {
+            tbody.innerHTML += `
+            <tr>
+                <td>${order.orderid ?? "--"}</td>
+                <td>${order.finishedgoodname ?? "--"}</td>
+                <td>${order.sensor_id ?? "--"}</td>
+                <td>${order.orderamount ?? "--"}</td>
+            </tr>
+            `;
+        });
+    } catch(err) {
+        console.error("Upcoming orders error", err);
+    }
+}
+
+// Time filter change
+function changeTimeFilter(event, days) {
+    CURRENT_DAYS = days;
+    document.querySelectorAll(".tab").forEach(btn => btn.classList.remove("active"));
+    event.target.classList.add("active");
+    loadCompletedOrders();
+}
+
+// Initialize tables
+function init() {
+    loadCurrentlyPackaging();
+    loadUpcomingOrders();
+    loadCompletedOrders();
+}
+
+window.addEventListener("DOMContentLoaded", init);
+</script>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+<script src="{{ url_for('static', filename='navbar.js') }}"></script>
+</body>
+</html>

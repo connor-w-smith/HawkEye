@@ -28,7 +28,8 @@ from ..services.search_services import (
     get_currently_packaging,
     get_finished_goods_with_quantities,
     get_active_order_for_finishedgood,
-    get_sensor_production_amounts
+    get_sensor_production_amounts,
+    get_completed_orders
 )
 
 router = APIRouter(
@@ -152,7 +153,16 @@ async def read_sensor_stats():
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.get("/order-history")
+def order_history(days: int = 7):
+    try:
+        results = get_completed_orders(days)
 
+        return {
+            "status": "success",
+            "count": len(results),
+            "orders": results
+        }
 
-
-
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

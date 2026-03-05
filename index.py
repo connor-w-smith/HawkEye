@@ -339,7 +339,10 @@ def edit_recipes_page():
 @app.route("/edit-finished-goods")
 def edit_finished_goods_page():
     return render_template("edit-finished-goods.html")
-
+    
+@app.route("/order-history")
+def order_history_page():
+    return render_template("order-history.html")
 
 #TODO: fix call on this
 # API endpoint to get all users

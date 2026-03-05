@@ -324,3 +324,35 @@ def get_active_order_for_finishedgood(finishedgoodid):
 
     finally:
         conn.close()
+
+def get_completed_orders(days: int):
+    conn = get_connection()
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            query = """
+                SELECT
+                    ap.orderid,
+                    ap.sensor_id,
+                    fg.finishedgoodname,
+                    ap.target_quantity AS planproduction
+                FROM tblactiveproduction ap
+                JOIN tblproductiondata pd
+                    ON ap.orderid = pd.orderid
+                JOIN tblfinishedgoods fg
+                    ON pd.finishedgoodid = fg.finishedgoodid
+                WHERE ap.is_active = FALSE
+                AND ap.end_time >= NOW() - (%s * INTERVAL '1 day')
+                ORDER BY ap.end_time DESC;
+            """
+
+            cursor.execute(query, (days,))
+            results = cursor.fetchall()
+
+            return results
+
+    except Exception as e:
+        raise e
+
+    finally:
+        conn.close()

@@ -38,9 +38,9 @@ router = APIRouter(
 
 
 @router.get("/production-data/{finished_good_id}")
-def read_order_history(finished_good_id: str):
+def read_order_history(finished_good_id: str, days: int = 7):
     try:
-        return get_orders_by_finishedgoodid(finished_good_id)
+        return get_orders_by_finishedgoodid(finished_good_id, days)
     except Exception:
         return []
 
