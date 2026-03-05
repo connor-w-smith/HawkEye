@@ -5,6 +5,64 @@
     <title>HawkEye | Product</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='product.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='navbar.css') }}">
+    <style>
+        /* Order Completion Modal */
+        #order-completion-modal {
+            display: none !important;
+            position: fixed !important;
+            z-index: 2000 !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background-color: rgba(0, 0, 0, 0.5) !important;
+        }
+        
+        #order-completion-modal.show {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        .order-completion-content {
+            background-color: #e8f5e9 !important;
+            border: 3px solid #4caf50 !important;
+            border-radius: 12px !important;
+            padding: 30px !important;
+            width: 90% !important;
+            max-width: 380px !important;
+            text-align: center !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+            animation: slideInPopup 0.4s ease-out !important;
+            position: relative !important;
+        }
+        
+        #completion-close {
+            position: absolute !important;
+            top: 10px !important;
+            right: 15px !important;
+            color: #4caf50 !important;
+            font-size: 32px !important;
+            cursor: pointer !important;
+            transition: color 0.2s !important;
+        }
+        
+        #completion-close:hover {
+            color: #2e7d32 !important;
+        }
+        
+        /* Order Completion Modal Animation */
+        @keyframes slideInPopup {
+            from {
+                transform: scale(0.3) translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -61,6 +119,11 @@
 <div class="status-banner">
     <p id="status-text">No active production orders</p>
 </div>
+
+<!-- Test Button (Comment out when done testing) -->
+<!-- <div style="padding: 10px 20px; background: #fff3cd; border-bottom: 1px solid #ffc107;">
+    <button onclick="testOrderCompletion()" style="padding: 8px 16px; background: #ffc107; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Test Order Completion Modal</button>
+</div> -->
 
 <!-- Main Content -->
 <div class="content-grid">
@@ -137,11 +200,104 @@
 <script>
     const FINISHED_GOOD_ID = "{{ finished_good_id }}";
     let CURRENT_DAYS_FILTER = 7;
+    let PREVIOUS_ACTIVE_ORDER = null;  // Track previous order state
     
     // Helper to safely update text
     function setText(id, text) {
         const el = document.getElementById(id);
         if (el) el.textContent = text;
+    }
+
+    // =====================
+    // Order Completion Modal
+    // =====================
+    function ensureCompletionModal() {
+        let modal = document.getElementById("order-completion-modal");
+        
+        if (!modal) {
+            modal = document.createElement("div");
+            modal.id = "order-completion-modal";
+            modal.className = "modal";
+            modal.innerHTML = `
+                <div class="modal-content order-completion-content">
+                    <span class="close" id="completion-close">&times;</span>
+                    <div style="margin-top: 20px;">
+                        <div style="font-size: 60px; margin-bottom: 15px;">✓</div>
+                        <h2 style="color: #2e7d32; margin: 0 0 25px 0; font-size: 28px;">Order Complete!</h2>
+                        <div style="margin: 25px 0; text-align: left; display: inline-block;">
+                            <p style="margin: 12px 0; font-size: 16px;"><strong>Order ID:</strong> <span id="completion-order-id" style="color: #1b5e20; font-weight: bold;">--</span></p>
+                            <p style="margin: 12px 0; font-size: 16px;"><strong>Parts Produced:</strong> <span id="completion-parts-produced" style="color: #1b5e20; font-weight: bold;">--</span></p>
+                            <p style="margin: 12px 0; font-size: 16px;"><strong>Target Quantity:</strong> <span id="completion-target" style="color: #1b5e20; font-weight: bold;">--</span></p>
+                        </div>
+                        <p style="color: #666; font-size: 12px; margin-top: 25px; margin-bottom: 0;">This notification will close in 5 seconds...</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        return {
+            modal,
+            closeButton: document.getElementById("completion-close"),
+            orderIdSpan: document.getElementById("completion-order-id"),
+            partsProdSpan: document.getElementById("completion-parts-produced"),
+            targetSpan: document.getElementById("completion-target")
+        };
+    }
+
+    function showOrderCompletionModal(order) {
+        const refs = ensureCompletionModal();
+        
+        // Update modal content
+        refs.orderIdSpan.textContent = order.orderid ?? "--";
+        refs.partsProdSpan.textContent = order.partsproduced ?? "--";
+        refs.targetSpan.textContent = order.target_quantity ?? "--";
+        
+        console.log("Showing modal with:", order);
+        
+        // Show modal
+        refs.modal.classList.add("show");
+        
+        // Auto-close after 5 seconds
+        let timeoutId = setTimeout(() => {
+            console.log("Auto-closing modal");
+            refs.modal.classList.remove("show");
+        }, 5000);
+        
+        // Allow manual close
+        const handleClose = () => {
+            console.log("Closing modal manually");
+            clearTimeout(timeoutId);
+            refs.modal.classList.remove("show");
+            refs.closeButton.removeEventListener("click", handleClose);
+            refs.modal.removeEventListener("click", handleOutsideClick);
+        };
+        
+        const handleOutsideClick = (event) => {
+            if (event.target === refs.modal) {
+                handleClose();
+            }
+        };
+        
+        refs.closeButton.addEventListener("click", handleClose);
+        refs.modal.addEventListener("click", handleOutsideClick);
+    }
+
+    // =====================
+    // Test Order Completion Modal (Remove when done testing)
+    // =====================
+    function testOrderCompletion() {
+        console.log("Test button clicked!");
+        try {
+            showOrderCompletionModal({
+                orderid: "TEST-001",
+                partsproduced: 150,
+                target_quantity: 200
+            });
+            console.log("Modal should be visible now");
+        } catch (error) {
+            console.error("Error showing modal:", error);
+        }
     }
     
     // =====================
@@ -261,12 +417,24 @@ async function loadMaxProduction() {
             console.log("Current orders:", data);
     
             const orders = data.current_orders || [];
+            
+            // Check if a previous order has been completed
+            if (PREVIOUS_ACTIVE_ORDER && orders.length === 0) {
+                // Order was active, now it's gone = order completed
+                showOrderCompletionModal(PREVIOUS_ACTIVE_ORDER);
+                PREVIOUS_ACTIVE_ORDER = null;
+            } else if (PREVIOUS_ACTIVE_ORDER && orders.length > 0 && orders[0].orderid !== PREVIOUS_ACTIVE_ORDER.orderid) {
+                // Different order is now active = previous order completed
+                showOrderCompletionModal(PREVIOUS_ACTIVE_ORDER);
+            }
+            
             if (orders.length === 0) {
                 setText("status-text", "No active production orders");
                 setText("live-counter", "--");
                 setText("sensor-id", "--");
                 setText("progress-text", "--% - Parts Made so far");
                 document.getElementById("progress-fill").style.width = "0%";
+                PREVIOUS_ACTIVE_ORDER = null;
                 return;
             }
     
@@ -281,6 +449,9 @@ async function loadMaxProduction() {
             const percent = Math.min(Math.round((order.partsproduced / target) * 100), 100);
             document.getElementById("progress-fill").style.width = percent + "%";
             setText("progress-text", percent + "% - Parts Made so far");
+            
+            // Update previous order reference
+            PREVIOUS_ACTIVE_ORDER = order;
     
         } catch (err) {
             console.info("Current orders unavailable");
