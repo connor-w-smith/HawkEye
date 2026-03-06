@@ -69,8 +69,14 @@
 <!-- Page Header -->
 <div class="page-header">
     <h1 id="sensor-title">Sensor Dashboard</h1>
-</div>
 
+    <div class="sensor-selector">
+        <label for="sensor-select">Switch Sensor:</label>
+        <select id="sensor-select">
+            <option value="">Loading sensors...</option>
+        </select>
+    </div>
+</div>
 
 <!-- Main Sensor Content -->
 <div class="content-grid sensor-grid">
@@ -281,11 +287,69 @@
             console.error("Graph error", err);
         }
     }
-    
+    async function populateSensorDropdown() {
+    try {
+        const dropdown = document.getElementById("sensor-select");
+        if (!dropdown) return;
+
+        // Get current sensor from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentSensor = urlParams.get("sensor");
+
+        // Fetch active orders to check which sensors are occupied
+        const resp = await fetch("/api/production/active-orders");
+        const activeOrders = await resp.json();
+
+        const occupiedSensors = new Set(
+            (Array.isArray(activeOrders) ? activeOrders : [])
+                .map(order => (order.sensor_id || "").trim())
+                .filter(Boolean)
+        );
+
+        const allSensors = ["Sensor_A", "Sensor_B"];
+
+        dropdown.innerHTML = ""; // Clear placeholder
+
+        allSensors.forEach(sensor => {
+            const option = document.createElement("option");
+            option.value = sensor;
+            option.textContent = sensor + (occupiedSensors.has(sensor) ? " (Occupied)" : "");
+            option.disabled = occupiedSensors.has(sensor); // disable occupied
+            dropdown.appendChild(option);
+        });
+
+        // **Select sensor from URL if present and available, else first available**
+        if (currentSensor && allSensors.includes(currentSensor)) {
+            dropdown.value = currentSensor;
+        } else {
+            const firstAvailable = allSensors.find(s => !occupiedSensors.has(s));
+            dropdown.value = firstAvailable || allSensors[0];
+        }
+
+        // Handle change: reload dashboard for new sensor
+        dropdown.addEventListener("change", () => {
+            const selectedSensor = dropdown.value;
+            if (selectedSensor) {
+                window.location.search = `?sensor=${selectedSensor}`;
+            }
+        });
+
+    } catch (error) {
+        console.error("Error populating sensor dropdown:", error);
+        const dropdown = document.getElementById("sensor-select");
+        if (dropdown) dropdown.innerHTML = `<option value="">Error loading sensors</option>`;
+    }
+}
+
+document.addEventListener("DOMContentLoaded", populateSensorDropdown);
+
+// Call it on page load
+document.addEventListener("DOMContentLoaded", populateSensorDropdown);
     // =========================
     // Initialize Page
     // =========================
     function initSensorPage() {
+        populateSensorDropdown();
         loadSensorStats();
         loadUpcomingOrders();
         loadCompletedOrders();

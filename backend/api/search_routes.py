@@ -246,3 +246,15 @@ def previous_order_production_rate(sensorid: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.get("/sensors")
+def get_sensors():
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT DISTINCT sensor_id FROM tblactiveproduction WHERE sensor_id IS NOT NULL;")
+            sensors = [row[0] for row in cur.fetchall()]
+            return JSONResponse(content={"status": "success", "sensors": sensors})
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "detail": str(e)}, status_code=500)
+    finally:
+        conn.close()

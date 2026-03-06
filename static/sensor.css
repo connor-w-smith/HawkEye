@@ -86,3 +86,28 @@ tbody tr:nth-child(even) {
 tbody tr:hover {
     background-color: #eef3f8;
 }
+.sensor-selector {
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.sensor-selector select {
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.sensor-selector select:hover {
+    border-color: #3a9ad9;
+}
+
+.sensor-selector select:focus {
+    outline: none;
+    border-color: #1c6ba0;
+    box-shadow: 0 0 5px rgba(58,154,217,0.5);
+}
