@@ -204,32 +204,34 @@ async def read_upcoming_orders_by_sensor(sensorid: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/order-history-sensor", response_model=List[Dict])
+@router.get("/order-history-sensor")
 def order_history(sensorid: str):
     try:
         results = get_completed_orders_by_sensor(sensorid)
-
         if not results:
             return []
-
         return results
-
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        print("Order history error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/current-production-rate", response_model=List[Dict])
+@router.get("/current-production-rate")
 def current_production_rate(sensorid: str):
     try:
-        results = current_order_production_rate(sensorid)
-
-        if not results:
-            return []
-
-        return results
-
+        result = current_order_production_rate(sensorid)
+        if not result:
+            return {
+                "partsproduced": 0,
+                "target_rate_pm": 0,
+                "actual_rate_pm": 0,
+                "should_be_produced": 0,
+                "orderid": None,
+                "start_time": None
+            }
+        return result
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/previous-order-production-rate", response_model=List[Dict])
 def previous_order_production_rate(sensorid: str):

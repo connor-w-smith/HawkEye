@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HawkEye | Sensor Dashboard</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='product.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='navbar.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sensor.css') }}">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<!-- Top Toolbar (MATCHES PRODUCT PAGE) -->
+<div class="top-toolbar">
+
+    <a href="/index" aria-label="Go to home page">
+        <img src="{{ url_for('static', filename='CapstoneLogoWhiteText.png') }}" alt="Logo">
+    </a>
+
+    <div class="toolbar-content">
+        <p>Hi, <span id="username">User</span></p>
+        <span class="separator">|</span>
+        <a href="/">Log out</a>
+    </div>
+
+</div>
+
+
+<!-- Responsive Navbar (MATCHES PRODUCT PAGE) -->
+<nav class="navbar">
+    <div class="nav-container">
+
+        <ul class="nav-links">
+
+            <li><a href="/index" class="nav-link">Home</a></li>
+            <li><a href="/search" class="nav-link">Search</a></li>
+            <li><a href="/start-order" class="nav-link">Start Order</a></li>
+            <li><a href="/order-history" class="nav-link">Order History</a></li>
+
+            <li class="admin-only dropdown">
+                <a href="#" class="nav-link">Edit ▼</a>
+
+                <div class="dropdown-content">
+                    <a href="/edit-raw-materials">Raw Materials</a>
+                    <a href="/edit-recipes">Recipes</a>
+                    <a href="/edit-finished-goods">Finished Goods</a>
+                </div>
+            </li>
+
+            <li class="admin-only">
+                <a href="/users" class="nav-link">Users</a>
+            </li>
+
+        </ul>
+
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+    </div>
+</nav>
+
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1 id="sensor-title">Sensor Dashboard</h1>
+</div>
+
+
+<!-- Main Sensor Content -->
+<div class="content-grid sensor-grid">
+
+    <!-- Graph -->
+    <div class="card graph-card">
+        <h2>Production Progress</h2>
+        <canvas id="productionGraph"></canvas>
+    </div>
+
+
+    <!-- Stats -->
+    <div class="card">
+
+        <h2>Current Production Stats</h2>
+
+        <div class="stats-row">
+
+            <div class="stat-card">
+                <h4>Parts Produced</h4>
+                <p id="parts-produced">--</p>
+            </div>
+
+            <div class="stat-card">
+                <h4>Target Rate</h4>
+                <p id="target-rate">--</p>
+            </div>
+
+            <div class="stat-card">
+                <h4>Actual Rate</h4>
+                <p id="actual-rate">--</p>
+            </div>
+
+            <div class="stat-card">
+                <h4>Expected Production</h4>
+                <p id="expected-production">--</p>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Upcoming Orders -->
+    <div class="card">
+
+        <h2>Upcoming Orders</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Product</th>
+                    <th>Sensor</th>
+                    <th>Target Quantity</th>
+                </tr>
+            </thead>
+
+            <tbody id="upcoming-orders-table"></tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- Completed Orders -->
+    <div class="card">
+
+        <h2>Completed Orders</h2>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Sensor</th>
+                    <th>Product</th>
+                    <th>Parts Produced</th>
+                </tr>
+            </thead>
+
+            <tbody id="completed-orders-table"></tbody>
+
+        </table>
+
+    </div>
+
+</div>
+<script>
+    const SENSOR_ID = new URLSearchParams(window.location.search).get("sensor") || "Sensor_A";
+    let productionChart;
+    
+    // =========================
+    // Load Sensor Stats
+    // =========================
+    async function loadSensorStats() {
+        try {
+            const resp = await fetch(`/search/current-production-rate?sensorid=${SENSOR_ID}`);
+            if (!resp.ok) throw new Error("Failed request");
+    
+            const data = await resp.json();
+            if (!data) return;
+    
+            // For current production, your backend returns a single object
+            document.getElementById("parts-produced").innerText = data.partsproduced ?? "--";
+            document.getElementById("target-rate").innerText = data.target_rate_pm ?? "--";
+            document.getElementById("actual-rate").innerText = data.actual_rate_pm?.toFixed(2) ?? "--";
+            document.getElementById("expected-production").innerText = data.should_be_produced?.toFixed(0) ?? "--";
+    
+        } catch (err) {
+            console.error("Sensor stats error", err);
+        }
+    }
+    
+    // =========================
+    // Load Upcoming Orders
+    // =========================
+    async function loadUpcomingOrders() {
+        try {
+            const resp = await fetch(`/search/upcoming-orders-sensor?sensorid=${SENSOR_ID}`);
+            if (!resp.ok) throw new Error("Failed request");
+    
+            const data = await resp.json();
+            const tbody = document.getElementById("upcoming-orders-table");
+            tbody.innerHTML = "";
+    
+            data.forEach(order => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${order.orderid ?? "--"}</td>
+                        <td>${order.finishedgoodname ?? "--"}</td>
+                        <td>${order.sensor_id ?? "--"}</td>
+                        <td>${order.target_quantity ?? "--"}</td>
+                    </tr>
+                `;
+            });
+        } catch (err) {
+            console.error("Upcoming orders error", err);
+        }
+    }
+    
+    // =========================
+    // Load Completed Orders
+    // =========================
+    async function loadCompletedOrders() {
+        try {
+            const resp = await fetch(`/search/order-history-sensor?sensorid=${SENSOR_ID}`);
+            if (!resp.ok) throw new Error("Failed request");
+    
+            const data = await resp.json();
+            const tbody = document.getElementById("completed-orders-table");
+            tbody.innerHTML = "";
+    
+            data.forEach(order => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${order.orderid ?? "--"}</td>
+                        <td>${order.sensor_id ?? "--"}</td>
+                        <td>${order.finishedgoodname ?? "--"}</td>
+                        <td>${order.partsproduced ?? "--"}</td>
+                    </tr>
+                `;
+            });
+        } catch (err) {
+            console.error("Completed orders error", err);
+        }
+    }
+    
+    // =========================
+    // Load Production Graph
+    // =========================
+    async function loadProductionGraph() {
+        try {
+            // Use last five orders for the graph (existing endpoint)
+            const resp = await fetch(`/search/previous-order-production-rate?sensorid=${SENSOR_ID}`);
+            if (!resp.ok) throw new Error("Failed request");
+    
+            const data = await resp.json();
+            if (!data || data.length === 0) return;
+    
+            const ctx = document.getElementById("productionGraph").getContext("2d");
+            const labels = data.map(d => new Date(d.start_time).toLocaleTimeString());
+            const parts = data.map(d => d.partsproduced);
+    
+            if (productionChart) productionChart.destroy();
+    
+            productionChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels,
+                    datasets: [{
+                        label: "Parts Produced",
+                        data: parts,
+                        tension: 0.3,
+                        borderColor: "rgb(75, 192, 192)",
+                        backgroundColor: "rgba(75, 192, 192, 0.2)"
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: true }
+                    }
+                }
+            });
+    
+        } catch (err) {
+            console.error("Graph error", err);
+        }
+    }
+    
+    // =========================
+    // Initialize Page
+    // =========================
+    function initSensorPage() {
+        loadSensorStats();
+        loadUpcomingOrders();
+        loadCompletedOrders();
+        loadProductionGraph();
+    
+        setInterval(loadSensorStats, 5000);
+        setInterval(loadUpcomingOrders, 10000);
+        setInterval(loadCompletedOrders, 10000);
+        setInterval(loadProductionGraph, 15000);
+    }
+    
+    window.addEventListener("DOMContentLoaded", initSensorPage);
+    </script>
+<script src="/static/app.js"></script>
+<script src="/static/search.js"></script>
+<script src="/static/navbar.js"></script>
+</body>
+</html>

@@ -65,6 +65,10 @@ def reset_password():
     email = request.args.get('email')
     return render_template("reset-password.html", token=token, email=email)
 
+@app.route('/sensor')
+def sensor():
+    return render_template('sensor.html')
+
 # API endpoint to confirm password reset using token
 @app.route("/api/reset-password-confirm", methods=["POST"])
 def api_reset_password_confirm():

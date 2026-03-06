@@ -420,17 +420,17 @@ def get_completed_orders_by_sensor(sensorid):
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             query = """SELECT 
-                        ap.orderid, 
-                        pd.sensor_id,
-                        fg.finishedgoodname, 
-                        pd.partsproduced,
+                            ap.orderid, 
+                            pd.sensor_id,
+                            fg.finishedgoodname, 
+                            pd.partsproduced,
                         FROM tblproductiondata pd
                         JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
                         JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
                         WHERE pd.sensor_id = %s
                         AND ap.is_active = false AND pd.productionenddate IS NOT NULL;
                     """
-            cursor.execute(query, (sensor_id,))
+            cursor.execute(query, (sensorid,))
 
             return cursor.fetchall()
 
