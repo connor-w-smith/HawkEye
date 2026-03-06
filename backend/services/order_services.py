@@ -24,6 +24,53 @@ def create_new_order(finishedgoodid: str, target_quantity: int, sensor_id: str |
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
 
+            material_quantity_query = """
+                WITH CurrentOrderRequirement AS (   
+                    SELECT materialid, quantity_required
+                    FROM tblrecipes
+                    WHERE finishedgoodid = %s
+                ),
+                TotalActiveDemand AS (
+                    SELECT tr.materialid, SUM(pd.target_quantity * tr.quantity_required) AS planned_qty
+                    FROM tblproductiondata pd
+                    JOIN tblrecipes tr ON pd.finishedgoodid = tr.finishedgoodid
+                    JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
+                    WHERE ap.end_time IS NULL
+                    GROUP BY tr.materialid
+                )
+                SELECT 
+                    rm.materialid,
+                    rm.material_name,
+                    -- (Quantity for THIS order) + (Total already reserved)
+                    ((cor.quantity_required * %s) + COALESCE(gad.planned_qty, 0)) AS total_required,
+                    rm.quantity_in_stock
+                FROM CurrentOrderRequirement cor
+                JOIN tblrawmaterials rm ON cor.materialid = rm.materialid
+                LEFT JOIN TotalActiveDemand gad ON cor.materialid = gad.materialid
+            """
+
+            cur.execute(material_quantity_query, (finishedgoodid, target_quantity))
+            requirements = cur.fetchall()
+
+            shortages = []
+            for item in requirements:
+                if item['total_required'] > item['quantity_in_stock']:
+                    shortages.append({
+                        "material_name": item['material_name'],
+                        "required": item['total_required'],
+                        "available": item['quantity_in_stock'],
+                        "short_by": item['total_required'] - item['quantity_in_stock']
+                    })
+
+            if shortages:
+                conn.rollback()
+                return{
+                    "status": "error",
+                    "message": "Insufficient raw materials including planned orders.",
+                    "shortages": shortages
+                }
+
+
             query = """
             INSERT INTO tblproductiondata (finishedgoodid, partsproduced, target_quantity, sensor_id)
             VALUES (%s, 0, %s, %s)
