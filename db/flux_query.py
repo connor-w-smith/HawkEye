@@ -1,3 +1,4 @@
+import sys
 import time
 import os
 import importlib.util
@@ -6,9 +7,14 @@ from datetime import datetime, timezone
 import logging
 import signal
 import threading
+
+# Add parent directory to path so imports work from any working directory
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from influxdb_client.client.influxdb_client import InfluxDBClient
 from influxdb_client.client.query_api import QueryApi
 from db import get_connection
+from backend.services.material_services import consume_raw_materials_for_production
 
 
 def _load_influx_details():
@@ -46,7 +52,7 @@ _level = getattr(logging, LOG_LEVEL, logging.INFO)
 logging.basicConfig(level=_level, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 logger = logging.getLogger('flux_query')
 
-POLL_INTERVAL = int(os.getenv('HAWKEYE_POLL_INTERVAL', os.getenv('POLL_INTERVAL', '10')))
+POLL_INTERVAL = int(os.getenv('HAWKEYE_POLL_INTERVAL', os.getenv('POLL_INTERVAL', '4')))
 RUN_ONCE = os.getenv('HAWKEYE_RUN_ONCE', os.getenv('RUN_ONCE', 'false')).lower() in ('1', 'true', 'yes')
 
 # Event used to detect shutdown signals
@@ -73,13 +79,18 @@ def get_active_orders():
         
         #this uses aliases i think what is happening
         query = """
-            SELECT ap.orderid, ap.target_quantity, ap.start_time, ap.end_time, ap.last_processed_timestamp,
-                   COALESCE(pd.partsproduced, 0) as current_count,
-                   COALESCE(pd.sensor_id, '') as sensor_id
+            SELECT ap.orderid,
+                ap.target_quantity,
+                ap.start_time,
+                ap.end_time,
+                ap.last_processed_timestamp,
+                pd.finishedgoodid,
+                COALESCE(pd.partsproduced, 0) as current_count,
+                COALESCE(pd.sensor_id, '') as sensor_id
             FROM tblactiveproduction ap
             JOIN tblproductiondata pd ON ap.orderid = pd.orderid
             WHERE ap.is_active = true
-        """
+"""
         cur.execute(query)
         results = cur.fetchall()
         
@@ -91,8 +102,10 @@ def get_active_orders():
                 'start_time': row[2],
                 'end_time': row[3],
                 'last_processed_timestamp': row[4],
-                'current_count': row[5],
-                'sensor_id': row[6]
+                'finished_good_id': row[5],
+                'current_count': row[6],
+                'sensor_id': row[7]
+
             })
         
         cur.close()
@@ -102,6 +115,27 @@ def get_active_orders():
     except Exception:
         logger.exception('Error fetching active orders')
         return []
+
+def get_finished_good_for_order(order_id):
+    conn = get_connection()
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT finishedgoodid
+                FROM tblproductiondata
+                WHERE orderid = %s
+            """, (order_id,))
+
+            row = cur.fetchone()
+
+            if row:
+                return row[0]
+
+            return None
+
+    finally:
+        conn.close()
 
 def get_influx_count_since(timestamp, sensor_id=None):
     """
@@ -237,8 +271,14 @@ def update_active_production(order_id, start_time=None, end_time=None, mark_inac
     try:
         conn = get_connection()
         cur = conn.cursor()
-        
+        sensor_id = None
         if mark_inactive:
+            # Get the sensor_id for this order before marking inactive
+            cur.execute("SELECT sensor_id FROM tblproductiondata WHERE orderid = %s", (order_id,))
+            row = cur.fetchone()
+            if row:
+                sensor_id = row[0]
+            # Mark this order as inactive
             cur.execute("""
                 UPDATE tblactiveproduction 
                 SET start_time = COALESCE(%s, start_time), 
@@ -248,6 +288,26 @@ def update_active_production(order_id, start_time=None, end_time=None, mark_inac
                 WHERE orderid = %s
             """, (start_time, end_time, end_time, order_id))
             print(f"✓ Order {order_id} marked as COMPLETE")
+
+            # Activate the next order (by orderid) with the same sensor_id and is_active = false
+            if sensor_id is not None and sensor_id != '':
+                logger.info(f"Looking for next order for sensor_id={sensor_id} after orderid={order_id}")
+                cur.execute("""
+                    SELECT ap.orderid FROM tblactiveproduction ap
+                    JOIN tblproductiondata pd ON ap.orderid = pd.orderid
+                    WHERE ap.is_active = false AND pd.sensor_id = %s AND ap.orderid > %s
+                    ORDER BY ap.orderid ASC LIMIT 1
+                """, (sensor_id, order_id))
+                next_row = cur.fetchone()
+                if next_row:
+                    next_orderid = next_row[0]
+                    logger.info(f"Activating next order {next_orderid} for sensor {sensor_id}")
+                    cur.execute("UPDATE tblactiveproduction SET is_active = true WHERE orderid = %s", (next_orderid,))
+                    print(f"✓ Activated next order {next_orderid} for sensor {sensor_id}")
+                else:
+                    logger.info(f"No next order found for sensor_id={sensor_id} after orderid={order_id}")
+            else:
+                logger.info(f"No valid sensor_id found for order {order_id}, cannot activate next order.")
         else:
             # During normal operation, only update start_time (if not set) and last_processed_timestamp
             cur.execute("""
@@ -256,12 +316,10 @@ def update_active_production(order_id, start_time=None, end_time=None, mark_inac
                     last_processed_timestamp = %s
                 WHERE orderid = %s
             """, (start_time, end_time, order_id))
-        
         conn.commit()
         cur.close()
         conn.close()
         return True
-        
     except Exception:
         logger.exception('Error updating active production for order %s', order_id)
         return False
@@ -314,8 +372,13 @@ def process_active_orders():
             
             #update production data with new count
             new_total = update_production_data(order_id, new_hits)
-            
             if new_total is not None:
+                finished_good_id = order['finished_good_id']
+
+                consume_raw_materials_for_production(
+                    finished_good_id,
+                    new_hits
+                )
                 logger.info('Updated total: %s/%s parts', new_total, target)
                 
                 # Update timestamps if we got valid ones
