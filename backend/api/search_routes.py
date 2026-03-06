@@ -19,6 +19,8 @@ No Pydantic models are used for search routes.
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict
 
+from ..services import get_upcoming_orders_by_sensor, get_completed_orders_by_sensor, last_five_orders_production_rate, \
+    current_order_production_rate
 from ..services.search_services import (
     search_finished_goods_fuzzy,
     search_finished_by_id,
@@ -188,3 +190,57 @@ def order_history(days: int = 7):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/upcoming-orders-sensor", response_model=List[Dict])
+async def read_upcoming_orders_by_sensor(sensorid: str):
+    try:
+        data = get_upcoming_orders_by_sensor(sensorid)
+
+        if not data:
+            return []
+
+        return data
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/order-history-sensor", response_model=List[Dict])
+def order_history(sensorid: str):
+    try:
+        results = get_completed_orders_by_sensor(sensorid)
+
+        if not results:
+            return []
+
+        return results
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/current-production-rate", response_model=List[Dict])
+def current_production_rate(sensorid: str):
+    try:
+        results = current_order_production_rate(sensorid)
+
+        if not results:
+            return []
+
+        return results
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/previous-order-production-rate", response_model=List[Dict])
+def previous_order_production_rate(sensorid: str):
+    try:
+        results = last_five_orders_production_rate(sensorid)
+
+        if not results:
+            return []
+
+        return results
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+

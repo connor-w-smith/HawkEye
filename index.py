@@ -472,6 +472,139 @@ def read_upcoming_orders():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/upcoming-orders-sensor", methods=["GET"])
+def get_upcoming_orders():
+    # 1. Get the sensorid from the Flask query string (?sensorid=XYZ)
+    sensorid = request.args.get('sensorid')
+
+    if not sensorid:
+        return jsonify({"error": "sensorid parameter is required"}), 400
+
+    try:
+        # 2. Call the FastAPI backend
+        # Note: We use 'params' to append '?sensorid=...' to the URL automatically
+        response = requests.get(
+            f"{BACKEND_URL}/upcoming-orders-sensor",
+            params={"sensorid": sensorid},
+            timeout=5
+        )
+
+        # 3. Check for errors (4xx/5xx) from the FastAPI backend
+        response.raise_for_status()
+
+        # 4. Parse the list of dicts
+        upcoming_data = response.json()
+
+        # 5. Return to your webpage
+        return jsonify(upcoming_data), 200
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Backend connection failed: {str(e)}"}), 500
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/completed-orders-sensor", methods=["GET"])
+def get_completed_orders():
+    # 1. Get the sensorid from the Flask query string (?sensorid=XYZ)
+    sensorid = request.args.get('sensorid')
+
+    if not sensorid:
+        return jsonify({"error": "sensorid parameter is required"}), 400
+
+    try:
+        # 2. Call the FastAPI backend
+        # Note: We use 'params' to append '?sensorid=...' to the URL automatically
+        response = requests.get(
+            f"{BACKEND_URL}/order-history-sensor",
+            params={"sensorid": sensorid},
+            timeout=5
+        )
+
+        # 3. Check for errors (4xx/5xx) from the FastAPI backend
+        response.raise_for_status()
+
+        # 4. Parse the list of dicts
+        upcoming_data = response.json()
+
+        # 5. Return to your webpage
+        return jsonify(upcoming_data), 200
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Backend connection failed: {str(e)}"}), 500
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/current-production-rate", methods=["GET"])
+def get_current_production_rate():
+    try:
+        # 1. Get the sensorid from the Flask frontend query string
+        sensorid = request.args.get('sensorid')
+
+        if not sensorid:
+            return jsonify({"error": "sensorid parameter is required"}), 400
+
+        # 2. Forward the request to the FastAPI Backend
+        # We pass the sensorid as a query parameter to the backend
+        response = requests.get(
+            f"{BACKEND_URL}/current-production-rate",
+            params={"sensorid": sensorid},
+            timeout=5
+        )
+
+        # 3. Check for backend errors (4xx or 5xx)
+        response.raise_for_status()
+
+        # 4. Parse the JSON from the backend
+        production_data = response.json()
+
+        # 5. Return the data to your webpage
+        return jsonify(production_data), 200
+
+    except requests.exceptions.RequestException as e:
+        # Handles connection issues, timeouts, or 4xx/5xx from backend
+        return jsonify({"error": f"Backend connection failed: {str(e)}"}), 500
+
+    except Exception as e:
+        # Handles any other unexpected Python errors
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/previous-production-rate", methods=["GET"])
+def get_previous_production_rate():
+    try:
+        # 1. Get the sensorid from the Flask frontend query string
+        sensorid = request.args.get('sensorid')
+
+        if not sensorid:
+            return jsonify({"error": "sensorid parameter is required"}), 400
+
+        # 2. Forward the request to the FastAPI Backend
+        # We pass the sensorid as a query parameter to the backend
+        response = requests.get(
+            f"{BACKEND_URL}/previous-order-production-rate",
+            params={"sensorid": sensorid},
+            timeout=5
+        )
+
+        # 3. Check for backend errors (4xx or 5xx)
+        response.raise_for_status()
+
+        # 4. Parse the JSON from the backend
+        production_data = response.json()
+
+        # 5. Return the data to your webpage
+        return jsonify(production_data), 200
+
+    except requests.exceptions.RequestException as e:
+        # Handles connection issues, timeouts, or 4xx/5xx from backend
+        return jsonify({"error": f"Backend connection failed: {str(e)}"}), 500
+
+    except Exception as e:
+        # Handles any other unexpected Python errors
+        return jsonify({"error": str(e)}), 500
     
 if __name__ == "__main__":
     #app.run(host='0.0.0.0', port=5000, debug=True)

@@ -255,7 +255,7 @@ def get_upcoming_orders():
                     ON ap.orderid = pd.orderid
                 JOIN tblfinishedgoods fg 
                     ON pd.finishedgoodid = fg.finishedgoodid
-                WHERE ap.is_active = TRUE 
+                WHERE ap.is_active = FALSE 
                 AND ap.start_time IS NULL;
             """
 
@@ -377,5 +377,124 @@ def get_completed_orders(days: int):
                 ORDER BY ap.end_time DESC;
             """, (days,))
             return cursor.fetchall()
+    finally:
+        conn.close()
+
+"""Sensor page functions"""
+
+def get_upcoming_orders_by_sensor(sensorid):
+    #open connection
+    conn = get_connection()
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            query = """
+                SELECT 
+                    ap.orderid,
+                    fg.finishedgoodname,
+                    ap.sensor_id,
+                    ap.target_quantity
+                FROM tblactiveproduction ap
+                JOIN tblproductiondata pd 
+                    ON ap.orderid = pd.orderid
+                JOIN tblfinishedgoods fg 
+                    ON pd.finishedgoodid = fg.finishedgoodid
+                WHERE ap.sensor_id = %s
+                AND ap.is_active = FALSE
+                AND ap.start_time IS NULL;
+            """
+
+            cursor.execute(query, (sensorid,))
+            return cursor.fetchall()
+
+    except Exception as e:
+        raise e
+
+    finally:
+        conn.close()
+
+def get_completed_orders_by_sensor(sensorid):
+    #Open connection
+    conn = get_connection()
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            query = """SELECT 
+                        ap.orderid, 
+                        pd.sensor_id,
+                        fg.finishedgoodname, 
+                        pd.partsproduced,
+                        FROM tblproductiondata pd
+                        JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
+                        JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
+                        WHERE pd.sensor_id = %s
+                        AND ap.is_active = false AND pd.productionenddate IS NOT NULL;
+                    """
+            cursor.execute(query, (sensor_id,))
+
+            return cursor.fetchall()
+
+    except Exception as e:
+        raise e
+
+    finally:
+        conn.close()
+
+def current_order_production_rate(sensor_id):
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            query =  """
+                    SELECT
+                        ap.orderid,
+                        pd.partsproduced,
+                        ap.production_rate AS target_rate_pm,
+                        -- Actual Rate: Parts / Minutes Elapsed
+                        pd.partsproduced / NULLIF(EXTRACT(EPOCH FROM (NOW() - ap.start_time)) / 60.0, 0) AS actual_rate_pm,
+                        -- Target Parts: Minutes Elapsed * 60 (Should-be produced by now)
+                        (EXTRACT(EPOCH FROM (NOW() - ap.start_time)) / 60.0) * ap.production_rate AS should_be_produced,
+                        ap.start_time
+                    FROM tblactiveproduction ap
+                    JOIN tblproductiondata pd ON ap.orderid = pd.orderid
+                    WHERE ap.sensor_id = %s AND ap.is_active = TRUE
+                    """
+
+            cursor.execute(query, (sensor_id,))
+            result = cursor.fetchone()
+
+            return result
+
+    except Exception as e:
+        raise e
+
+    finally:
+        conn.close()
+
+def last_five_orders_production_rate(sensor_id):
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            query = """
+                SELECT
+                    ap.orderid,
+                    pd.partsproduced,
+                    ap.production_rate AS target_rate_pm,
+                    -- Actual Rate: Total produced / total minutes elapsed
+                    pd.partsproduced / NULLIF(EXTRACT(EPOCH FROM (NOW() - ap.start_time)) / 60.0, 0) AS actual_rate_pm,
+                    -- Efficiency percentage (Actual vs Target)
+                    (pd.partsproduced / NULLIF(EXTRACT(EPOCH FROM (NOW() - ap.start_time)) / 60.0, 0)) / ap.production_rate * 100 AS efficiency_pct,
+                    ap.start_time
+                FROM tblactiveproduction ap
+                JOIN tblproductiondata pd ON ap.orderid = pd.orderid
+                WHERE ap.sensor_id = %s  AND ap.is_active = FALSE
+                ORDER BY ap.start_time DESC
+                LIMIT 5
+            """
+            cursor.execute(query, (sensor_id,))
+
+            # Use fetchall() to get a list of dictionaries (one for each order)
+            results = cursor.fetchall()
+            return results
+
     finally:
         conn.close()
