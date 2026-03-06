@@ -401,7 +401,8 @@ def get_upcoming_orders_by_sensor(sensorid):
                     ON pd.finishedgoodid = fg.finishedgoodid
                 WHERE ap.sensor_id = %s
                 AND ap.is_active = FALSE
-                AND ap.start_time IS NULL;
+                AND ap.start_time IS NULL
+                ORDER BY ap.orderid ASC;
             """
 
             cursor.execute(query, (sensorid,))
@@ -423,12 +424,13 @@ def get_completed_orders_by_sensor(sensorid):
                             ap.orderid, 
                             pd.sensor_id,
                             fg.finishedgoodname, 
-                            pd.partsproduced,
+                            pd.partsproduced
                         FROM tblproductiondata pd
                         JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
                         JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
                         WHERE pd.sensor_id = %s
-                        AND ap.is_active = false AND pd.productionenddate IS NOT NULL;
+                        AND ap.is_active = false AND ap.end_time IS NOT NULL
+                        ORDER BY ap.orderid DESC;
                     """
             cursor.execute(query, (sensorid,))
 
