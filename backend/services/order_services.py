@@ -84,27 +84,35 @@ def delete_order(orderid: str):
     finally:
         conn.close()
 
-def edit_order(orderid: str,finishedgoodid:str, target_quantity: int, sensor_id: str):
+def edit_order(orderid: str, finishedgoodid: str, target_quantity: int, sensor_id: str | None):
+    """
+    Updates an existing production order.
+    finishedgoodid is ignored for tblactiveproduction because that column doesn't exist there.
+    """
     conn = get_connection()
     conn.autocommit = False
 
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            tbl_production_data_query = """
-            UPDATE tblproductiondata SET finishedgoodid = %s, target_quantity = %s, sensor_id = %s WHERE orderid = %s"""
+            # Update tblproductiondata (has finishedgoodid)
+            cur.execute("""
+                UPDATE tblproductiondata
+                SET target_quantity = %s,
+                    sensor_id = %s
+                WHERE orderid = %s
+            """, (target_quantity, sensor_id, orderid))
 
-            tbl_active_production_query = """
-            UPDATE tblactiveproduction SET finishedgoodid = %S, target_quantity = %s, sensor_id = %s WHERE orderid = %s"""
-
-            cur.execute(tbl_production_data_query, (finishedgoodid, target_quantity, sensor_id, orderid))
-
-            cur.execute(tbl_active_production_query, (finishedgoodid, target_quantity, sensor_id, orderid))
+            # Update tblactiveproduction (no finishedgoodid column)
+            cur.execute("""
+                UPDATE tblactiveproduction
+                SET target_quantity = %s,
+                    sensor_id = %s
+                WHERE orderid = %s
+            """, (target_quantity, sensor_id, orderid))
 
             conn.commit()
 
-            return{
-                "status": "success",
-            }
+            return {"status": "success"}
 
     except Exception as e:
         conn.rollback()
@@ -112,8 +120,6 @@ def edit_order(orderid: str,finishedgoodid:str, target_quantity: int, sensor_id:
 
     finally:
         conn.close()
-
-
 """
 
     # Lines below were added by Chase to be more verbose on output for failed order creation
