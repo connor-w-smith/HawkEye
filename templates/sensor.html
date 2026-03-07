@@ -9,6 +9,8 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='sensor.css') }}">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://jsdelivr.net"></script>
 </head>
 
 <body>
@@ -92,7 +94,7 @@
     <!-- Stats -->
     <div class="card">
 
-        <h2>Current Production Stats</h2>
+        <h2>Current Order Stats</h2>
 
         <div class="stats-row">
 
@@ -103,12 +105,20 @@
 
             <div class="stat-card">
                 <h4>Target Rate</h4>
-                <p id="target-rate">--</p>
+                <p>
+                    <span id="target-rate">--</span>
+                    <span class="stat-card-label">parts per minute</span>
+                </p>
+
+
             </div>
 
             <div class="stat-card">
                 <h4>Actual Rate</h4>
-                <p id="actual-rate">--</p>
+                <p>
+                    <span id="actual-rate">--</span>
+                    <span class="stat-card-label">parts per minute</span>
+                </p>
             </div>
 
             <div class="stat-card">

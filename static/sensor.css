@@ -57,6 +57,19 @@ body {
     font-weight: bold;
 }
 
+/* The new shadowed label */
+.stat-card-label {
+    display: block;
+    font-size: 12px;
+    font-weight: normal;
+    color: #888;
+    margin-top: 4px;
+
+    /* Subtle Shadow Effect */
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
+    letter-spacing: 0.3px;
+}
+
 
 
 /* Tables */

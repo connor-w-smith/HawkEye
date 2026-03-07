@@ -484,9 +484,9 @@ def last_five_orders_production_rate(sensor_id):
                     pd.partsproduced,
                     ap.production_rate AS target_rate_pm,
                     -- Actual Rate: Total produced / total minutes elapsed
-                    pd.partsproduced / NULLIF(EXTRACT(EPOCH FROM (NOW() - ap.start_time)) / 60.0, 0) AS actual_rate_pm,
+                    pd.partsproduced / NULLIF(EXTRACT(EPOCH FROM (ap.end_time - ap.start_time)) / 60.0, 0) AS actual_rate_pm,
                     -- Efficiency percentage (Actual vs Target)
-                    (pd.partsproduced / NULLIF(EXTRACT(EPOCH FROM (NOW() - ap.start_time)) / 60.0, 0)) / ap.production_rate * 100 AS efficiency_pct,
+                    (pd.partsproduced / NULLIF(EXTRACT(EPOCH FROM (ap.end_time - ap.start_time)) / 60.0, 0)) / ap.production_rate * 100 AS efficiency_pct,
                     ap.start_time
                 FROM tblactiveproduction ap
                 JOIN tblproductiondata pd ON ap.orderid = pd.orderid
