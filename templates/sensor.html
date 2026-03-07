@@ -9,8 +9,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='sensor.css') }}">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <script src="https://jsdelivr.net"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 </head>
 
 <body>
@@ -87,7 +86,9 @@
     <!-- Graph -->
     <div class="card graph-card">
         <h2>Production Progress</h2>
-        <canvas id="productionGraph"></canvas>
+        <div class="chart-container">
+            <canvas id="productionGraph"></canvas>
+        </div>
     </div>
 
 
@@ -269,27 +270,45 @@
             if (!data || data.length === 0) return;
     
             const ctx = document.getElementById("productionGraph").getContext("2d");
-            const labels = data.map(d => new Date(d.start_time).toLocaleTimeString());
-            const parts = data.map(d => d.partsproduced);
+            const labels = data.map(d => d.orderid);
+            const parts = data.map(d => d.efficiency_pct);
     
             if (productionChart) productionChart.destroy();
     
-            productionChart = new Chart(ctx, {
-                type: "line",
+           productionChart = new Chart(ctx, {
+                type: "bar", // Changed from "line" to "bar"
+                plugins: [ChartDataLabels],
                 data: {
                     labels,
                     datasets: [{
-                        label: "Parts Produced",
+                        label: "Production Efficency Percent",
                         data: parts,
-                        tension: 0.3,
-                        borderColor: "rgb(75, 192, 192)",
-                        backgroundColor: "rgba(75, 192, 192, 0.2)"
+                        backgroundColor: "rgba(255, 140, 0, 0.6)", // Slightly more opaque looks better for bars
+                        borderColor: "rgb(255, 140, 0)",
+                        borderWidth: 1 // Added a border around the bars
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { top: 10, bottom: 10 }
+                    },
                     plugins: {
-                        legend: { display: true }
+                        legend: { display: true },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'start',
+                            offset: 4,
+                            formatter: (value) => Math.round(value) + '%',
+                            color: '#FFFFFF',
+                            font: { weight: 'bold', size: 12 }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true // Recommended for bar charts to ensure scale accurate
+                        }
                     }
                 }
             });
@@ -374,6 +393,7 @@ document.addEventListener("DOMContentLoaded", populateSensorDropdown);
     
     window.addEventListener("DOMContentLoaded", initSensorPage);
     </script>
+<script src="https://unpkg.com"></script>
 <script src="/static/app.js"></script>
 <script src="/static/search.js"></script>
 <script src="/static/navbar.js"></script>

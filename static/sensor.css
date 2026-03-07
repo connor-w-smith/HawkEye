@@ -25,9 +25,20 @@ body {
 }
 
 .graph-card {
-    height: 400px;
+    display: flex;
+    flex-direction: column;
+    height: 400px; /* Adjust this to your preferred card height */
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+.chart-container {
+    position: relative;
+    width: 100%;
+    flex-grow: 1;
+}
 
 
 /* Stats Row */

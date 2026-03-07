@@ -482,16 +482,18 @@ def last_five_orders_production_rate(sensor_id):
                 SELECT
                     ap.orderid,
                     pd.partsproduced,
-                    ap.production_rate AS target_rate_pm,
-                    -- Actual Rate: Total produced / total minutes elapsed
-                    pd.partsproduced / NULLIF(EXTRACT(EPOCH FROM (ap.end_time - ap.start_time)) / 60.0, 0) AS actual_rate_pm,
-                    -- Efficiency percentage (Actual vs Target)
-                    (pd.partsproduced / NULLIF(EXTRACT(EPOCH FROM (ap.end_time - ap.start_time)) / 60.0, 0)) / ap.production_rate * 100 AS efficiency_pct,
-                    ap.start_time
+                    ap.start_time,
+                    ap.end_time,
+                    -- 1. Calculate total minutes elapsed for the run
+                    EXTRACT(EPOCH FROM (ap.end_time - ap.start_time)) / 60.0 AS minutes_elapsed,
+                    -- 2. Calculate what SHOULD have been made (60 parts * minutes)
+                    (EXTRACT(EPOCH FROM (ap.end_time - ap.start_time)) / 60.0) * 60 AS expected_parts,
+                    -- 3. Calculate efficiency: (Actual / Expected) * 100
+                    (pd.partsproduced / NULLIF((EXTRACT(EPOCH FROM (ap.end_time - ap.start_time)) / 60.0) * 60, 0)) * 100 AS efficiency_pct
                 FROM tblactiveproduction ap
                 JOIN tblproductiondata pd ON ap.orderid = pd.orderid
                 WHERE ap.sensor_id = %s  AND ap.is_active = FALSE
-                ORDER BY ap.start_time DESC
+                ORDER BY ap.orderid DESC
                 LIMIT 5
             """
             cursor.execute(query, (sensor_id,))
