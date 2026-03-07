@@ -257,7 +257,8 @@ def get_upcoming_orders():
                 JOIN tblfinishedgoods fg 
                     ON pd.finishedgoodid = fg.finishedgoodid
                 WHERE ap.is_active = FALSE 
-                AND ap.start_time IS NULL;
+                AND ap.start_time IS NULL
+                ORDER BY ap.orderid ASC;
             """
 
             cursor.execute(query)
