@@ -19,7 +19,7 @@ def user_login_verification(username, password):
 
             cur.execute("""SELECT password
                             FROM tblusercredentials
-                            WHERE username = %s""",
+                            WHERE LOWER(username) = LOWER(%s)""",
                         (str(username),))
 
             results = cur.fetchone()
