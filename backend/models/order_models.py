@@ -9,3 +9,9 @@ class CreateProductionOrderRequest(BaseModel):
 
 class DeleteProductionOrderRequest(BaseModel):
     orderid: str
+
+class EditProductionOrder(BaseModel):
+    orderid: str
+    finishedgoodid: str
+    target_quantity: int
+    sensor_id: str

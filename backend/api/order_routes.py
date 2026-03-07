@@ -19,7 +19,8 @@ models/order_models.py
 
 from fastapi import APIRouter, HTTPException
 
-from ..services import create_new_order
+from ..models import EditProductionOrder
+from ..services import create_new_order, edit_order
 
 '''
 not implemented yet ;p
@@ -78,6 +79,18 @@ async def delete_production_order(order: DeleteProductionOrderRequest):
     except Exception as e:
         print(f"Error deleting production order: {e}")
         raise Exception(f"Failed to delete production order: {str(e)}")
+
+
+@router.post("/update-production-order")
+async def update_production_order(order: EditProductionOrder):
+    try:
+        result = edit_order(order.orderid, order.finishedgoodid, order.target_quantity, order.sensor_id)
+
+        return result
+
+    except Exception as e:
+        print(f"Error updating production order: {e}")
+        raise Exception(f"Failed to update production order: {str(e)}")
 
 '''
 

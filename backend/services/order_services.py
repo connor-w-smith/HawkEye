@@ -84,6 +84,35 @@ def delete_order(orderid: str):
     finally:
         conn.close()
 
+def edit_order(orderid: str,finishedgoodid:str, target_quantity: int, sensor_id: str):
+    conn = get_connection()
+    conn.autocommit = False
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            tbl_production_data_query = """
+            UPDATE tblproductiondata SET finishedgoodid = %s, target_quantity = %s, sensor_id = %s WHERE orderid = %s"""
+
+            tbl_active_production_query = """
+            UPDATE tblactiveproduction SET finishedgoodid = %S, target_quantity = %s, sensor_id = %s WHERE orderid = %s"""
+
+            cur.execute(tbl_production_data_query, (finishedgoodid, target_quantity, sensor_id, orderid))
+
+            cur.execute(tbl_active_production_query, (finishedgoodid, target_quantity, sensor_id, orderid))
+
+            conn.commit()
+
+            return{
+                "status": "success",
+            }
+
+    except Exception as e:
+        conn.rollback()
+        return {"status": "error", "message": str(e)}
+
+    finally:
+        conn.close()
+
 
 """
 
