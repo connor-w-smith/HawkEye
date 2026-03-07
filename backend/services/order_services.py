@@ -53,6 +53,38 @@ def create_new_order(finishedgoodid: str, target_quantity: int, sensor_id: str |
     finally:
         conn.close()
 
+def delete_order(orderid: str):
+    conn = get_connection()
+    conn.autocommit = False
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            query = "SELECT 1 FROM tblproductiondata WHERE orderid = %s"
+
+            cur.execute(query, (orderid,))
+            result = cur.fetchone()
+
+            if result is None:
+                return {"status": "error", "message": "Order not found"}
+
+            cur.execute("DELETE FROM tblproductiondata WHERE orderid = %s", (orderid,))
+
+            cur.execute("DELETE FROM tblactiveproduction WHERE orderid = %s", (orderid,))
+
+        conn.commit()
+
+        return {
+            "status": "success",
+        }
+
+    except Exception as e:
+        conn.rollback()
+        return {"status": "error", "message": str(e)}
+
+    finally:
+        conn.close()
+
+
 """
 
     # Lines below were added by Chase to be more verbose on output for failed order creation

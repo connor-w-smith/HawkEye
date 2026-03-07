@@ -609,7 +609,27 @@ def get_previous_production_rate():
     except Exception as e:
         # Handles any other unexpected Python errors
         return jsonify({"error": str(e)}), 500
-    
+
+# API endpoint to delete a user
+@app.route("/delete-production-order-request", methods=["DELETE"])
+def api_delete_order(orderid):
+    try:
+        response = requests.delete(f"{BACKEND_URL}/delete-production-order/{orderid}",
+                                   timeout=5)
+
+        response.raise_for_status()
+
+        return jsonify(response.json()), 200
+
+
+    except requests.exceptions.HTTPError as e:
+        error_detail = e.response.json().get("detail",str(e))
+        return jsonify({"status": "error", "message": error_detail}), 400
+    except ValueError as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": "An error occurred"}), 500
+
 if __name__ == "__main__":
     #app.run(host='0.0.0.0', port=5000, debug=True)
     serve(app, host='0.0.0.0', port=5000)

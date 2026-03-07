@@ -29,7 +29,7 @@ from ..services.order_services import (
     create_production_order as create_production_order_service
 )
 '''
-from ..models.order_models import CreateProductionOrderRequest
+from ..models.order_models import CreateProductionOrderRequest, DeleteProductionOrderRequest
 
 router = APIRouter(
     prefix="/orders",
@@ -67,6 +67,18 @@ async def create_production_order(order: CreateProductionOrderRequest):
     except Exception as e:
         print(f"Error creating production order: {e}")
         raise Exception(f"Failed to create production order: {str(e)}")
+
+@router.post("/delete-production-order")
+async def delete_production_order(order: DeleteProductionOrderRequest):
+    try:
+        result = delete_production_order(order.orderid)
+
+        return result
+
+    except Exception as e:
+        print(f"Error deleting production order: {e}")
+        raise Exception(f"Failed to delete production order: {str(e)}")
+
 '''
 
 TODO: THIS CODE IS NOT READY TO BE DEPLOYED YET. 
