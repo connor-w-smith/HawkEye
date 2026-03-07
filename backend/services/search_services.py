@@ -167,7 +167,8 @@ def get_currently_packaging():
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute("""
                 SELECT 
-                    pd.orderid, 
+                    pd.orderid,
+                    pd.finishedgoodid,
                     fg.finishedgoodname, 
                     pd.sensor_id, 
                     pd.partsproduced

@@ -149,11 +149,20 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Add each sensor to the table
             data.forEach(sensor => {
                 const row = document.createElement("tr");
+            
+                // make row clickable
+                row.style.cursor = "pointer";
+            
+                row.addEventListener("click", () => {
+                    window.location.href = `/sensor?sensor=${encodeURIComponent(sensor.sensor_id)}`;
+                });
+            
                 row.innerHTML = `
                     <td>${sensor.sensor_id || 'N/A'}</td>
                     <td>${sensor.production_last_1h || 0}</td>
                     <td>${sensor.production_last_24h || 0}</td>
                 `;
+            
                 sensorTable.appendChild(row);
             });
         })
@@ -183,12 +192,21 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Add each order to the table
             data.forEach(order => {
                 const row = document.createElement("tr");
+            
+                // make row clickable
+                row.style.cursor = "pointer";
+            
+                row.addEventListener("click", () => {
+                    window.location.href = `/product/${encodeURIComponent(order.finishedgoodid)}`;
+                });
+            
                 row.innerHTML = `
                     <td>${order.orderid || 'N/A'}</td>
                     <td>${order.finishedgoodname || 'N/A'}</td>
                     <td>${order.sensor_id || 'N/A'}</td>
                     <td>${order.partsproduced || 0}</td>
                 `;
+            
                 packagingTable.appendChild(row);
             });
         })

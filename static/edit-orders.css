@@ -1,0 +1,89 @@
+/* =============================
+   Tabs for Upcoming / Completed
+   ============================= */
+   .tab-bar {
+    display: flex;
+    justify-content: flex-start;
+    margin: 20px;
+    border-bottom: 2px solid #ccc;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    cursor: pointer;
+    border: none;
+    background-color: #f5f7fa;
+    font-weight: bold;
+    margin-right: 5px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.tab-button.active {
+    background-color: #ffffff;
+    border-bottom: 2px solid #ffffff;
+}
+
+.tab-button:hover {
+    background-color: #e0e0e0;
+}
+
+/* =============================
+   Table styling
+   ============================= */
+.orders-table {
+    width: 90%;
+    margin: 0 auto 20px auto;
+    border-collapse: collapse;
+}
+
+.orders-table th, .orders-table td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+}
+
+.orders-table th {
+    background-color: #f0f0f0;
+}
+
+.orders-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.actions-container button {
+    margin: 0 5px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.actions-container .btn-edit {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.actions-container .btn-delete {
+    background-color: #f44336;
+    color: white;
+}
+
+.add-order-btn {
+    display: block;
+    margin: 10px auto 30px auto;
+    padding: 10px 15px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.add-order-btn:hover {
+    background-color: #0056b3;
+}
