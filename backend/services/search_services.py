@@ -240,7 +240,6 @@ def get_completed_orders(timeframe_days=7):
         conn.close()
 
 def get_upcoming_orders():
-    #open connection
     conn = get_connection()
 
     try:
@@ -248,6 +247,7 @@ def get_upcoming_orders():
             query = """
                 SELECT 
                     ap.orderid,
+                    pd.finishedgoodid,      -- <-- ADD THIS
                     fg.finishedgoodname,
                     ap.sensor_id,
                     ap.target_quantity
@@ -260,13 +260,8 @@ def get_upcoming_orders():
                 AND ap.start_time IS NULL
                 ORDER BY ap.orderid ASC;
             """
-
             cursor.execute(query)
             return cursor.fetchall()
-
-    except Exception as e:
-        raise e
-
     finally:
         conn.close()
 
