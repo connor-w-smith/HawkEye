@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("upcoming-orders-table").style.display = tab === "upcoming" ? "table" : "none";
         document.getElementById("completed-orders-table").style.display = tab === "completed" ? "table" : "none";
         if(productionBtn) productionBtn.style.display = tab === "upcoming" ? "inline-block" : "none";
-        if(completedBtn) completedBtn.style.display = tab === "completed" ? "inline-block" : "none";
+        //if(completedBtn) completedBtn.style.display = tab === "completed" ? "inline-block" : "none";
         buttons.forEach(b => b.classList.remove("active"));
         buttons.forEach(b => { if(b.dataset.tab === tab) b.classList.add("active"); });
     }
@@ -37,33 +37,34 @@ document.addEventListener("DOMContentLoaded", function () {
         currentEditingType = type;
         currentEditingOrder = orderid;
         currentEditingFinishedGood = finishedgoodid || null;
-
+    
+        const sensorGroup = document.getElementById("edit-order-sensor").closest(".form-group"); // entire form group
         const sensorField = document.getElementById("edit-order-sensor");
         const startField = document.getElementById("edit-order-start-time");
         const endField = document.getElementById("edit-order-end-time");
         document.getElementById("edit-order-quantity").value = quantity;
-
+    
         if(type === "upcoming"){
             loadSensorOptions();
-            sensorField.style.display = "block";
+            if(sensorGroup) sensorGroup.style.display = "block";
             sensorField.disabled = false;
             sensorField.value = sensor || "";
             if(startField){ startField.style.display = "none"; startField.disabled = true; }
             if(endField){ endField.style.display = "none"; endField.disabled = true; }
         }
-
+    
         if(type === "completed"){
-            sensorField.style.display = "none";
+            if(sensorGroup) sensorGroup.style.display = "none"; // hide sensor completely
             sensorField.disabled = true;
             if(startField){ startField.style.display = "block"; startField.disabled = false; }
             if(endField){ endField.style.display = "block"; endField.disabled = false; }
         }
-
+    
         if(editModalMessage){
             editModalMessage.textContent = "";
             editModalMessage.style.color = "";
         }
-
+    
         editModal.style.display = "block";
     }
 
