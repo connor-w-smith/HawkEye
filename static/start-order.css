@@ -160,6 +160,22 @@
     display: block;
 }
 
+.shortage-modal-summary {
+    margin: 10px 0 14px;
+    color: #333;
+    line-height: 1.4;
+}
+
+.shortage-material-list {
+    margin: 0 0 18px;
+    padding-left: 18px;
+    color: #721c24;
+}
+
+.shortage-material-list li {
+    margin-bottom: 8px;
+}
+
 @keyframes slideIn {
     from {
         opacity: 0;
