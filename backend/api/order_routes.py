@@ -20,7 +20,7 @@ models/order_models.py
 from fastapi import APIRouter, HTTPException
 
 from ..models import EditProductionOrder
-from ..services import create_new_order, edit_order
+from ..services import create_new_order, edit_order, delete_order, edit_completed_order
 
 '''
 not implemented yet ;p
@@ -69,16 +69,16 @@ async def create_production_order(order: CreateProductionOrderRequest):
         print(f"Error creating production order: {e}")
         raise Exception(f"Failed to create production order: {str(e)}")
 
+
+
 @router.post("/delete-production-order")
 async def delete_production_order(order: DeleteProductionOrderRequest):
     try:
-        result = delete_production_order(order.orderid)
-
+        result = delete_order(order.orderid) 
         return result
-
     except Exception as e:
         print(f"Error deleting production order: {e}")
-        raise Exception(f"Failed to delete production order: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete production order: {str(e)}")
 
 
 @router.post("/update-production-order")
@@ -92,6 +92,29 @@ async def update_production_order(order: EditProductionOrder):
         print(f"Error updating production order: {e}")
         raise Exception(f"Failed to update production order: {str(e)}")
 
+@router.post("/update-completed-order")
+def update_completed_order(data: dict):
+    try:
+        return edit_completed_order(
+            orderid = data["orderid"],
+            partsproduced = data["partsproduced"],
+            start_time = data["start_time"],
+            end_time = data["end_time"]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+        
+@router.post("/create-completed-order")
+def create_completed_order(data: dict):
+    try:
+        return edit_completed_order(
+            orderid=None,  # Or generate a new orderid if needed
+            partsproduced=data["partsproduced"],
+            start_time=data["start_time"],
+            end_time=data["end_time"]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 '''
 
 TODO: THIS CODE IS NOT READY TO BE DEPLOYED YET. 

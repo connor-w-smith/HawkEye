@@ -120,6 +120,98 @@ def edit_order(orderid: str, finishedgoodid: str, target_quantity: int, sensor_i
 
     finally:
         conn.close()
+
+
+def edit_completed_order(orderid: str, partsproduced: int, start_time: str, end_time: str):
+    """
+    Updates a completed production order:
+    - partsproduced (tblproductiondata)
+    - start_time, end_time (tblactiveproduction)
+    
+    start_time and end_time should be ISO strings (e.g., '2026-03-07T10:00')
+    """
+    conn = get_connection()
+    conn.autocommit = False
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Update parts produced
+            cur.execute("""
+                UPDATE tblproductiondata
+                SET partsproduced = %s
+                WHERE orderid = %s
+            """, (partsproduced, orderid))
+
+            # Update start_time / end_time
+            cur.execute("""
+                UPDATE tblactiveproduction
+                SET start_time = %s,
+                    end_time = %s
+                WHERE orderid = %s
+            """, (start_time, end_time, orderid))
+
+            conn.commit()
+            return {"status": "success"}
+
+    except Exception as e:
+        conn.rollback()
+        return {"status": "error", "message": str(e)}
+
+    finally:
+        conn.close()
+
+def create_completed_order(finishedgoodid: str, partsproduced: int, start_time: str, end_time: str):
+    """
+    Creates a completed production order.
+    Inserts a new row in tblproductiondata and tblactiveproduction with
+    partsproduced, start_time, and end_time.
+
+    Args:
+        finishedgoodid (str): UUID of the finished good
+        partsproduced (int): Number of parts produced
+        start_time (str): ISO string start time
+        end_time (str): ISO string end time
+
+    Returns:
+        dict: {"status": "success", "orderid": ...} or {"status": "error", "message": ...}
+    """
+    conn = get_connection()
+    conn.autocommit = False
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Insert into tblproductiondata
+            cur.execute("""
+                INSERT INTO tblproductiondata (finishedgoodid, partsproduced, target_quantity, sensor_id)
+                VALUES (%s, %s, %s, NULL)
+                RETURNING orderid
+            """, (finishedgoodid, partsproduced, partsproduced))  # target_quantity = partsproduced for completed orders
+
+            result = cur.fetchone()
+            orderid = result["orderid"]
+
+            # Insert corresponding row in tblactiveproduction
+            cur.execute("""
+                INSERT INTO tblactiveproduction (orderid, start_time, end_time)
+                VALUES (%s, %s, %s)
+            """, (orderid, start_time, end_time))
+
+        conn.commit()
+        return {
+            "status": "success",
+            "message": "Completed order created",
+            "orderid": orderid,
+            "partsproduced": partsproduced,
+            "start_time": start_time,
+            "end_time": end_time
+        }
+
+    except Exception as e:
+        conn.rollback()
+        return {"status": "error", "message": str(e)}
+
+    finally:
+        conn.close()
 """
 
     # Lines below were added by Chase to be more verbose on output for failed order creation

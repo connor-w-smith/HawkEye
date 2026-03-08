@@ -78,13 +78,13 @@
             </table>
 
             <!-- Completed Orders Table -->
+            
             <table id="completed-orders-table" class="sensor-data-display" style="display:none;">
                 <caption>Completed Orders</caption>
                 <thead>
                     <tr>
                         <th>Order ID</th>
                         <th>Finished Good</th>
-                        <th>Target Qty</th>
                         <th>Produced</th>
                         <th>Actions</th>
                     </tr>
@@ -93,11 +93,18 @@
             </table>
 
             <!-- Add Order Button -->
-            <button class="btn-edit add-order-btn" onclick="openAddOrderModal()" style="width: 100%; margin-top: 10px;">
+            <button class="btn-edit add-order-btn">
                 <i class="fa fa-plus"></i> Add Production Order
             </button>
+            <button id="add-completed-btn" class="btn-edit add-completed-order-btn" style="display:none;">
+                <i class="fa fa-plus"></i> Add Completed Order
+            </button>
+    
         </div>
     </div>
+    <button id="add-completed-btn" class="btn-edit add-completed-order-btn" style="display:none;">
+        <i class="fa fa-plus"></i> Add Completed Order
+    </button>
 
     <!-- Add Order Modal -->
     <div id="add-order-modal" class="modal" style="display:none;">
@@ -122,7 +129,33 @@
             <div id="add-order-modal-message" class="modal-message"></div>
         </div>
     </div>
-
+    <!-- Add Completed Order Modal -->
+<div id="add-completed-order-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Add Completed Order</h2>
+        <form id="add-completed-order-form">
+            <div class="form-group">
+                <label for="completed-finished-good">Finished Good:</label>
+                <select id="completed-finished-good" required></select>
+            </div>
+            <div class="form-group">
+                <label for="completed-parts-produced">Parts Produced:</label>
+                <input type="number" id="completed-parts-produced" min="1" required>
+            </div>
+            <div class="form-group">
+                <label for="completed-start-time">Start Time:</label>
+                <input type="datetime-local" id="completed-start-time" required>
+            </div>
+            <div class="form-group">
+                <label for="completed-end-time">End Time:</label>
+                <input type="datetime-local" id="completed-end-time" required>
+            </div>
+            <button type="submit" class="btn-submit">Create Completed Order</button>
+        </form>
+        <div id="completed-order-modal-message" class="modal-message"></div>
+    </div>
+</div>
     <!-- Edit Order Modal -->
     <div id="edit-order-modal" class="modal" style="display:none;">
         <div class="modal-content">
@@ -132,6 +165,8 @@
                 <div class="form-group">
                     <label for="edit-order-quantity">Target Quantity:</label>
                     <input type="number" id="edit-order-quantity" min="1" required>
+                    <input type="datetime-local" id="edit-order-start-time" style="display:none;">
+                    <input type="datetime-local" id="edit-order-end-time" style="display:none;">
                 </div>
                 <div class="form-group">
                     <label for="edit-order-sensor">Sensor:</label>

@@ -209,35 +209,7 @@ def get_current_finishedgood_orders(finishedgoodid):
     finally:
         conn.close()
 
-"""Returns all completed orders with date filter (Defaults to 7 days)"""
-def get_completed_orders(timeframe_days=7):
-    #calculate start date for time frame
-    start_date = datetime.now() - timedelta(days=timeframe_days)
 
-    #Open connection
-    conn = get_connection()
-
-    try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            query = """SELECT 
-                        pd.orderid, 
-                        pd.sensor_id,
-                        fg.finishedgoodname, 
-                        pd.partsproduced,
-                        FROM tblproductiondata pd
-                        JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
-                        JOIN tblactiveproduction ap ON pd.orderid = ap.orderid
-                        WHERE ap.is_active = false AND pd.productionenddate >= %s;
-                    """
-            cursor.execute(query, (start_date,))
-
-            return cursor.fetchall()
-
-    except Exception as e:
-        raise e
-
-    finally:
-        conn.close()
 
 def get_upcoming_orders():
     conn = get_connection()
@@ -356,7 +328,7 @@ def get_active_order_for_finishedgood(finishedgoodid):
     finally:
         conn.close()
 
-def get_completed_orders(days: int):
+def get_completed_orders(days: int = 7):
     conn = get_connection()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -364,8 +336,10 @@ def get_completed_orders(days: int):
                 SELECT
                     ap.orderid,
                     ap.sensor_id,
+                    fg.finishedgoodid,
                     fg.finishedgoodname,
-                    ap.target_quantity AS planproduction
+                    pd.partsproduced AS partsproduced,
+                    ap.end_time
                 FROM tblactiveproduction ap
                 JOIN tblproductiondata pd ON ap.orderid = pd.orderid
                 JOIN tblfinishedgoods fg ON pd.finishedgoodid = fg.finishedgoodid
