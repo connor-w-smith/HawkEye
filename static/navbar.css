@@ -60,6 +60,10 @@
     cursor: pointer;
 }
 
+.dropdown-caret {
+    font-size: 0.7em;
+}
+
 .dropdown-content {
     display: none;
     position: absolute;
