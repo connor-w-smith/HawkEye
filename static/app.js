@@ -41,6 +41,8 @@ async function syncCurrentUserPermissions() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+    const isEditRoute = window.location.pathname.startsWith("/edit");
+
     // Password visibility toggle for login page
     const togglePassword = document.getElementById("togglePassword");
     const inputPassword = document.getElementById("inputPassword");
@@ -71,7 +73,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Fetch finished goods (only if data-table exists and NOT on search page)
     const table = document.getElementById("data-table");
     const searchInput = document.getElementById("searchInput");
-    if (table && !searchInput) {
+    if (table && !searchInput && !isEditRoute) {
         // Function to load and refresh the inventory
         const loadFinishedGoods = () => {
             // Check if edit modal exists (means we're on edit.html)
@@ -131,7 +133,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Fetch sensor production amounts
     const sensorTable = document.getElementById("sensor-data-table");
-    if (sensorTable) {
+    if (sensorTable && !isEditRoute) {
         fetch("/search/sensor-stats")
         .then(response => response.json())
         .then(data => {
@@ -165,7 +167,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Fetch currently packaging orders
     const packagingTable = document.getElementById("packaging-data-table");
-    if (packagingTable) {
+    if (packagingTable && !isEditRoute) {
         fetch("/search/active-orders")
         .then(response => response.json())
         .then(data => {

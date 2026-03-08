@@ -525,36 +525,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         editModal.style.display = "block";
     };
 
-    // Fetch sensor data
-    const sensorTable = document.getElementById("sensor-data-table");
-    if (sensorTable) {
-        fetch("/search/sensor-production")
-        .then(response => response.json())
-        .then(data => {
-            sensorTable.innerHTML = '';
-            if (!data || data.length === 0) {
-                const row = document.createElement("tr");
-                row.innerHTML = `<td colspan="3" style="text-align: center;">No sensor data available</td>`;
-                sensorTable.appendChild(row);
-                return;
-            }
-
-            data.forEach(sensor => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${sensor.sensorid || 'N/A'}</td>
-                    <td>${sensor.last_hour || 0}</td>
-                    <td>${sensor.total_today || 0}</td>
-                `;
-                sensorTable.appendChild(row);
-            });
-        })
-        .catch(err => {
-            console.error("Error loading sensor data: ", err);
-            sensorTable.innerHTML = '<tr><td colspan="3" style="text-align: center;">Error loading sensor data</td></tr>';
-        });
-    }
-
     // Handle Add Recipe modal
     const addRecipeModal = document.getElementById("add-recipe-modal");
     const addRecipeCloseBtn = addRecipeModal ? addRecipeModal.querySelector(".close") : null;
