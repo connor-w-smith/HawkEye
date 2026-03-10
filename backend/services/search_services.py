@@ -461,7 +461,7 @@ def last_five_orders_production_rate(sensor_id):
                     (pd.partsproduced / NULLIF((EXTRACT(EPOCH FROM (ap.end_time - ap.start_time)) / 60.0) * 60, 0)) * 100 AS efficiency_pct
                 FROM tblactiveproduction ap
                 JOIN tblproductiondata pd ON ap.orderid = pd.orderid
-                WHERE ap.sensor_id = %s  AND ap.is_active = FALSE
+                WHERE ap.sensor_id = %s  AND ap.end_time IS NOT NULL
                 ORDER BY ap.orderid DESC
                 LIMIT 5
             """
