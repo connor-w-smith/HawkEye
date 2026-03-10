@@ -157,8 +157,9 @@ def get_influx_count_since(timestamp, sensor_id=None):
             if timestamp.tzinfo is None:
                 timestamp = timestamp.replace(tzinfo=timezone.utc)
             ts_utc = timestamp.astimezone(timezone.utc)
-            # Format like 2026-02-18T12:34:56Z which Flux accepts
-            time_str = ts_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+            # Keep microsecond precision; truncating to seconds can re-count the same point.
+            # Format like 2026-02-18T12:34:56.123456Z which Flux accepts.
+            time_str = ts_utc.isoformat(timespec="microseconds").replace("+00:00", "Z")
             time_filter = f"start: {time_str}"
             # Flux range(start: ...) is inclusive. Use strict filter to avoid reprocessing
             # the point that exactly matches last_processed_timestamp.
