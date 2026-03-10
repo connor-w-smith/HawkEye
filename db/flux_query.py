@@ -149,6 +149,7 @@ def get_influx_count_since(timestamp, sensor_id=None):
         query_api = client.query_api()
 
         # If no timestamp, use last 60 seconds as default (duration literal)
+        strict_time_filter = ""
         if timestamp is None:
             time_filter = "start: -60s"
         else:
@@ -159,6 +160,9 @@ def get_influx_count_since(timestamp, sensor_id=None):
             # Format like 2026-02-18T12:34:56Z which Flux accepts
             time_str = ts_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
             time_filter = f"start: {time_str}"
+            # Flux range(start: ...) is inclusive. Use strict filter to avoid reprocessing
+            # the point that exactly matches last_processed_timestamp.
+            strict_time_filter = f'|> filter(fn: (r) => r._time > time(v: "{time_str}"))'
 
         # If sensor_id is provided, filter by the 'location' tag in InfluxDB
         sensor_filter = ""
@@ -170,6 +174,7 @@ def get_influx_count_since(timestamp, sensor_id=None):
 from(bucket: "{INFLUX_BUCKET}") 
   |> range({time_filter}) 
   {sensor_filter} 
+    {strict_time_filter}
   |> count()
 '''
         result = query_api.query(query=count_query, org=INFLUX_ORG)
@@ -188,6 +193,7 @@ from(bucket: "{INFLUX_BUCKET}")
 from(bucket: "{INFLUX_BUCKET}") 
   |> range({time_filter}) 
   {sensor_filter} 
+    {strict_time_filter}
   |> min(column: "_time")
 '''
         result = query_api.query(query=first_time_query, org=INFLUX_ORG)
@@ -205,6 +211,7 @@ from(bucket: "{INFLUX_BUCKET}")
 from(bucket: "{INFLUX_BUCKET}") 
   |> range({time_filter}) 
   {sensor_filter} 
+    {strict_time_filter}
   |> max(column: "_time")
 '''
         result = query_api.query(query=last_time_query, org=INFLUX_ORG)
