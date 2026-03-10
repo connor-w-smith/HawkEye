@@ -3,7 +3,7 @@ import time
 import os
 import importlib.util
 from importlib.machinery import ModuleSpec
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import logging
 import signal
 import threading
@@ -87,6 +87,14 @@ def _newer_timestamp(ts_a, ts_b):
     if b_utc is None:
         return a_utc
     return a_utc if a_utc >= b_utc else b_utc
+
+
+def _advance_watermark(dt):
+    """Return timestamp advanced by 1 microsecond to avoid replay on precision loss."""
+    dt_utc = _to_utc(dt)
+    if dt_utc is None:
+        return None
+    return dt_utc + timedelta(microseconds=1)
 
 
 def _handle_signal(signum, frame):
@@ -440,10 +448,11 @@ def process_active_orders():
                 
                 # Update timestamps if we got valid ones
                 if first_timestamp and last_timestamp:
+                    next_watermark = _advance_watermark(last_timestamp)
                     # Keep exact high-water mark in memory for this process lifetime.
                     _order_last_seen_timestamp[order_id] = _newer_timestamp(
                         _order_last_seen_timestamp.get(order_id),
-                        last_timestamp
+                        next_watermark
                     )
                     # Set start_time if it's not already set
                     if not start_time:
@@ -454,7 +463,7 @@ def process_active_orders():
                         update_active_production(order_id, start_time=start_time, end_time=last_timestamp, mark_inactive=True)
                     else:
                         # Just update last_processed_timestamp (don't set end_time yet)
-                        update_active_production(order_id, start_time=start_time, end_time=last_timestamp, mark_inactive=False)
+                        update_active_production(order_id, start_time=start_time, end_time=next_watermark, mark_inactive=False)
                         if target:
                             logger.info('Progress: %.1f%% complete', (new_total / target * 100))
                         else:
