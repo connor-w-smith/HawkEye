@@ -423,9 +423,9 @@ def current_order_production_rate(sensor_id):
                         pd.partsproduced,
                         ap.production_rate AS target_rate_pm,
                         -- Actual Rate: Parts / Minutes Elapsed
-                        pd.partsproduced / NULLIF(EXTRACT(EPOCH FROM (NOW() AT TIME ZONE 'America/Chicago' - ap.start_time)) / 60.0, 0) AS actual_rate_pm,
+                        pd.partsproduced / NULLIF(EXTRACT(EPOCH FROM (NOW() - ap.start_time)) / 60.0, 0) AS actual_rate_pm,
                         -- Target Parts: Minutes Elapsed * 60 (Should-be produced by now)
-                        (EXTRACT(EPOCH FROM (NOW() AT TIME ZONE 'America/Chicago' - ap.start_time)) / 60.0) * ap.production_rate AS should_be_produced,
+                        (EXTRACT(EPOCH FROM (NOW() - ap.start_time)) / 60.0) * ap.production_rate AS should_be_produced,
                         ap.start_time
                     FROM tblactiveproduction ap
                     JOIN tblproductiondata pd ON ap.orderid = pd.orderid
