@@ -67,7 +67,7 @@ def create_new_order(finishedgoodid: str, target_quantity: int, sensor_id: str |
                 conn.rollback()
                 return{
                     "status": "error",
-                    "message": "Insufficient raw materials including planned orders.",
+                    "message": "Insufficient Available Raw Materials",
                     "shortages": shortages
                 }
 
