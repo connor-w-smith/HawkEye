@@ -43,7 +43,8 @@ def create_new_order(finishedgoodid: str, target_quantity: int, sensor_id: str |
                     rm.material_name,
                     -- (Quantity for THIS order) + (Total already reserved)
                     ((cor.quantity_required * %s) + COALESCE(gad.planned_qty, 0)) AS total_required,
-                    rm.quantity_in_stock
+                    rm.quantity_in_stock,
+                    gad.planned_qty
                 FROM CurrentOrderRequirement cor
                 JOIN tblrawmaterials rm ON cor.materialid = rm.materialid
                 LEFT JOIN TotalActiveDemand gad ON cor.materialid = gad.materialid
@@ -58,7 +59,7 @@ def create_new_order(finishedgoodid: str, target_quantity: int, sensor_id: str |
                     shortages.append({
                         "material_name": item['material_name'],
                         "required": item['total_required'],
-                        "available": item['quantity_in_stock'],
+                        "available": item['quantity_in_stock'] - item['planned_qty'],
                         "short_by": item['total_required'] - item['quantity_in_stock']
                     })
 
@@ -66,7 +67,7 @@ def create_new_order(finishedgoodid: str, target_quantity: int, sensor_id: str |
                 conn.rollback()
                 return{
                     "status": "error",
-                    "message": "Insufficient raw materials including planned orders.",
+                    "message": "Insufficient Available Raw Materials",
                     "shortages": shortages
                 }
 
