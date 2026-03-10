@@ -69,7 +69,12 @@ def _to_utc(dt):
     if dt is None:
         return None
     if dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
+        # Database values may be timezone-naive local timestamps.
+        # Treat naive values as local time, then convert to UTC.
+        local_tz = datetime.now().astimezone().tzinfo
+        if local_tz is None:
+            local_tz = timezone.utc
+        return dt.replace(tzinfo=local_tz).astimezone(timezone.utc)
     return dt.astimezone(timezone.utc)
 
 
@@ -189,6 +194,7 @@ def get_influx_count_since(timestamp, sensor_id=None):
             # Flux range(start: ...) is inclusive. Use strict filter to avoid reprocessing
             # the point that exactly matches last_processed_timestamp.
             strict_time_filter = f'|> filter(fn: (r) => r._time > time(v: "{time_str}"))'
+            logger.info('Influx query boundary (UTC): %s for sensor %s', time_str, sensor_id or 'unassigned')
 
         # If sensor_id is provided, filter by the 'location' tag in InfluxDB
         sensor_filter = ""
