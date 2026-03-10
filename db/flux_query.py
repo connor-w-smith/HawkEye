@@ -58,6 +58,31 @@ RUN_ONCE = os.getenv('HAWKEYE_RUN_ONCE', os.getenv('RUN_ONCE', 'false')).lower()
 # Event used to detect shutdown signals
 _stop_event = threading.Event()
 
+# In-memory high-water mark of exact Influx hit time per order.
+# This avoids replaying the same point when DB timestamp precision is lower
+# than Influx point precision.
+_order_last_seen_timestamp = {}
+
+
+def _to_utc(dt):
+    """Return timezone-aware UTC datetime (or None)."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _newer_timestamp(ts_a, ts_b):
+    """Return the newer of two datetimes, handling None and timezone normalization."""
+    a_utc = _to_utc(ts_a)
+    b_utc = _to_utc(ts_b)
+    if a_utc is None:
+        return b_utc
+    if b_utc is None:
+        return a_utc
+    return a_utc if a_utc >= b_utc else b_utc
+
 
 def _handle_signal(signum, frame):
     logger.info('Received signal %s, initiating shutdown', signum)
@@ -295,6 +320,7 @@ def update_active_production(order_id, start_time=None, end_time=None, mark_inac
                     is_active = false 
                 WHERE orderid = %s
             """, (start_time, end_time, end_time, order_id))
+            _order_last_seen_timestamp.pop(order_id, None)
             print(f"✓ Order {order_id} marked as COMPLETE")
 
             # Activate the next order (by orderid) with the same sensor_id and is_active = false
@@ -310,7 +336,12 @@ def update_active_production(order_id, start_time=None, end_time=None, mark_inac
                 if next_row:
                     next_orderid = next_row[0]
                     logger.info(f"Activating next order {next_orderid} for sensor {sensor_id}")
-                    cur.execute("UPDATE tblactiveproduction SET is_active = true WHERE orderid = %s", (next_orderid,))
+                    cur.execute("""
+                        UPDATE tblactiveproduction
+                        SET is_active = true,
+                            last_processed_timestamp = NOW()
+                        WHERE orderid = %s
+                    """, (next_orderid,))
                     print(f"✓ Activated next order {next_orderid} for sensor {sensor_id}")
                 else:
                     logger.info(f"No next order found for sensor_id={sensor_id} after orderid={order_id}")
@@ -356,9 +387,21 @@ def process_active_orders():
         order_id = order['orderid']
         target = order['target_quantity']
         start_time = order['start_time']
-        last_processed_timestamp = order['last_processed_timestamp']  # Use this as query reference point
+        db_last_processed_timestamp = order['last_processed_timestamp']
+        cached_last_seen_timestamp = _order_last_seen_timestamp.get(order_id)
+        # Use whichever timestamp is newer to avoid reprocessing the same hit.
+        last_processed_timestamp = _newer_timestamp(db_last_processed_timestamp, cached_last_seen_timestamp)
         current_count = order['current_count']
         sensor_id = order.get('sensor_id', '')
+
+        # New/just-activated orders may have no processing watermark yet.
+        # Initialize it to "now" to avoid counting stale historical points.
+        if last_processed_timestamp is None:
+            initialized_ts = datetime.now(timezone.utc)
+            update_active_production(order_id, start_time=start_time, end_time=initialized_ts, mark_inactive=False)
+            _order_last_seen_timestamp[order_id] = initialized_ts
+            logger.info('Order %s watermark initialized; skipping historical backfill this cycle', order_id)
+            continue
         
         logger.info('Order %s (Sensor %s): %s/%s parts', order_id, sensor_id or 'unassigned', current_count, target)
         
@@ -391,6 +434,11 @@ def process_active_orders():
                 
                 # Update timestamps if we got valid ones
                 if first_timestamp and last_timestamp:
+                    # Keep exact high-water mark in memory for this process lifetime.
+                    _order_last_seen_timestamp[order_id] = _newer_timestamp(
+                        _order_last_seen_timestamp.get(order_id),
+                        last_timestamp
+                    )
                     # Set start_time if it's not already set
                     if not start_time:
                         start_time = first_timestamp
