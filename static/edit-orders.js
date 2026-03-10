@@ -245,7 +245,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function loadCompletedOrders(){
         const table = document.getElementById("completed-orders-body");
         if(!table) return;
-        fetch("/search/completed-orders")
+        fetch("/search/completed-orders?timeframe=30")
             .then(res => res.json())
             .then(data => {
                 table.innerHTML = "";
